@@ -1,0 +1,178 @@
+@import "tailwindcss";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+/*
+  Tailwind v4 defaults `dark:` to the OS-level prefers-color-scheme media
+  query. This app toggles dark mode by adding/removing a `.dark` class on
+  <html> instead (see the anti-flash script in layout.tsx and useTheme),
+  so every `dark:` utility needs to key off that class -- otherwise the
+  in-app toggle silently does nothing for any element using `dark:*` and
+  only the OS theme setting has any effect.
+
+  Using :is() rather than the commonly-suggested :where() -- :where() has
+  zero specificity, so a `dark:bg-x` utility only wins over a same-element
+  `bg-y` utility by coming later in the generated stylesheet, and that
+  ordering isn't reliably guaranteed (observed dark utilities losing to
+  their light counterpart in this build). :is() takes on the specificity
+  of its argument, so `dark:bg-x` is unconditionally more specific than
+  `bg-y` and always wins once `.dark` is present, regardless of order.
+*/
+@custom-variant dark (&:is(.dark, .dark *));
+
+/*
+  Bosket's EduSheet brand palette.
+  "primary" = deep indigo-navy (trust, ruled-notebook blue).
+  "secondary" = marigold amber (warm accent, used sparingly for CTAs/highlights).
+  "accent" = sage green (success/positive states only).
+  Existing components reference these Tailwind class names (bg-primary-600, etc.) --
+  only the underlying hex values changed, so the whole app re-themes from here.
+*/
+@theme {
+  --color-primary-50: #EEF1FC;
+  --color-primary-100: #DCE2F8;
+  --color-primary-200: #B9C5F1;
+  --color-primary-300: #93A3E8;
+  --color-primary-400: #5F73D6;
+  --color-primary-500: #3448BE;
+  --color-primary-600: #24358E;
+  --color-primary-700: #1B2A6B;
+  --color-primary-800: #14204F;
+  --color-primary-900: #0E1636;
+
+  --color-secondary-50: #FDF3E4;
+  --color-secondary-100: #FBE7C9;
+  --color-secondary-200: #F6CE93;
+  --color-secondary-300: #F0B563;
+  --color-secondary-400: #E9A047;
+  --color-secondary-500: #E2963A;
+  --color-secondary-600: #C97C22;
+
+  --color-accent-50: #E7F5EF;
+  --color-accent-100: #CFEBDF;
+  --color-accent-200: #9DD6BE;
+  --color-accent-300: #6BC29E;
+  --color-accent-400: #45AC82;
+  --color-accent-500: #2F8F6F;
+  --color-accent-600: #23735A;
+
+  --color-surface-light: #FFFFFF;
+  --color-surface-dark: #151A2E;
+  --color-bg-light: #F6F7FB;
+  --color-bg-dark: #0D111F;
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: 'Fraunces', 'Georgia', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/*
+  Font picker (Profile > Appearance): every option is preloaded in
+  layout.tsx under its own CSS variable, never as --font-sans directly, so
+  swapping the active font is just re-pointing --font-sans here based on
+  the [data-font] attribute the user's choice sets on <html>. Scoped to
+  "html[data-font] body" (not just :root) so it wins over the default
+  --font-sans inherited from the @theme block above.
+*/
+html[data-font="poppins"] body { --font-sans: var(--font-poppins), system-ui, sans-serif; }
+html[data-font="nunito"] body { --font-sans: var(--font-nunito), system-ui, sans-serif; }
+html[data-font="lexend"] body { --font-sans: var(--font-lexend), system-ui, sans-serif; }
+html[data-font="atkinson"] body { --font-sans: var(--font-atkinson), system-ui, sans-serif; }
+html[data-font="merriweather"] body { --font-sans: var(--font-merriweather), Georgia, serif; }
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+  }
+
+  .dark .glass {
+    background: rgba(21, 26, 46, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(27, 42, 107, 0.08);
+    box-shadow: 0 10px 30px -12px rgba(27, 42, 107, 0.12);
+  }
+
+  .dark .glass-card {
+    background: rgba(21, 26, 46, 0.88);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #24358E 0%, #E2963A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Perforated worksheet-edge motif -- the brand's one recurring signature detail. */
+  .torn-edge {
+    background-image: radial-gradient(circle, rgba(148, 163, 184, 0.5) 1px, transparent 1.5px);
+    background-size: 10px 10px;
+    background-position: 0 center;
+    background-repeat: repeat-x;
+    height: 1px;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* Print Stylesheet for Worksheets */
+@media print {
+  html, body, .dark, .dark body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* The app shell's dark-mode background utilities otherwise outrank the
+     print reset above (equal selector specificity, later in the cascade) --
+     force every themed container back to white when printing. */
+  [class*="bg-bg-dark"],
+  [class*="bg-surface-dark"] {
+    background: white !important;
+  }
+
+  aside, header, nav, button, .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:border-none {
+    border: none !important;
+  }
+
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+
+  .print\:page-break-before {
+    page-break-before: always;
+  }
+}

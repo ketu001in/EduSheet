@@ -1,0 +1,21 @@
+{
+  "name": "@edusheets/ai",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "echo 'no linting configured'"
+  },
+  "dependencies": {
+    "@edusheets/types": "workspace:*",
+    "groq-sdk": "^0.9.0",
+    "openai": "^4.77.0"
+  },
+  "devDependencies": {
+    "@edusheets/config": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}
