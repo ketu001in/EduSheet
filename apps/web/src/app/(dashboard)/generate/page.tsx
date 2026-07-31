@@ -10,6 +10,7 @@ import {
 } from '@/lib/curriculum';
 import { QUESTION_TYPE_OPTIONS, SavedSection, downloadWorksheetPdf, downloadAnswerKeyPdf } from '@/lib/worksheet';
 import { Logo } from '@/components/Logo';
+import { DiagramPreview, ColoringSheetPreview, TracingPreview, MatchPreview } from '@/components/DiagramPreview';
 import {
   ChevronRight, ChevronLeft, Sparkles, Check, Calculator, BookA, Leaf, Languages,
   FlaskConical, Globe, ScrollText, Printer, Heart, AlertTriangle, Loader2,
@@ -292,9 +293,9 @@ export default function GeneratePage() {
                   }`}
                 >
                   <span className={`block font-bold ${selectedClassId === cls.id ? 'text-primary-600 dark:text-primary-400 text-xl' : 'text-slate-700 dark:text-slate-300'}`}>
-                    {cls.grade_number}
+                    {cls.grade_number > 0 ? cls.grade_number : cls.name}
                   </span>
-                  <span className="text-xs text-slate-500 block">Class</span>
+                  {cls.grade_number > 0 && <span className="text-xs text-slate-500 block">Class</span>}
                 </button>
               ))}
             </div>
@@ -642,15 +643,27 @@ export default function GeneratePage() {
                         {sec.questions?.map((q, qIdx) => (
                           <div key={qIdx} className="space-y-1.5 text-sm">
                             <p className="font-medium">{q.number || qIdx + 1}. {q.question}</p>
-                            {q.options && q.options.length > 0 && (
-                              <div className="grid grid-cols-2 gap-2 text-xs pl-4">
-                                {q.options.map((opt, optIdx) => (
-                                  <span key={optIdx}>{opt}</span>
-                                ))}
-                              </div>
-                            )}
-                            {(!q.options || q.options.length === 0) && (
-                              <div className="h-16 border-b border-dashed border-slate-300 mt-2"></div>
+                            {q.type === 'coloring_sheet' ? (
+                              <ColoringSheetPreview diagram={q.diagram} />
+                            ) : q.type === 'tracing' ? (
+                              <TracingPreview content={q.diagram?.traceContent} />
+                            ) : q.type === 'match_following' ? (
+                              <MatchPreview options={q.options} answer={q.answer} matchImageUrls={q.diagram?.matchImageUrls} showLabels={false} />
+                            ) : q.diagram ? (
+                              <DiagramPreview diagram={q.diagram} showLabels={false} />
+                            ) : (
+                              <>
+                                {q.options && q.options.length > 0 && (
+                                  <div className="grid grid-cols-2 gap-2 text-xs pl-4">
+                                    {q.options.map((opt, optIdx) => (
+                                      <span key={optIdx}>{opt}</span>
+                                    ))}
+                                  </div>
+                                )}
+                                {(!q.options || q.options.length === 0) && (
+                                  <div className="h-16 border-b border-dashed border-slate-300 mt-2"></div>
+                                )}
+                              </>
                             )}
                           </div>
                         ))}
@@ -662,10 +675,21 @@ export default function GeneratePage() {
                       <div className="space-y-2 text-xs">
                         {generatedWorksheet.sections?.map((sec) =>
                           sec.questions?.map((q, qIdx) => (
-                            <p key={qIdx}>
-                              <strong>Q{q.number || qIdx + 1} Answer:</strong> {q.answer}
-                              {q.explanation && <span className="text-slate-600"> — {q.explanation}</span>}
-                            </p>
+                            <div key={qIdx}>
+                              <p>
+                                <strong>Q{q.number || qIdx + 1} Answer:</strong> {q.answer}
+                                {q.explanation && <span className="text-slate-600"> — {q.explanation}</span>}
+                              </p>
+                              {q.type === 'coloring_sheet' ? (
+                                <ColoringSheetPreview diagram={q.diagram} />
+                              ) : q.type === 'tracing' ? (
+                                <TracingPreview content={q.diagram?.traceContent} />
+                              ) : q.type === 'match_following' ? (
+                                <MatchPreview options={q.options} answer={q.answer} matchImageUrls={q.diagram?.matchImageUrls} showLabels={true} />
+                              ) : (
+                                q.diagram && <DiagramPreview diagram={q.diagram} showLabels={true} />
+                              )}
+                            </div>
                           ))
                         )}
                       </div>

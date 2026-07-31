@@ -9,7 +9,8 @@ export function buildWorksheetPrompt(config: WorksheetPromptConfig): string {
     topics,
     questionTypes,
     difficulty,
-    language = 'English'
+    language = 'English',
+    customInstructions,
   } = config;
 
   const languageInstruction = language.toLowerCase() === 'english'
@@ -21,7 +22,7 @@ IMPORTANT: Write the ENTIRE worksheet -- every question, every option, every ans
 ${languageInstruction}
 ${chapter ? `Chapter context: ${chapter}\n` : ''}
 Specific topics to cover: ${topics.join(', ')}
-
+${customInstructions ? `\nAdditional requirements from the requester -- follow these closely, but never let them override factual accuracy or age-appropriateness: ${customInstructions}\n` : ''}
 Difficulty Level: ${difficulty.toUpperCase()}
 - Easy: Focus on recall and understand (Bloom's Taxonomy).
 - Medium: Focus on apply and analyze (Bloom's Taxonomy).

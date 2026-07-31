@@ -6,6 +6,69 @@ export interface WorksheetPromptConfig {
   questionTypes: Record<string, number>;
   difficulty: 'easy' | 'medium' | 'hard' | 'mixed';
   language?: string;
+  // Free-text ask from the "custom" generation flow (any class/board, not tied
+  // to the curriculum tables) -- extra instructions layered on top of the
+  // standard prompt, e.g. "focus on real-life examples involving cricket".
+  customInstructions?: string;
+}
+
+// Legacy vector-shape schema -- kept only so already-saved worksheets (whose
+// `diagram` JSONB still has this shape) keep rendering after this change. The
+// AI is no longer instructed to produce these; see DiagramSpec's imagePrompt/
+// labelPoints instead, which uses a real generated image.
+export interface DiagramShape {
+  type: 'rect' | 'circle' | 'ellipse' | 'line' | 'arrow' | 'polygon';
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  rx?: number;
+  ry?: number;
+  x2?: number;
+  y2?: number;
+  points?: string;
+  fill?: string;
+  rotation?: number;
+  label: string;
+}
+
+// A point identifying a named part's approximate location on the generated
+// image, as a percentage of the image's width/height (0-100) -- used to
+// overlay a numbered marker (worksheet) or the real label (answer key).
+export interface DiagramLabelPoint {
+  x: number;
+  y: number;
+  label: string;
+}
+
+// Doubles as the general-purpose "question extras" shape stored in
+// worksheet_questions.diagram (JSONB) -- despite the name, it also carries
+// tracing/picture-matching data (traceContent/matchImages/matchImageUrls),
+// reusing one column/type end-to-end (AI -> DB -> PDF -> web preview) instead
+// of a dedicated column per new question type.
+export interface DiagramSpec {
+  // "diagram"/"coloring" questions: a real image generated from `imagePrompt`
+  // (filled in by apps/api after generation, not by the AI itself), with
+  // named parts pinned to approximate locations via `labelPoints` ("coloring"
+  // omits labelPoints -- there's nothing to label, just color).
+  imagePrompt?: string;
+  imageUrl?: string;
+  labelPoints?: DiagramLabelPoint[];
+
+  // "tracing" questions: the short text to trace (e.g. "A", "3", "cat").
+  traceContent?: string;
+
+  // "match" questions: an optional image-generation prompt for each Column A
+  // entry (parallel array to `options`), turning a plain text-match question
+  // into a picture-matching one, plus the resulting stored image URLs (same
+  // order/length, `null` for any single image that failed to generate).
+  matchImages?: string[];
+  matchImageUrls?: (string | null)[];
+
+  // Legacy vector-shape schema (see DiagramShape) -- present only on
+  // worksheets generated before this change.
+  viewBox?: string;
+  shapes?: DiagramShape[];
 }
 
 export interface Question {
@@ -16,6 +79,21 @@ export interface Question {
   answer: string | string[] | boolean;
   explanation?: string;
   marks: number;
+  // "diagram" and "coloring" type questions: for "coloring", only imagePrompt
+  // is used (a real outline/line-art image to color in) -- labelPoints don't
+  // apply since there's nothing to label, just color.
+  diagram?: DiagramSpec;
+  // "tracing" type questions: the short text to trace (e.g. "A", "3", "cat").
+  traceContent?: string;
+  // "match" type questions: an optional image-generation prompt for each
+  // Column A entry (parallel array to `options`), turning a plain text-match
+  // question into a picture-matching one -- e.g. a small apple icon next to
+  // the word "Apple" for a child to match to its meaning in Column B.
+  matchImages?: string[];
+  // Filled in by apps/api after generating each matchImages prompt -- parallel
+  // array of the resulting stored image URLs (same order/length as matchImages,
+  // with `null` for any single image that failed to generate).
+  matchImageUrls?: (string | null)[];
 }
 
 export interface GeneratedWorksheet {
@@ -32,6 +110,8 @@ export interface ProjectPromptConfig {
   topics: string[];
   length: 'short' | 'medium' | 'long';
   language?: string;
+  // Free-text ask from the "custom" generation flow -- see WorksheetPromptConfig.
+  customInstructions?: string;
 }
 
 export interface ProjectSection {

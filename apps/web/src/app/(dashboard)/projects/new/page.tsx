@@ -272,9 +272,9 @@ export default function NewProjectPage() {
                   }`}
                 >
                   <span className={`block font-bold ${selectedClassId === cls.id ? 'text-primary-600 dark:text-primary-400 text-xl' : 'text-slate-700 dark:text-slate-300'}`}>
-                    {cls.grade_number}
+                    {cls.grade_number > 0 ? cls.grade_number : cls.name}
                   </span>
-                  <span className="text-xs text-slate-500 block">Class</span>
+                  {cls.grade_number > 0 && <span className="text-xs text-slate-500 block">Class</span>}
                 </button>
               ))}
             </div>

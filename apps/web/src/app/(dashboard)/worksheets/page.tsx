@@ -1,10 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Search, Trash2, Heart, Eye, Printer, X, Sparkles, BookOpen, Loader2 } from 'lucide-react';
+import { Search, Trash2, Heart, Eye, Printer, X, Sparkles, BookOpen, Loader2, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useWorksheetStore, SavedWorksheet } from '@/store/useWorksheetStore';
-import { fetchWorksheetDetail, downloadWorksheetPdf, downloadAnswerKeyPdf } from '@/lib/worksheet';
+import { fetchWorksheetDetail, downloadWorksheetPdf, downloadAnswerKeyPdf, regenerateWorksheetPdf } from '@/lib/worksheet';
 import { Logo } from '@/components/Logo';
+import { DiagramPreview, ColoringSheetPreview, TracingPreview, MatchPreview } from '@/components/DiagramPreview';
 
 export default function WorksheetsPage() {
   const { worksheets, searchQuery, setSearchQuery, toggleFavorite, deleteWorksheet, fetchWorksheets, isLoading, hasLoaded } = useWorksheetStore();
@@ -14,6 +15,7 @@ export default function WorksheetsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<'worksheet' | 'answer-key' | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [regeneratingPdf, setRegeneratingPdf] = useState(false);
 
   const handleDownloadPdf = async (worksheetId: string, kind: 'worksheet' | 'answer-key') => {
     setPdfError(null);
@@ -23,9 +25,23 @@ export default function WorksheetsPage() {
       else await downloadAnswerKeyPdf(worksheetId);
     } catch (err: any) {
       console.error('Failed to open PDF:', err);
-      setPdfError('The PDF isn\'t ready yet — try again in a few seconds.');
+      setPdfError('The PDF isn\'t ready yet — it may have failed to generate. Try regenerating it below.');
     } finally {
       setDownloadingPdf(null);
+    }
+  };
+
+  const handleRegeneratePdf = async (worksheetId: string) => {
+    setPdfError(null);
+    setRegeneratingPdf(true);
+    try {
+      await regenerateWorksheetPdf(worksheetId);
+      setPdfError(null);
+    } catch (err) {
+      console.error('Failed to regenerate PDF:', err);
+      setPdfError('Regeneration failed. Please try again in a moment.');
+    } finally {
+      setRegeneratingPdf(false);
     }
   };
 
@@ -33,7 +49,7 @@ export default function WorksheetsPage() {
     if (!hasLoaded) fetchWorksheets();
   }, [hasLoaded, fetchWorksheets]);
 
-  const subjects = ['All', 'Mathematics', 'Science', 'English', 'Social Science', 'Hindi', 'EVS'];
+  const subjects = ['All', 'Mathematics', 'Science', 'English', 'Social Science', 'Hindi', 'EVS', 'General Knowledge', 'Numbers', 'Rhymes & Stories'];
 
   const filteredWorksheets = worksheets.filter((ws) => {
     const matchesSearch =
@@ -79,12 +95,20 @@ export default function WorksheetsPage() {
           <h1 className="text-3xl font-bold">My Worksheets</h1>
           <p className="text-slate-500 text-sm">Manage, view, and print your AI-generated practice papers.</p>
         </div>
-        <Link
-          href="/generate"
-          className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
-        >
-          <Sparkles className="w-4 h-4" /> Create New Worksheet
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/worksheets/custom"
+            className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm flex items-center gap-2 hover:border-primary-300 transition-colors"
+          >
+            <Sparkles className="w-4 h-4" /> Custom Worksheet
+          </Link>
+          <Link
+            href="/generate"
+            className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
+          >
+            <Sparkles className="w-4 h-4" /> Create New Worksheet
+          </Link>
+        </div>
       </div>
 
       {/* Search & Subject Filters */}
@@ -224,7 +248,18 @@ export default function WorksheetsPage() {
                 </button>
               </div>
             </div>
-            {pdfError && <p className="text-xs text-red-600 font-medium">{pdfError}</p>}
+            {pdfError && (
+              <div className="flex items-center justify-between gap-3 bg-red-50 dark:bg-red-950/30 rounded-xl px-4 py-2.5">
+                <p className="text-xs text-red-600 font-medium">{pdfError}</p>
+                <button
+                  onClick={() => handleRegeneratePdf(selectedWorksheet.id)}
+                  disabled={regeneratingPdf}
+                  className="shrink-0 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {regeneratingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Regenerate PDF
+                </button>
+              </div>
+            )}
 
             {/* Printable Content */}
             <div className="bg-white text-slate-900 p-6 rounded-2xl border border-slate-200 space-y-6 text-left">
@@ -243,10 +278,20 @@ export default function WorksheetsPage() {
                   {sec.questions.map((q, qIdx) => (
                     <div key={qIdx} className="space-y-1 text-sm">
                       <p className="font-medium">{q.number || qIdx + 1}. {q.question}</p>
-                      {q.options && (
-                        <div className="grid grid-cols-2 gap-1 pl-4 text-xs">
-                          {q.options.map((opt, oIdx) => <span key={oIdx}>{opt}</span>)}
-                        </div>
+                      {q.type === 'coloring_sheet' ? (
+                        <ColoringSheetPreview diagram={q.diagram} />
+                      ) : q.type === 'tracing' ? (
+                        <TracingPreview content={q.diagram?.traceContent} />
+                      ) : q.type === 'match_following' ? (
+                        <MatchPreview options={q.options} answer={q.answer} matchImageUrls={q.diagram?.matchImageUrls} showLabels={false} />
+                      ) : q.diagram ? (
+                        <DiagramPreview diagram={q.diagram} showLabels={false} />
+                      ) : (
+                        q.options && (
+                          <div className="grid grid-cols-2 gap-1 pl-4 text-xs">
+                            {q.options.map((opt, oIdx) => <span key={oIdx}>{opt}</span>)}
+                          </div>
+                        )
                       )}
                     </div>
                   ))}
@@ -258,10 +303,21 @@ export default function WorksheetsPage() {
                 <div className="space-y-2 text-xs">
                   {(selectedWorksheet.sections || []).map((sec) =>
                     sec.questions.map((q, qIdx) => (
-                      <p key={qIdx}>
-                        <strong>Q{q.number || qIdx + 1}:</strong> {q.answer}
-                        {q.explanation && <span className="text-slate-600"> — {q.explanation}</span>}
-                      </p>
+                      <div key={qIdx}>
+                        <p>
+                          <strong>Q{q.number || qIdx + 1}:</strong> {q.answer}
+                          {q.explanation && <span className="text-slate-600"> — {q.explanation}</span>}
+                        </p>
+                        {q.type === 'coloring_sheet' ? (
+                          <ColoringSheetPreview diagram={q.diagram} />
+                        ) : q.type === 'tracing' ? (
+                          <TracingPreview content={q.diagram?.traceContent} />
+                        ) : q.type === 'match_following' ? (
+                          <MatchPreview options={q.options} answer={q.answer} matchImageUrls={q.diagram?.matchImageUrls} showLabels={true} />
+                        ) : (
+                          q.diagram && <DiagramPreview diagram={q.diagram} showLabels={true} />
+                        )}
+                      </div>
                     ))
                   )}
                 </div>

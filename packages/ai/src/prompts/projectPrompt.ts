@@ -7,7 +7,7 @@ const LENGTH_GUIDANCE: Record<string, string> = {
 };
 
 export function buildProjectPrompt(config: ProjectPromptConfig): string {
-  const { classLevel, subject, chapter, topics, length, language = 'English' } = config;
+  const { classLevel, subject, chapter, topics, length, language = 'English', customInstructions } = config;
 
   const languageInstruction = language.toLowerCase() === 'english'
     ? `Language: English`
@@ -19,7 +19,7 @@ ${languageInstruction}
 ${chapter ? `Chapter context: ${chapter}\n` : ''}Topic(s) to cover: ${topics.join(', ')}
 
 Length: ${length.toUpperCase()} -- ${LENGTH_GUIDANCE[length] || LENGTH_GUIDANCE.medium}
-
+${customInstructions ? `\nAdditional requirements from the requester -- follow these closely, but never let them override factual accuracy or age-appropriateness: ${customInstructions}\n` : ''}
 Structure the report as a sequence of sections, always starting with an "Objective" or "Introduction" section and ending with a "Conclusion" section. Include a bibliography of plausible, appropriate reference sources for a school project at this level (e.g. "NCERT Textbook, Class ${classLevel} ${subject}", named government/educational bodies) -- do not invent specific URLs you are not confident are real.
 
 Requirements:

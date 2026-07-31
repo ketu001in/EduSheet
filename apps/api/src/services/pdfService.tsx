@@ -1,6 +1,7 @@
 import React from 'react';
 import path from 'path';
-import { Document, Page, Text, View, StyleSheet, renderToStream, Svg, Rect, Line, Circle, Path, Polygon, Defs, LinearGradient, Stop, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, renderToStream, Svg, Rect, Line, Circle, Ellipse, Path, Polygon, Defs, LinearGradient, Stop, Font, Image } from '@react-pdf/renderer';
+import type { DiagramSpec, DiagramShape, DiagramLabelPoint } from '@edusheets/ai';
 
 // Helvetica (react-pdf's default) is a base-14 PDF font with Latin glyphs
 // only -- Hindi/Sanskrit worksheets are generated in Devanagari script, and
@@ -24,6 +25,9 @@ function isDevanagariLanguage(language?: string): boolean {
 
 const styles = StyleSheet.create({
   page: { padding: 40, paddingTop: 56, fontFamily: 'Helvetica', fontSize: 11, lineHeight: 1.5 },
+  // Formal worksheet frame -- a bordered rule inset from the page edge,
+  // repeated on every page via `fixed`.
+  pageBorder: { position: 'absolute', top: 10, left: 10, right: 10, bottom: 10, border: '1.5pt solid #1B2A6B', borderRadius: 3 },
   brandMark: { position: 'absolute', top: 18, right: 24, flexDirection: 'row', alignItems: 'center', gap: 5 },
   brandName: { fontSize: 8, fontWeight: 'bold', color: '#1B2A6B' },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, borderBottom: '1pt solid #e2e8f0', paddingBottom: 10 },
@@ -40,13 +44,23 @@ const styles = StyleSheet.create({
   footer: { position: 'absolute', bottom: 30, left: 40, right: 40, textAlign: 'center', fontSize: 9, color: '#94a3b8', borderTop: '1pt solid #e2e8f0', paddingTop: 10 },
 });
 
+// These match the AI package's own type keys (packages/ai's questionTypes.ts /
+// systemPrompt.ts), e.g. "fill_in_the_blank" not "fill_blank" -- NOT the DB's
+// question_type enum values, which differ (see worksheetService's
+// AI_TYPE_TO_DB_TYPE / regenerateWorksheetPdf's inverse mapping).
+type QuestionType =
+  | 'mcq' | 'fill_in_the_blank' | 'true_false' | 'match' | 'short_answer'
+  | 'long_answer' | 'word_problem' | 'diagram' | 'logical_reasoning'
+  | 'coloring' | 'tracing';
+
 interface Question {
   id: string;
-  type: 'mcq' | 'fill_blank' | 'true_false' | 'short_answer' | 'long_answer';
+  type: QuestionType;
   text: string;
   options?: string[];
   answer?: string;
   marks?: number;
+  diagram?: DiagramSpec;
 }
 
 interface Worksheet {
@@ -84,9 +98,337 @@ const PdfLogo = () => (
   </Svg>
 );
 
+const diagramStyles = StyleSheet.create({
+  wrapper: { marginTop: 8, marginBottom: 4, alignItems: 'center' },
+  frame: { border: '1pt solid #cbd5e1', borderRadius: 4, padding: 6 },
+  legend: { marginTop: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  legendMarker: { width: 12, height: 12, borderRadius: 6, border: '1pt solid #1B2A6B', textAlign: 'center', fontSize: 7 },
+  imageMarker: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },
+  imageMarkerText: { fontSize: 7, color: '#FFFFFF' },
+});
+
+const num = (v: any, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
+const clampPercent = (v: number) => Math.min(Math.max(v, 0), 100);
+
+// Matches the fixed 500x350 size requested from the image-generation service
+// (diagramImageService.ts) -- used to keep the label markers' aspect ratio
+// consistent with the actual image.
+const DIAGRAM_IMAGE_RENDER_WIDTH = 220;
+const DIAGRAM_IMAGE_ASPECT = 350 / 500;
+
+// The AI doesn't always follow the exact field names from the prompt schema
+// verbatim -- it commonly substitutes the more familiar raw-SVG convention
+// (x1/y1/x2/y2) for a line's start point instead of x/y. Coerce known aliases
+// and fall back to safe numeric defaults for anything missing/non-numeric,
+// so a single malformed shape can never throw and take down the whole PDF
+// (that failure is silent to the caller -- worksheetService's PDF step is
+// best-effort -- so it must not fail at all here).
+// Unlike DiagramShape (whose numeric fields are optional, since the AI's raw
+// output may omit any of them), a normalized shape always has every field
+// coerced to a concrete number -- react-pdf's SVG primitives reject `undefined`.
+type NormalizedShape = Required<Pick<DiagramShape, 'type' | 'x' | 'y' | 'width' | 'height' | 'rx' | 'ry' | 'x2' | 'y2' | 'points' | 'fill' | 'rotation' | 'label'>>;
+
+// A pleasant, print-safe palette used whenever the AI omits (or supplies an
+// invalid) "fill" -- diagrams should never fall back to plain monochrome.
+const FALLBACK_PALETTE = ['#FDE68A', '#F9A8D4', '#86EFAC', '#93C5FD', '#FCA5A5', '#D8B4FE', '#FDBA74', '#67E8F9'];
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}){1,2}$/;
+// Loosely validates a "x,y x,y x,y ..." SVG points string (at least 3 pairs).
+const POLYGON_POINTS_RE = /^(-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?\s+){2,}-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?$/;
+
+function normalizeShape(raw: any, idx: number): NormalizedShape {
+  const x = num(raw?.x ?? raw?.x1, 60);
+  const y = num(raw?.y ?? raw?.y1, 90);
+  const fill = typeof raw?.fill === 'string' && HEX_COLOR_RE.test(raw.fill.trim())
+    ? raw.fill.trim()
+    : FALLBACK_PALETTE[idx % FALLBACK_PALETTE.length];
+  const points = typeof raw?.points === 'string' && POLYGON_POINTS_RE.test(raw.points.trim())
+    ? raw.points.trim()
+    : `${x},${y - 15} ${x - 15},${y + 10} ${x + 15},${y + 10}`;
+  return {
+    type: ['rect', 'circle', 'ellipse', 'line', 'arrow', 'polygon'].includes(raw?.type) ? raw.type : 'rect',
+    x,
+    y,
+    width: num(raw?.width, 40),
+    height: num(raw?.height, 40),
+    rx: num(raw?.rx, 20),
+    ry: num(raw?.ry, 15),
+    x2: num(raw?.x2, x + 30),
+    y2: num(raw?.y2, y),
+    points,
+    fill,
+    rotation: num(raw?.rotation, 0),
+    label: typeof raw?.label === 'string' && raw.label ? raw.label : '',
+  };
+}
+
+// Rotates point (px,py) around (ox,oy) by `deg` degrees, matching the SVG
+// rotate(deg, ox, oy) transform's matrix exactly.
+function rotatePoint(px: number, py: number, ox: number, oy: number, deg: number): { x: number; y: number } {
+  const rad = (deg * Math.PI) / 180;
+  const dx = px - ox;
+  const dy = py - oy;
+  return {
+    x: ox + dx * Math.cos(rad) - dy * Math.sin(rad),
+    y: oy + dx * Math.sin(rad) + dy * Math.cos(rad),
+  };
+}
+
+// Places each shape's number/label near an edge rather than dead-center --
+// diagrams commonly nest shapes with shared centers (e.g. a cell membrane
+// ellipse around a nucleus circle, or petals rotated around a flower center),
+// and center-placed labels would stack exactly on top of each other, hiding
+// all but the last-drawn one. When the shape itself is rotated (e.g. a petal
+// arranged radially), the label position must rotate with it too.
+function shapeLabelPos(shape: NormalizedShape): { cx: number; cy: number } {
+  let pos: { cx: number; cy: number };
+  if (shape.type === 'line' || shape.type === 'arrow') {
+    pos = { cx: shape.x2, cy: shape.y2 - 6 };
+  } else if (shape.type === 'rect') {
+    pos = { cx: shape.x + 10, cy: shape.y + 12 };
+  } else if (shape.type === 'ellipse') {
+    pos = { cx: shape.x, cy: shape.y - shape.ry + 9 };
+  } else {
+    // circle and polygon -- x,y is already the AI-supplied center/anchor point.
+    pos = { cx: shape.x, cy: shape.y };
+  }
+  if (!shape.rotation) return pos;
+  const rotated = rotatePoint(pos.cx, pos.cy, shape.x, shape.y, shape.rotation);
+  return { cx: rotated.x, cy: rotated.y };
+}
+
+// Renders a real generated reference image (see diagramImageService.ts) with
+// numbered markers pinned at the AI's estimated label positions, plus a
+// legend below (blank lines on the worksheet, real labels in the answer key).
+const ImageDiagramView = ({ diagram, showLabels }: { diagram: DiagramSpec; showLabels: boolean }) => {
+  const points: DiagramLabelPoint[] = Array.isArray(diagram.labelPoints) ? diagram.labelPoints : [];
+  const renderHeight = DIAGRAM_IMAGE_RENDER_WIDTH * DIAGRAM_IMAGE_ASPECT;
+
+  return (
+    <View style={diagramStyles.wrapper} wrap={false}>
+      <View style={diagramStyles.frame}>
+        <View style={{ width: DIAGRAM_IMAGE_RENDER_WIDTH, height: renderHeight, position: 'relative' }}>
+          <Image src={diagram.imageUrl!} style={{ width: DIAGRAM_IMAGE_RENDER_WIDTH, height: renderHeight }} />
+          {points.map((pt, idx) => {
+            const px = clampPercent(num(pt?.x, 50));
+            const py = clampPercent(num(pt?.y, 50));
+            const left = (px / 100) * DIAGRAM_IMAGE_RENDER_WIDTH - 7;
+            const top = (py / 100) * renderHeight - 7;
+            return (
+              <View key={idx} style={[diagramStyles.imageMarker, { left, top }]}>
+                <Text style={diagramStyles.imageMarkerText}>{idx + 1}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+      <View style={diagramStyles.legend}>
+        {points.map((pt, idx) => (
+          <View key={idx} style={diagramStyles.legendItem}>
+            <Text style={diagramStyles.legendMarker}>{idx + 1}</Text>
+            <Text style={{ fontSize: 8 }}>{showLabels ? (typeof pt?.label === 'string' ? pt.label : '') : '_______________'}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+};
+
+// Legacy fallback for worksheets saved before real image generation existed
+// -- renders the old shape-based vector wireframe from `diagram.shapes`.
+const ShapeDiagramView = ({ diagram, showLabels }: { diagram: DiagramSpec; showLabels: boolean }) => {
+  const rawShapes = Array.isArray(diagram?.shapes) ? diagram.shapes : [];
+  if (rawShapes.length === 0) return null;
+  const shapes = rawShapes.map((s, idx) => normalizeShape(s, idx));
+
+  const viewBoxParts = (diagram.viewBox || '0 0 300 180').split(' ').map(Number);
+  const viewBox = viewBoxParts.length === 4 && viewBoxParts.every(Number.isFinite) ? diagram.viewBox! : '0 0 300 180';
+  const [, , vbWidth, vbHeight] = viewBox.split(' ').map(Number);
+  const renderWidth = Math.min(vbWidth || 300, 260);
+  const renderHeight = ((vbHeight || 180) / (vbWidth || 300)) * renderWidth;
+
+  // The colored illustration itself is identical on both the worksheet and
+  // the answer key -- only the marker/legend text (numbers vs real labels)
+  // differs -- so a student sees the real, accurate picture either way.
+  // wrap={false} keeps the whole diagram (frame + legend) from being split
+  // across a page boundary. Without it, react-pdf can lay out this <Svg> with
+  // a truncated (sometimes zero) box height when it straddles a page break,
+  // which crashes deep in the PDF layout engine ("unsupported number:
+  // Infinity") instead of failing gracefully -- moving the whole block to the
+  // next page avoids ever slicing an <Svg> node.
+  return (
+    <View style={diagramStyles.wrapper} wrap={false}>
+      <View style={diagramStyles.frame}>
+        <Svg width={renderWidth} height={renderHeight} viewBox={viewBox}>
+          {shapes.map((shape, idx) => {
+            const stroke = '#1e293b';
+            const marker = showLabels ? shape.label : String(idx + 1);
+            const { cx, cy } = shapeLabelPos(shape);
+            const transform = shape.rotation ? `rotate(${shape.rotation} ${shape.x} ${shape.y})` : undefined;
+            return (
+              <React.Fragment key={idx}>
+                {shape.type === 'rect' && (
+                  <Rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} stroke={stroke} strokeWidth={1} fill={shape.fill} transform={transform} />
+                )}
+                {shape.type === 'circle' && (
+                  <Circle cx={shape.x} cy={shape.y} r={shape.rx} stroke={stroke} strokeWidth={1} fill={shape.fill} />
+                )}
+                {shape.type === 'ellipse' && (
+                  <Ellipse cx={shape.x} cy={shape.y} rx={shape.rx} ry={shape.ry} stroke={stroke} strokeWidth={1} fill={shape.fill} transform={transform} />
+                )}
+                {shape.type === 'polygon' && (
+                  <Polygon points={shape.points} stroke={stroke} strokeWidth={1} fill={shape.fill} transform={transform} />
+                )}
+                {(shape.type === 'line' || shape.type === 'arrow') && (
+                  <Line x1={shape.x} y1={shape.y} x2={shape.x2} y2={shape.y2} stroke={shape.fill} strokeWidth={2} />
+                )}
+                <Text x={cx} y={cy} style={{ fontSize: 7 }}>{marker}</Text>
+              </React.Fragment>
+            );
+          })}
+        </Svg>
+      </View>
+      <View style={diagramStyles.legend}>
+        {shapes.map((shape, idx) => (
+          <View key={idx} style={diagramStyles.legendItem}>
+            <Text style={diagramStyles.legendMarker}>{idx + 1}</Text>
+            <Text style={{ fontSize: 8 }}>{showLabels ? shape.label : '_______________'}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+};
+
+// Text-only fallback for when image generation failed/timed out (best-effort
+// -- see diagramImageService.ts) but the AI's labelPoints/labels still exist,
+// so the question isn't left with nothing at all below it.
+const TextOnlyLegend = ({ labels, showLabels }: { labels: string[]; showLabels: boolean }) => {
+  if (labels.length === 0) return null;
+  return (
+    <View style={diagramStyles.legend}>
+      {labels.map((label, idx) => (
+        <View key={idx} style={diagramStyles.legendItem}>
+          <Text style={diagramStyles.legendMarker}>{idx + 1}</Text>
+          <Text style={{ fontSize: 8 }}>{showLabels ? label : '_______________'}</Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+// Prefers a real generated image (current schema) over the legacy vector
+// shapes (only present on worksheets saved before real image generation was
+// added) -- see DiagramSpec's comment in packages/ai for why both exist.
+const DiagramView = ({ diagram, showLabels }: { diagram: DiagramSpec; showLabels: boolean }) => {
+  if (!diagram) return null;
+  if (diagram.imageUrl) return <ImageDiagramView diagram={diagram} showLabels={showLabels} />;
+  if (Array.isArray(diagram.shapes) && diagram.shapes.length > 0) {
+    return <ShapeDiagramView diagram={diagram} showLabels={showLabels} />;
+  }
+  if (Array.isArray(diagram.labelPoints) && diagram.labelPoints.length > 0) {
+    return <TextOnlyLegend labels={diagram.labelPoints.map((p) => p?.label || '')} showLabels={showLabels} />;
+  }
+  return null;
+};
+
+const coloringStyles = StyleSheet.create({
+  wrapper: { marginTop: 8, marginBottom: 4, alignItems: 'center' },
+  frame: { border: '1.5pt solid #cbd5e1', borderRadius: 6, padding: 8 },
+});
+
+// Full-size real outline/line-art image for a child to print and color --
+// deliberately no numbered markers or legend (there's nothing to label, just
+// color), unlike the labeled ImageDiagramView.
+const ColoringSheetView = ({ diagram }: { diagram?: DiagramSpec | null }) => {
+  if (!diagram?.imageUrl) return null;
+  const width = 380;
+  const height = width * DIAGRAM_IMAGE_ASPECT;
+  return (
+    <View style={coloringStyles.wrapper} wrap={false}>
+      <View style={coloringStyles.frame}>
+        <Image src={diagram.imageUrl} style={{ width, height }} />
+      </View>
+    </View>
+  );
+};
+
+const tracingStyles = StyleSheet.create({
+  wrapper: { marginTop: 10, marginBottom: 4 },
+  guideRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  guideGlyph: { fontSize: 40, fontWeight: 'bold', color: '#cbd5e1', marginRight: 14 },
+  practiceLine: { borderBottom: '1pt dashed #94a3b8', height: 30, marginTop: 8, width: '100%' },
+});
+
+// Repeats the trace content (a letter/number/short word) as large, light-gray
+// bold text for a child to trace over with a pencil, followed by blank
+// practice lines. A validated technique -- react-pdf's PDF text engine always
+// fills glyphs solid regardless of stroke/fill/strokeDasharray props, so a
+// dashed/dotted OUTLINE glyph (the more common tracing-worksheet look) isn't
+// achievable here; a light solid fill is the reliable, still-legitimate
+// real-world alternative used by many printable tracing worksheets.
+const TracingView = ({ content }: { content?: string }) => {
+  if (!content) return null;
+  const repeated = Array.from({ length: 6 }, () => content).join('   ');
+  return (
+    <View style={tracingStyles.wrapper} wrap={false}>
+      <View style={tracingStyles.guideRow}>
+        <Text style={tracingStyles.guideGlyph}>{repeated}</Text>
+      </View>
+      <View style={tracingStyles.practiceLine} />
+      <View style={tracingStyles.practiceLine} />
+    </View>
+  );
+};
+
+const matchStyles = StyleSheet.create({
+  row: { flexDirection: 'row', marginLeft: 25, marginTop: 6, gap: 20 },
+  columnA: { flex: 1, gap: 8 },
+  columnB: { flex: 1, gap: 8 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  itemImage: { width: 28, height: 28, borderRadius: 3 },
+  itemText: { fontSize: 10 },
+});
+
+// Renders "match the following" with the actual Column A options printed
+// (previously "match" questions only showed blank lines with no options ever
+// printed). When matchImageUrls is present (young-learner picture matching),
+// a small real image is shown next to each Column A entry instead of just
+// text. Column B answers arrive as one already-joined string (see
+// worksheetService.ts, which flattens the AI's answer array before storage),
+// so the answer key shows them as a single reference line rather than a fake
+// second column.
+const MatchView = ({ q, isAnswerKey }: { q: Question; isAnswerKey?: boolean }) => {
+  const options = q.options || [];
+  if (options.length === 0) return null;
+  const imageUrls = q.diagram?.matchImageUrls;
+
+  return (
+    <View style={matchStyles.row}>
+      <View style={matchStyles.columnA}>
+        {options.map((opt, idx) => (
+          <View key={idx} style={matchStyles.itemRow}>
+            <Text style={{ fontSize: 10, fontWeight: 'bold' }}>{idx + 1}.</Text>
+            {imageUrls?.[idx] && <Image src={imageUrls[idx]!} style={matchStyles.itemImage} />}
+            <Text style={matchStyles.itemText}>{opt}</Text>
+          </View>
+        ))}
+      </View>
+      <View style={matchStyles.columnB}>
+        {isAnswerKey ? (
+          <Text style={{ fontSize: 10, color: '#ef4444', fontWeight: 'bold' }}>Ans: {q.answer}</Text>
+        ) : (
+          options.map((_, idx) => <View key={idx} style={styles.blankLine} />)
+        )}
+      </View>
+    </View>
+  );
+};
+
 const WorksheetDocument = ({ worksheet, questions, isAnswerKey }: { worksheet: Worksheet, questions: Question[], isAnswerKey?: boolean }) => (
   <Document>
     <Page size="A4" style={isDevanagariLanguage(worksheet.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+      <View style={styles.pageBorder} fixed />
       {/* Letterhead mark -- fixed so it repeats on every page, top right */}
       <View style={styles.brandMark} fixed>
         <PdfLogo />
@@ -119,7 +461,25 @@ const WorksheetDocument = ({ worksheet, questions, isAnswerKey }: { worksheet: W
             <View style={styles.questionText}>
               <Text>{q.text} {q.marks ? `[${q.marks} marks]` : ''}</Text>
 
-              {isAnswerKey ? (
+              {q.type === 'diagram' && q.diagram ? (
+                <>
+                  <DiagramView diagram={q.diagram} showLabels={!!isAnswerKey} />
+                  {isAnswerKey && q.answer && (
+                    <Text style={{ color: '#ef4444', marginTop: 5, fontWeight: 'bold' }}>Ans: {q.answer}</Text>
+                  )}
+                </>
+              ) : q.type === 'coloring' ? (
+                <>
+                  <ColoringSheetView diagram={q.diagram} />
+                  {isAnswerKey && q.answer && (
+                    <Text style={{ color: '#ef4444', marginTop: 5, fontWeight: 'bold' }}>Ans: {q.answer}</Text>
+                  )}
+                </>
+              ) : q.type === 'tracing' ? (
+                <TracingView content={q.diagram?.traceContent} />
+              ) : q.type === 'match' ? (
+                <MatchView q={q} isAnswerKey={isAnswerKey} />
+              ) : isAnswerKey ? (
                 <Text style={{ color: '#ef4444', marginTop: 5, fontWeight: 'bold' }}>Ans: {q.answer}</Text>
               ) : (
                 <>
@@ -130,10 +490,10 @@ const WorksheetDocument = ({ worksheet, questions, isAnswerKey }: { worksheet: W
                       ))}
                     </View>
                   )}
-                  {q.type === 'fill_blank' && <View style={styles.blankLine} />}
+                  {q.type === 'fill_in_the_blank' && <View style={styles.blankLine} />}
                   {q.type === 'true_false' && <Text style={{ marginTop: 5 }}>( True / False )</Text>}
                   {q.type === 'short_answer' && <><View style={styles.blankLine}/><View style={styles.blankLine}/></>}
-                  {q.type === 'long_answer' && <><View style={styles.blankLine}/><View style={styles.blankLine}/><View style={styles.blankLine}/><View style={styles.blankLine}/></>}
+                  {(q.type === 'long_answer' || q.type === 'word_problem' || q.type === 'logical_reasoning') && <><View style={styles.blankLine}/><View style={styles.blankLine}/><View style={styles.blankLine}/><View style={styles.blankLine}/></>}
                 </>
               )}
             </View>
@@ -189,6 +549,7 @@ const projectStyles = StyleSheet.create({
 const ProjectDocument = ({ project, sections, bibliography }: { project: ProjectMeta; sections: ProjectSection[]; bibliography?: string[] }) => (
   <Document>
     <Page size="A4" style={isDevanagariLanguage(project.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+      <View style={styles.pageBorder} fixed />
       <View style={styles.brandMark} fixed>
         <PdfLogo />
         <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>

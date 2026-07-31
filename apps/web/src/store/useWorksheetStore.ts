@@ -41,7 +41,7 @@ interface RawWorksheetRow {
   classes?: { name: string } | null;
   subjects?: { name: string } | null;
   chapters?: { title: string } | null;
-  settings?: { board?: string; topics?: string[] } | null;
+  settings?: { board?: string; topics?: string[]; isCustom?: boolean; className?: string; subjectName?: string; topic?: string } | null;
 }
 
 function mapRowToSummary(row: RawWorksheetRow): SavedWorksheet {
@@ -49,9 +49,9 @@ function mapRowToSummary(row: RawWorksheetRow): SavedWorksheet {
     id: row.id,
     title: row.title,
     board: row.settings?.board || 'CBSE',
-    class: row.classes?.name || '',
-    subject: row.subjects?.name || '',
-    chapter: row.chapters?.title || '',
+    class: row.classes?.name || row.settings?.className || '',
+    subject: row.subjects?.name || row.settings?.subjectName || '',
+    chapter: row.chapters?.title || row.settings?.topic || '',
     topics: row.settings?.topics || [],
     difficulty: row.difficulty,
     questionCount: row.question_count,

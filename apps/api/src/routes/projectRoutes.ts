@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimiter';
-import { generateProject } from '../services/projectService';
+import { generateProject, generateCustomProject, regenerateProjectPdf } from '../services/projectService';
 import { getSignedURL } from '../services/storageService';
 import { resolveAiOverride, AiKeyRequiredError } from '../lib/resolveAiOverride';
 import { z } from 'zod';
@@ -29,6 +29,29 @@ router.post('/generate', aiLimiter, validate(generateSchema), async (req: Authen
   try {
     const aiOverride = await resolveAiOverride(req.supabase, req.user!.id);
     const result = await generateProject(req.body, req.user!.id, req.supabase, aiOverride);
+    res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    if (error instanceof AiKeyRequiredError) {
+      return res.status(400).json({ success: false, error: 'AI_KEY_REQUIRED' });
+    }
+    next(error);
+  }
+});
+
+const generateCustomSchema = z.object({
+  title: z.string().optional(),
+  className: z.string().min(1),
+  subjectName: z.string().min(1),
+  topic: z.string().min(1),
+  description: z.string().optional(),
+  length: z.enum(['short', 'medium', 'long']).default('medium'),
+  language: z.string().optional(),
+});
+
+router.post('/generate-custom', aiLimiter, validate(generateCustomSchema), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const aiOverride = await resolveAiOverride(req.supabase, req.user!.id);
+    const result = await generateCustomProject(req.body, req.user!.id, req.supabase, aiOverride);
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof AiKeyRequiredError) {
@@ -79,6 +102,15 @@ router.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
 
     if (error) throw error;
     res.json({ success: true, message: 'Project deleted' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/:id/regenerate-pdf', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const result = await regenerateProjectPdf(req.params.id, req.user!.id, req.supabase);
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

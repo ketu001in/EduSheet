@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Enums
 CREATE TYPE user_role AS ENUM ('student', 'parent', 'teacher', 'admin');
-CREATE TYPE question_type AS ENUM ('mcq', 'fill_in_blank', 'true_false', 'match_following', 'short_answer', 'long_answer', 'word_problem', 'diagram_based', 'logical_reasoning');
+CREATE TYPE question_type AS ENUM ('mcq', 'fill_in_blank', 'true_false', 'match_following', 'short_answer', 'long_answer', 'word_problem', 'diagram_based', 'logical_reasoning', 'coloring_sheet', 'tracing');
 CREATE TYPE difficulty_level AS ENUM ('easy', 'medium', 'hard', 'mixed');
 CREATE TYPE linking_status AS ENUM ('pending', 'approved', 'rejected');
 CREATE TYPE favorite_type AS ENUM ('topic', 'chapter', 'worksheet');
@@ -43,7 +43,8 @@ CREATE TABLE public.boards (
 -- 4. classes (create before user_profiles)
 CREATE TABLE public.classes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  grade_number INT UNIQUE NOT NULL CHECK (grade_number BETWEEN 1 AND 12),
+  -- -1 = LKG, 0 = UKG (pre-primary), 1-12 = Class 1-12.
+  grade_number INT UNIQUE NOT NULL CHECK (grade_number BETWEEN -1 AND 12),
   name TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -156,6 +157,10 @@ CREATE TABLE public.worksheet_questions (
   correct_answer TEXT,
   explanation TEXT,
   hints TEXT,
+  -- Simplified shape-based schematic for "diagram_based" questions (see
+  -- packages/ai's DiagramSpec) -- rendered as an unlabeled wireframe on the
+  -- worksheet and a fully-labeled diagram in the answer key PDF.
+  diagram JSONB,
   marks INT DEFAULT 1,
   order_index INT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
