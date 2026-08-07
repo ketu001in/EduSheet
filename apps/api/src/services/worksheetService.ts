@@ -1,4 +1,4 @@
-import { createAIProvider, WorksheetPromptConfig, Question as AIQuestion } from '@edusheets/ai';
+import { createAIProvider, WorksheetPromptConfig, Question as AIQuestion, AIProvider } from '@edusheets/ai';
 import { trackActivity } from './behaviorService';
 import { generateWorksheetPDF, generateAnswerKeyPDF } from './pdfService';
 import { uploadPDF } from './storageService';
@@ -11,27 +11,66 @@ import { generateAndStoreDiagramImage } from './diagramImageService';
 // missing (pdfService/DiagramPreview both handle that gracefully with a text
 // fallback), it must never fail worksheet generation.
 //
+// For "diagram" questions with labelPoints (parts to identify), also asks
+// the AI provider to verify label positions against the ACTUAL generated
+// image (see AIProvider.verifyImageLabels) -- the AI's original labelPoints
+// are a blind guess made before the image exists, and were confirmed wrong
+// often enough in practice to be misleading. If verification isn't available
+// (e.g. Groq has no vision model right now) or fails, `labelPointsVerified`
+// is left false and pdfService/DiagramPreview must render a safe, non-
+// pinpoint list instead of trusting the unverified guess.
+//
 // Runs strictly SERIALLY, not in parallel: Pollinations' free anonymous tier
 // allows roughly one request per ~15s per IP. A worksheet with several
 // diagram/coloring/match-image questions firing all their image requests at
 // once reliably triggers 429s across the whole batch (confirmed: a single
 // 8-question test worksheet lost 100% of its images this way) -- one at a
 // time is slower but actually succeeds instead of racing itself into failure.
-async function attachGeneratedImages(questions: AIQuestion[], worksheetId: string): Promise<AIQuestion[]> {
+//
+// Also enforces a hard overall time budget across ALL of a worksheet's
+// images. Confirmed by direct testing (concurrent AND sequential requests,
+// with and without a free Pollinations API key) that the free anonymous tier
+// is now genuinely at its ceiling -- keyed requests to the paid endpoint
+// returned 402 Payment Required, and the free classic endpoint still 429s or
+// times out under normal use regardless of the key. There is no further
+// tuning that makes the free tier reliable, so this budget is deliberately
+// short: fail fast to the graceful text-only fallback (see pdfService.tsx/
+// DiagramPreview) rather than spend a long time chasing a service that's
+// likely to fail anyway. At ~17s spacing + up to 15s per attempt, this
+// realistically allows at most one image attempt per worksheet when the
+// service is struggling -- accepted tradeoff for staying on the free tier.
+const IMAGE_GENERATION_BUDGET_MS = 30_000;
+
+async function attachGeneratedImages(questions: AIQuestion[], worksheetId: string, provider: AIProvider): Promise<AIQuestion[]> {
+  const deadline = Date.now() + IMAGE_GENERATION_BUDGET_MS;
   const results: AIQuestion[] = [];
   for (let idx = 0; idx < questions.length; idx++) {
     let next = questions[idx];
+    const budgetLeft = Date.now() < deadline;
 
-    if (next.diagram?.imagePrompt) {
-      const imageUrl = await generateAndStoreDiagramImage(worksheetId, idx, next.diagram.imagePrompt);
-      if (imageUrl) next = { ...next, diagram: { ...next.diagram, imageUrl } };
+    if (next.diagram?.imagePrompt && budgetLeft) {
+      const originalDiagram = next.diagram;
+      const imageUrl = await generateAndStoreDiagramImage(worksheetId, idx, originalDiagram.imagePrompt!);
+      if (imageUrl) {
+        const labels = originalDiagram.labelPoints?.map((p) => p.label) || [];
+        const verified = labels.length > 0 ? await provider.verifyImageLabels(imageUrl, labels) : null;
+        next = {
+          ...next,
+          diagram: {
+            ...originalDiagram,
+            imageUrl,
+            labelPoints: verified || originalDiagram.labelPoints,
+            labelPointsVerified: !!verified,
+          },
+        };
+      }
     }
 
-    if (Array.isArray(next.matchImages) && next.matchImages.length > 0) {
+    if (Array.isArray(next.matchImages) && next.matchImages.length > 0 && Date.now() < deadline) {
       const matchImageUrls: (string | null)[] = [];
       for (let imgIdx = 0; imgIdx < next.matchImages.length; imgIdx++) {
         const prompt = next.matchImages[imgIdx];
-        matchImageUrls.push(prompt ? await generateAndStoreDiagramImage(worksheetId, `${idx}-match-${imgIdx}`, prompt) : null);
+        matchImageUrls.push(prompt && Date.now() < deadline ? await generateAndStoreDiagramImage(worksheetId, `${idx}-match-${imgIdx}`, prompt) : null);
       }
       next = { ...next, matchImageUrls };
     }
@@ -131,7 +170,7 @@ function inferLanguage(subjectName: string, explicit?: string): string {
 }
 
 export interface AIProviderOverride {
-  provider: 'groq' | 'openai' | 'gemini' | 'anthropic';
+  provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'sarvam';
   apiKey: string;
 }
 
@@ -172,6 +211,7 @@ export const generateWorksheet = async (
     questionTypes: questionTypeCounts,
     difficulty: input.difficulty,
     language,
+    board: input.board,
   };
 
   const provider = createAIProvider({ provider: aiOverride.provider, apiKey: aiOverride.apiKey });
@@ -206,7 +246,7 @@ export const generateWorksheet = async (
   if (wsError) throw new Error(`Failed to save worksheet: ${wsError.message}`);
 
   // 3. Generate real reference images for any diagram questions, then save questions.
-  generated.questions = await attachGeneratedImages(generated.questions, worksheet.id);
+  generated.questions = await attachGeneratedImages(generated.questions, worksheet.id, provider);
   const questionsToInsert = generated.questions.map((q: AIQuestion, idx: number) => ({
     worksheet_id: worksheet.id,
     question_text: q.text,
@@ -362,7 +402,7 @@ export const generateCustomWorksheet = async (
 
   if (wsError) throw new Error(`Failed to save worksheet: ${wsError.message}`);
 
-  generated.questions = await attachGeneratedImages(generated.questions, worksheet.id);
+  generated.questions = await attachGeneratedImages(generated.questions, worksheet.id, provider);
   const questionsToInsert = generated.questions.map((q: AIQuestion, idx: number) => ({
     worksheet_id: worksheet.id,
     question_text: q.text,

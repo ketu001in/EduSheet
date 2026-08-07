@@ -22,6 +22,9 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE public.users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT UNIQUE NOT NULL,
+  -- Nullable at the DB level (existing rows predate this column) even though
+  -- the signup flow always requires and sets it for new accounts.
+  username TEXT UNIQUE,
   full_name TEXT,
   avatar_url TEXT,
   role user_role DEFAULT 'student',
@@ -41,13 +44,22 @@ CREATE TABLE public.boards (
 );
 
 -- 4. classes (create before user_profiles)
+-- board_id NULL = a shared/global class (e.g. CBSE/ICSE's Class 1-12, LKG,
+-- UKG -- grade_number is a real, globally-unique grade). board_id set = a
+-- stage scoped to one alternative-pedagogy board (Montessori/Reggio Emilia/
+-- Steiner-Waldorf), whose age-stage names don't correspond to a numbered
+-- grade at all -- grade_number there is just a display-order key, unique
+-- only within that board, not a real grade (see the two partial unique
+-- indexes below instead of one global UNIQUE).
 CREATE TABLE public.classes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  -- -1 = LKG, 0 = UKG (pre-primary), 1-12 = Class 1-12.
-  grade_number INT UNIQUE NOT NULL CHECK (grade_number BETWEEN -1 AND 12),
+  grade_number INT NOT NULL CHECK (grade_number BETWEEN -5 AND 20),
   name TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE UNIQUE INDEX classes_grade_number_global_uidx ON public.classes(grade_number) WHERE board_id IS NULL;
+CREATE UNIQUE INDEX classes_grade_number_per_board_uidx ON public.classes(board_id, grade_number) WHERE board_id IS NOT NULL;
 
 -- 2. user_profiles
 CREATE TABLE public.user_profiles (
@@ -141,6 +153,52 @@ CREATE TABLE public.projects (
   settings JSONB,
   sections JSONB NOT NULL,
   bibliography JSONB,
+  pdf_storage_path TEXT,
+  is_public BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8c. study_materials (teacher/parent-only, role-gated at the app layer --
+-- role-gating itself has NO database enforcement here since the underlying
+-- data isn't sensitive; access is refused server-side via requireRole
+-- middleware before this table is ever touched, see apps/api/src/middleware/auth.ts).
+CREATE TABLE public.study_materials (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  creator_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE,
+  subject_id UUID REFERENCES public.subjects(id) ON DELETE CASCADE,
+  chapter_id UUID REFERENCES public.chapters(id) ON DELETE SET NULL,
+  settings JSONB,
+  -- Each section: { heading, content, audience: 'teacher' | 'student' } --
+  -- combines educator teaching-notes and child-facing revision-notes
+  -- sections in one document, per the user's explicit choice.
+  sections JSONB NOT NULL,
+  pdf_storage_path TEXT,
+  is_public BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8d. activity_sheets (teacher/parent-only, same role-gating model as
+-- study_materials -- enforced server-side, not by RLS). A hands-on activity
+-- FOR THE STUDENT to do (materials + numbered steps + reflection questions),
+-- plus a short facilitation note for the adult running it -- deliberately a
+-- different shape than a worksheet (no MCQ/fill-blank/answer-key questions)
+-- and different than study_materials (this is a "do this" sheet, not notes).
+CREATE TABLE public.activity_sheets (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  creator_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE,
+  subject_id UUID REFERENCES public.subjects(id) ON DELETE CASCADE,
+  chapter_id UUID REFERENCES public.chapters(id) ON DELETE SET NULL,
+  settings JSONB,
+  materials JSONB NOT NULL, -- string[] of items needed for the activity
+  steps JSONB NOT NULL, -- string[] of numbered procedure steps for the student
+  reflection_questions JSONB, -- string[] of post-activity reflection prompts
+  facilitation_notes TEXT, -- short guidance for the adult running the activity
   pdf_storage_path TEXT,
   is_public BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -259,11 +317,12 @@ BEGIN
     user_role_val := (NEW.raw_user_meta_data->>'role')::user_role;
   END IF;
 
-  INSERT INTO public.users (id, email, full_name, avatar_url, role)
+  INSERT INTO public.users (id, email, full_name, username, avatar_url, role)
   VALUES (
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'username',
     NEW.raw_user_meta_data->>'avatar_url',
     user_role_val
   )
@@ -309,6 +368,8 @@ CREATE TRIGGER set_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW E
 CREATE TRIGGER set_user_profiles_updated_at BEFORE UPDATE ON public.user_profiles FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_worksheets_updated_at BEFORE UPDATE ON public.worksheets FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_study_materials_updated_at BEFORE UPDATE ON public.study_materials FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_activity_sheets_updated_at BEFORE UPDATE ON public.activity_sheets FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_user_behavior_updated_at BEFORE UPDATE ON public.user_behavior FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_parent_children_updated_at BEFORE UPDATE ON public.parent_children FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_teacher_classrooms_updated_at BEFORE UPDATE ON public.teacher_classrooms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
@@ -353,6 +414,8 @@ ALTER TABLE public.chapters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.study_materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_sheets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
@@ -416,6 +479,34 @@ CREATE POLICY "Projects UPDATE own or admin" ON public.projects FOR UPDATE TO au
 USING (creator_id = auth.uid() OR is_admin());
 
 CREATE POLICY "Projects DELETE own or admin" ON public.projects FOR DELETE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+-- Study Materials (role-gating itself is enforced server-side, not by RLS --
+-- see apps/api/src/middleware/auth.ts's requireRole)
+CREATE POLICY "Study materials SELECT public or related" ON public.study_materials FOR SELECT TO authenticated
+USING (is_public = true OR creator_id = auth.uid() OR is_parent_of(creator_id) OR is_admin());
+
+CREATE POLICY "Study materials INSERT own" ON public.study_materials FOR INSERT TO authenticated
+WITH CHECK (creator_id = auth.uid());
+
+CREATE POLICY "Study materials UPDATE own or admin" ON public.study_materials FOR UPDATE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Study materials DELETE own or admin" ON public.study_materials FOR DELETE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+-- Activity Sheets (role-gating itself is enforced server-side, not by RLS --
+-- see apps/api/src/middleware/auth.ts's requireRole)
+CREATE POLICY "Activity sheets SELECT public or related" ON public.activity_sheets FOR SELECT TO authenticated
+USING (is_public = true OR creator_id = auth.uid() OR is_parent_of(creator_id) OR is_admin());
+
+CREATE POLICY "Activity sheets INSERT own" ON public.activity_sheets FOR INSERT TO authenticated
+WITH CHECK (creator_id = auth.uid());
+
+CREATE POLICY "Activity sheets UPDATE own or admin" ON public.activity_sheets FOR UPDATE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Activity sheets DELETE own or admin" ON public.activity_sheets FOR DELETE TO authenticated
 USING (creator_id = auth.uid() OR is_admin());
 
 -- Worksheet Questions

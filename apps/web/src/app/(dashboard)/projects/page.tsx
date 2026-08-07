@@ -90,7 +90,7 @@ export default function ProjectsPage() {
           </Link>
           <Link
             href="/projects/new"
-            className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
+            className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
           >
             <Sparkles className="w-4 h-4" /> Create New Project
           </Link>
@@ -108,7 +108,7 @@ export default function ProjectsPage() {
           </div>
           <h3 className="text-lg font-bold">No Projects Found</h3>
           <p className="text-sm text-slate-500">You have not generated any project reports yet.</p>
-          <Link href="/projects/new" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform text-sm">
+          <Link href="/projects/new" className="inline-flex items-center gap-2 btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl text-sm">
             <Sparkles className="w-4 h-4" /> Generate Project
           </Link>
         </div>
@@ -176,7 +176,7 @@ export default function ProjectsPage() {
               <button
                 onClick={() => handleDownloadPdf(selectedProject.id)}
                 disabled={downloadingPdf}
-                className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg disabled:opacity-50"
+                className="btn-brutal px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-50"
               >
                 {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} PDF
               </button>

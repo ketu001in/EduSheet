@@ -52,7 +52,8 @@ export function getQuestionTypeInstructions(type: string): string {
   (numbered markers over the image) and the answer key (real labels over the image), so the imagePrompt
   must name the exact real-world subject clearly enough that an image model draws the right thing, whether
   that's a plant, an animal, a body part, a map, a geometric figure, a lab setup, a historical artifact, or
-  anything else the question is actually about -- this applies to every subject, not just biology.
+  anything else the question is actually about -- this applies to every subject, not just biology. Isolated
+  human body parts need extra explicit detail, see the "diagram" field's schema comment.
 `;
     case 'logical_reasoning':
       return `\nLogical Reasoning:

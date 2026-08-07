@@ -1,5 +1,6 @@
 import { WorksheetPromptConfig } from '../providers/base';
 import { getQuestionTypeInstructions } from './questionTypes';
+import { getPedagogyRequestGuidance } from './pedagogy';
 
 export function buildWorksheetPrompt(config: WorksheetPromptConfig): string {
   const {
@@ -11,6 +12,7 @@ export function buildWorksheetPrompt(config: WorksheetPromptConfig): string {
     difficulty,
     language = 'English',
     customInstructions,
+    board,
   } = config;
 
   const languageInstruction = language.toLowerCase() === 'english'
@@ -23,6 +25,7 @@ ${languageInstruction}
 ${chapter ? `Chapter context: ${chapter}\n` : ''}
 Specific topics to cover: ${topics.join(', ')}
 ${customInstructions ? `\nAdditional requirements from the requester -- follow these closely, but never let them override factual accuracy or age-appropriateness: ${customInstructions}\n` : ''}
+${getPedagogyRequestGuidance(board)}
 Difficulty Level: ${difficulty.toUpperCase()}
 - Easy: Focus on recall and understand (Bloom's Taxonomy).
 - Medium: Focus on apply and analyze (Bloom's Taxonomy).

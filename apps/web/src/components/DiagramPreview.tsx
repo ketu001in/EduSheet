@@ -32,6 +32,11 @@ export interface DiagramSpec {
   imagePrompt?: string;
   imageUrl?: string;
   labelPoints?: DiagramLabelPoint[];
+  // True only when labelPoints came from a vision model that actually looked
+  // at the generated image -- the AI's original guess (made before the image
+  // exists) was confirmed wrong often enough to be misleading. When false,
+  // pinpoint markers are not rendered; see ImageWithLegendPreview.
+  labelPointsVerified?: boolean;
 
   // "tracing" questions: the short text to trace.
   traceContent?: string;
@@ -120,6 +125,32 @@ function shapeLabelPos(shape: NormalizedShape): { cx: number; cy: number } {
 }
 
 const clampPercent = (v: number) => Math.min(Math.max(v, 0), 100);
+
+// Shows the real generated image WITHOUT pinpoint markers -- used whenever
+// label positions haven't been vision-verified against the actual image.
+// A plain numbered list next to the picture never claims a precise position,
+// so unlike a pin it can't be wrong.
+function ImageWithLegendPreview({ diagram, showLabels }: { diagram: DiagramSpec; showLabels: boolean }) {
+  const points = Array.isArray(diagram.labelPoints) ? diagram.labelPoints : [];
+  const renderHeight = IMAGE_RENDER_WIDTH * IMAGE_ASPECT;
+
+  return (
+    <div className="my-2 flex flex-col items-center">
+      <div className="border border-slate-200 rounded-lg p-2 bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={diagram.imageUrl} alt="Diagram" style={{ width: IMAGE_RENDER_WIDTH, height: renderHeight }} className="object-cover rounded" />
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center mt-1.5 text-[10px]">
+        {points.map((pt, idx) => (
+          <span key={idx} className="flex items-center gap-1">
+            <span className="w-3.5 h-3.5 rounded-full border border-slate-700 text-[8px] leading-none flex items-center justify-center shrink-0">{idx + 1}</span>
+            <span>{showLabels ? pt?.label || '' : '_______________'}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Real generated reference image (see apps/api's diagramImageService.ts) with
 // numbered markers pinned at the AI's estimated label positions.
@@ -233,9 +264,14 @@ function TextOnlyLegend({ labels, showLabels }: { labels: string[]; showLabels: 
 // Prefers a real generated image (current schema) over the legacy vector
 // shapes (only present on worksheets saved before real image generation was
 // added) -- see apps/api's pdfService.tsx DiagramView, which mirrors this.
+// Pinpoint markers only render when labelPointsVerified is true.
 export function DiagramPreview({ diagram, showLabels }: { diagram?: DiagramSpec | null; showLabels: boolean }) {
   if (!diagram) return null;
-  if (diagram.imageUrl) return <ImageDiagramPreview diagram={diagram} showLabels={showLabels} />;
+  if (diagram.imageUrl) {
+    return diagram.labelPointsVerified
+      ? <ImageDiagramPreview diagram={diagram} showLabels={showLabels} />
+      : <ImageWithLegendPreview diagram={diagram} showLabels={showLabels} />;
+  }
   if (Array.isArray(diagram.shapes) && diagram.shapes.length > 0) {
     return <ShapeDiagramPreview diagram={diagram} showLabels={showLabels} />;
   }

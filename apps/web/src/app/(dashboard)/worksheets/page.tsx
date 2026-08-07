@@ -104,7 +104,7 @@ export default function WorksheetsPage() {
           </Link>
           <Link
             href="/generate"
-            className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
+            className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
           >
             <Sparkles className="w-4 h-4" /> Create New Worksheet
           </Link>
@@ -157,7 +157,7 @@ export default function WorksheetsPage() {
               ? 'Try clearing your search query or filter.'
               : 'You have not generated any worksheets yet.'}
           </p>
-          <Link href="/generate" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform text-sm">
+          <Link href="/generate" className="inline-flex items-center gap-2 btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl text-sm">
             <Sparkles className="w-4 h-4" /> Generate Worksheet
           </Link>
         </div>
@@ -235,7 +235,7 @@ export default function WorksheetsPage() {
                 <button
                   onClick={() => handleDownloadPdf(selectedWorksheet.id, 'worksheet')}
                   disabled={downloadingPdf !== null}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg disabled:opacity-50"
+                  className="btn-brutal px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-50"
                 >
                   {downloadingPdf === 'worksheet' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} PDF
                 </button>

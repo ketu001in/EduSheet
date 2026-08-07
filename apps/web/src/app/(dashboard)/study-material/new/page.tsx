@@ -6,11 +6,13 @@ import {
   fetchBoards, fetchClasses, fetchSubjects, fetchChapters, fetchTopics,
   Board, ClassLevel, Subject, Chapter, Topic,
 } from '@/lib/curriculum';
-import { downloadProjectPdf, ProjectSection } from '@/lib/project';
+import { downloadStudyMaterialPdf, downloadMarkdownFile, studyMaterialToMarkdown, StudyMaterialSection } from '@/lib/studyMaterial';
 import { Logo } from '@/components/Logo';
+import { LessonPlanContent } from '@/components/LessonPlanContent';
+import RoleGate from '@/components/RoleGate';
 import {
   ChevronRight, ChevronLeft, Sparkles, Check, Calculator, BookA, Leaf, Languages,
-  FlaskConical, Globe, ScrollText, Printer, AlertTriangle, Loader2,
+  FlaskConical, Globe, ScrollText, Printer, AlertTriangle, Loader2, FileDown, GraduationCap, User, ClipboardList,
 } from 'lucide-react';
 
 function iconForSubject(name: string) {
@@ -24,20 +26,21 @@ function iconForSubject(name: string) {
   return BookA;
 }
 
-const LENGTH_OPTIONS = [
-  { id: 'short', label: 'Short', hint: '4-5 sections, ~600 words' },
-  { id: 'medium', label: 'Medium', hint: '6-8 sections, ~1200 words' },
-  { id: 'long', label: 'Long', hint: '8-10 sections, ~2200 words' },
-] as const;
-
-interface GeneratedProjectResult {
+interface GeneratedStudyMaterialResult {
   id: string;
   title: string;
-  sections: ProjectSection[];
-  bibliography: string[];
+  sections: StudyMaterialSection[];
 }
 
-export default function NewProjectPage() {
+export default function NewStudyMaterialPage() {
+  return (
+    <RoleGate allow={['teacher', 'parent']}>
+      <NewStudyMaterialPageContent />
+    </RoleGate>
+  );
+}
+
+function NewStudyMaterialPageContent() {
   const [currentStep, setCurrentStep] = useState(1);
 
   const [boards, setBoards] = useState<Board[]>([]);
@@ -59,11 +62,10 @@ export default function NewProjectPage() {
   const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
   const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [length, setLength] = useState<'short' | 'medium' | 'long'>('medium');
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [result, setResult] = useState<GeneratedProjectResult | null>(null);
+  const [result, setResult] = useState<GeneratedStudyMaterialResult | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
@@ -81,9 +83,6 @@ export default function NewProjectPage() {
     })();
   }, []);
 
-  // Alternative-pedagogy boards (Montessori/Reggio Emilia/Steiner-Waldorf)
-  // have their own age-stage classes scoped to them, not the shared
-  // Class 1-12/LKG/UKG list.
   useEffect(() => {
     if (!selectedBoardId) { setClasses([]); return; }
     fetchClasses(selectedBoardId)
@@ -172,8 +171,8 @@ export default function NewProjectPage() {
     setIsGenerating(true);
     setGenerationError(null);
     try {
-      const res = await api.post<{ success: boolean; data: { project: any; sections: ProjectSection[]; bibliography: string[] } }>(
-        '/api/projects/generate',
+      const res = await api.post<{ success: boolean; data: { material: any; sections: StudyMaterialSection[] } }>(
+        '/api/study-materials/generate',
         {
           board: boards.find((b) => b.id === selectedBoardId)?.name,
           classId: selectedClassId,
@@ -184,15 +183,14 @@ export default function NewProjectPage() {
           chapterName: selectedChapter || undefined,
           topicIds: selectedTopicIds,
           topics: effectiveTopics,
-          length,
         }
       );
 
-      const { project, sections, bibliography } = res.data;
-      setResult({ id: project.id, title: project.title, sections, bibliography });
+      const { material, sections } = res.data;
+      setResult({ id: material.id, title: material.title, sections });
     } catch (err: any) {
-      console.error('Project generation error:', err);
-      setGenerationError(err.message || 'Error generating project. Please try again.');
+      console.error('Study material generation error:', err);
+      setGenerationError(err.message || 'Error generating study material. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -203,7 +201,7 @@ export default function NewProjectPage() {
     setPdfError(null);
     setDownloadingPdf(true);
     try {
-      await downloadProjectPdf(result.id);
+      await downloadStudyMaterialPdf(result.id);
     } catch (err) {
       console.error('Failed to open PDF:', err);
       setPdfError('The PDF isn\'t ready yet — it finishes shortly after generation. Try again in a few seconds.');
@@ -212,13 +210,31 @@ export default function NewProjectPage() {
     }
   };
 
+  const handleDownloadMarkdown = () => {
+    if (!result) return;
+    downloadMarkdownFile(`${result.title.replace(/[^a-z0-9]+/gi, '-')}.md`, studyMaterialToMarkdown(result.title, result.sections));
+  };
+
+  // Pre-fills the standalone Activity Sheet wizard with the exact same
+  // board/class/subject/chapter/topics just used for this study material,
+  // so the teacher/parent doesn't have to re-pick the curriculum context.
+  const activitySheetHref = () => {
+    const params = new URLSearchParams();
+    if (selectedBoardId) params.set('boardId', selectedBoardId);
+    if (selectedClassId) params.set('classId', selectedClassId);
+    if (selectedSubjectId) params.set('subjectId', selectedSubjectId);
+    if (selectedChapterId) params.set('chapterId', selectedChapterId);
+    if (selectedTopicIds.length) params.set('topicIds', selectedTopicIds.join('|'));
+    if (effectiveTopics.length) params.set('topics', effectiveTopics.join('|'));
+    return `/activity-sheet/new?${params.toString()}`;
+  };
+
   const resetAll = () => {
     setCurrentStep(1);
     setSelectedClassId(null); setSelectedClass(null);
     setSelectedSubjectId(null); setSelectedSubject(null);
     setSelectedChapterId(null); setSelectedChapter(null);
     setSelectedTopicIds([]); setSelectedTopics([]);
-    setLength('medium');
     setResult(null);
     setGenerationError(null);
   };
@@ -226,8 +242,8 @@ export default function NewProjectPage() {
   return (
     <div className="max-w-4xl mx-auto pb-20 select-none">
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-semibold mb-2">Create Project / Assignment</h1>
-        <p className="text-slate-500">Generate a written project report — objective, content sections, conclusion, and bibliography — ready to submit.</p>
+        <h1 className="font-display text-3xl font-semibold mb-2">Create Study Material</h1>
+        <p className="text-slate-500">Generate one document with teaching notes for you and matching revision notes for your student &mdash; ready to print or share.</p>
       </div>
 
       {catalogError && (
@@ -248,7 +264,7 @@ export default function NewProjectPage() {
       <div className="glass-card p-6 md:p-8 rounded-3xl min-h-[400px]">
         {currentStep === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-6">Select Board</h2>
+            <h2 className="font-display text-2xl font-semibold mb-6">Select Board</h2>
             <div className="grid grid-cols-2 gap-4">
               {boards.length === 0 && !catalogError && (
                 <div className="col-span-2 text-sm text-slate-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading boards...</div>
@@ -266,7 +282,7 @@ export default function NewProjectPage() {
                       : 'bg-surface-light dark:bg-surface-dark hover:shadow-[4px_4px_0_var(--color-ink)]'
                   }`}
                 >
-                  <span className={`block text-2xl font-bold ${selectedBoardId === b.id ? 'text-white' : ''}`}>{b.code}</span>
+                  <span className={`block font-display text-2xl font-semibold ${selectedBoardId === b.id ? 'text-white' : ''}`}>{b.code}</span>
                   <span className={`text-sm ${selectedBoardId === b.id ? 'text-primary-50' : 'text-slate-500'}`}>{b.is_active ? b.name : 'Coming Soon'}</span>
                 </button>
               ))}
@@ -276,9 +292,9 @@ export default function NewProjectPage() {
 
         {currentStep === 2 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">{classes[0]?.board_id ? 'Select Stage' : 'Select Class'}</h2>
+            <h2 className="font-display text-2xl font-semibold mb-2">{classes[0]?.board_id ? 'Select Stage' : 'Select Class'}</h2>
             <p className="text-slate-500 text-sm mb-6">
-              {classes[0]?.board_id ? 'Choose the developmental stage for the project.' : 'Choose the grade level for the project.'}
+              {classes[0]?.board_id ? 'Choose the developmental stage for this study material.' : 'Choose the grade level for this study material.'}
             </p>
             {classes[0]?.board_id ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -323,7 +339,7 @@ export default function NewProjectPage() {
 
         {currentStep === 3 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">Select Subject</h2>
+            <h2 className="font-display text-2xl font-semibold mb-2">Select Subject</h2>
             <p className="text-slate-500 text-sm mb-6">Choose the subject for {selectedClass || 'your class'}.</p>
             {loadingSubjects && (
               <div className="text-sm text-slate-400 flex items-center gap-2 py-8 justify-center"><Loader2 className="w-4 h-4 animate-spin" /> Loading subjects...</div>
@@ -355,7 +371,7 @@ export default function NewProjectPage() {
 
         {currentStep === 4 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">Select Chapter</h2>
+            <h2 className="font-display text-2xl font-semibold mb-2">Select Chapter</h2>
             <p className="text-slate-500 text-sm mb-6">Choose a chapter from {selectedSubject || 'your subject'}.</p>
             {loadingChapters && (
               <div className="text-sm text-slate-400 flex items-center gap-2 py-8 justify-center"><Loader2 className="w-4 h-4 animate-spin" /> Loading chapters...</div>
@@ -389,81 +405,58 @@ export default function NewProjectPage() {
         {currentStep === 5 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
             {!result && (
-              <>
-                <div>
-                  <div className="flex justify-between items-end mb-4">
-                    <div>
-                      <h2 className="text-2xl font-bold mb-1">Select Topics</h2>
-                      <p className="text-slate-500 text-sm">Choose specific topics to focus the project on (optional).</p>
-                    </div>
-                    {topics.length > 0 && (
-                      <button
-                        onClick={() => {
-                          if (selectedTopicIds.length === topics.length) {
-                            setSelectedTopicIds([]); setSelectedTopics([]);
-                          } else {
-                            setSelectedTopicIds(topics.map((t) => t.id));
-                            setSelectedTopics(topics.map((t) => t.title));
-                          }
-                        }}
-                        className="text-sm font-semibold text-primary-600 hover:text-primary-700"
-                      >
-                        {selectedTopicIds.length === topics.length ? 'Deselect All' : 'Select All'}
-                      </button>
-                    )}
+              <div>
+                <div className="flex justify-between items-end mb-4">
+                  <div>
+                    <h2 className="font-display text-2xl font-semibold mb-1">Select Topics</h2>
+                    <p className="text-slate-500 text-sm">Choose specific topics to focus the study material on (optional).</p>
                   </div>
-                  {loadingTopics && (
-                    <div className="text-sm text-slate-400 flex items-center gap-2 py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading topics...</div>
+                  {topics.length > 0 && (
+                    <button
+                      onClick={() => {
+                        if (selectedTopicIds.length === topics.length) {
+                          setSelectedTopicIds([]); setSelectedTopics([]);
+                        } else {
+                          setSelectedTopicIds(topics.map((t) => t.id));
+                          setSelectedTopics(topics.map((t) => t.title));
+                        }
+                      }}
+                      className="text-sm font-semibold text-primary-600 hover:text-primary-700"
+                    >
+                      {selectedTopicIds.length === topics.length ? 'Deselect All' : 'Select All'}
+                    </button>
                   )}
-                  {!loadingTopics && topics.length === 0 && (
-                    <div className="text-sm text-slate-400 py-4">No specific topics listed for this chapter &mdash; the AI will cover the chapter as a whole.</div>
-                  )}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {topics.map((topic) => {
-                      const isSelected = selectedTopicIds.includes(topic.id);
-                      return (
-                        <label
-                          key={topic.id}
-                          className={`p-3 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all ${
-                            isSelected
-                              ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 font-bold shadow-[3px_3px_0_var(--color-ink)]'
-                              : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
-                          }`}
-                        >
-                          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
-                            isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-slate-300 dark:border-slate-600'
-                          }`}>
-                            {isSelected && <Check className="w-3.5 h-3.5" />}
-                          </div>
-                          <span className="font-medium text-sm">{topic.title}</span>
-                          <input type="checkbox" className="hidden" checked={isSelected} onChange={() => toggleTopic(topic)} />
-                        </label>
-                      );
-                    })}
-                  </div>
                 </div>
-
-                <div className="border-t-2 border-slate-900 dark:border-slate-800 pt-8">
-                  <h2 className="font-display text-2xl font-semibold mb-1">Project Length</h2>
-                  <p className="text-slate-500 text-sm mb-6">How in-depth should the report be?</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {LENGTH_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => setLength(opt.id)}
-                        className={`p-4 rounded-xl border-2 border-slate-900 dark:border-slate-700 text-center transition-all ${
-                          length === opt.id
-                            ? 'bg-primary-600 text-white font-bold shadow-[3px_3px_0_var(--color-ink)]'
-                            : 'bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                {loadingTopics && (
+                  <div className="text-sm text-slate-400 flex items-center gap-2 py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading topics...</div>
+                )}
+                {!loadingTopics && topics.length === 0 && (
+                  <div className="text-sm text-slate-400 py-4">No specific topics listed for this chapter &mdash; the AI will cover the chapter as a whole.</div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {topics.map((topic) => {
+                    const isSelected = selectedTopicIds.includes(topic.id);
+                    return (
+                      <label
+                        key={topic.id}
+                        className={`p-3 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 font-bold shadow-[3px_3px_0_var(--color-ink)]'
+                            : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                         }`}
                       >
-                        <span className="block text-sm font-bold">{opt.label}</span>
-                        <span className={`block text-xs mt-1 ${length === opt.id ? 'text-primary-100' : 'text-slate-500'}`}>{opt.hint}</span>
-                      </button>
-                    ))}
-                  </div>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
+                          isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-slate-300 dark:border-slate-600'
+                        }`}>
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </div>
+                        <span className="font-medium text-sm">{topic.title}</span>
+                        <input type="checkbox" className="hidden" checked={isSelected} onChange={() => toggleTopic(topic)} />
+                      </label>
+                    );
+                  })}
                 </div>
-              </>
+              </div>
             )}
 
             {!isGenerating && !result && (
@@ -473,7 +466,7 @@ export default function NewProjectPage() {
                 </p>
                 {generationError === 'AI_KEY_REQUIRED' && (
                   <div className="w-full max-w-md p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl text-amber-800 dark:text-amber-300 text-sm font-medium space-y-3">
-                    <p className="flex items-center gap-3"><AlertTriangle className="w-5 h-5 shrink-0" /> You need an AI key to generate projects.</p>
+                    <p className="flex items-center gap-3"><AlertTriangle className="w-5 h-5 shrink-0" /> You need an AI key to generate study material.</p>
                     <Link href="/profile#ai-provider" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-xs">
                       Set up your key
                     </Link>
@@ -488,7 +481,7 @@ export default function NewProjectPage() {
                   onClick={handleGenerate}
                   className="btn-brutal px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-full font-display font-medium text-lg flex items-center gap-3"
                 >
-                  <Sparkles className="w-6 h-6" /> Generate Project Report
+                  <Sparkles className="w-6 h-6" /> Generate Study Material
                 </button>
               </div>
             )}
@@ -500,8 +493,8 @@ export default function NewProjectPage() {
                   <Sparkles className="w-10 h-10 text-primary-600 animate-pulse" />
                 </div>
                 <div>
-                  <h3 className="font-display text-2xl font-semibold mb-2">Writing Your Project Report...</h3>
-                  <p className="text-primary-600 dark:text-primary-400 font-medium animate-pulse">Asking your AI provider to draft the report...</p>
+                  <h3 className="font-display text-2xl font-semibold mb-2">Writing Your Study Material...</h3>
+                  <p className="text-primary-600 dark:text-primary-400 font-medium animate-pulse">Drafting teaching notes and revision notes...</p>
                 </div>
               </div>
             )}
@@ -514,8 +507,8 @@ export default function NewProjectPage() {
                       <Check className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-display text-lg font-semibold text-accent-900 dark:text-accent-200">Project Generated & Saved! 🎉</h3>
-                      <p className="text-sm text-accent-700 dark:text-accent-400">Your AI-drafted project report is ready to print & download.</p>
+                      <h3 className="font-display text-lg font-semibold text-accent-900 dark:text-accent-200">Study Material Generated & Saved! 🎉</h3>
+                      <p className="text-sm text-accent-700 dark:text-accent-400">Ready to print, download, or share.</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3 w-full md:w-auto">
@@ -524,8 +517,20 @@ export default function NewProjectPage() {
                       disabled={downloadingPdf}
                       className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Download PDF
+                      {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} PDF
                     </button>
+                    <button
+                      onClick={handleDownloadMarkdown}
+                      className="btn-brutal px-5 py-2.5 bg-white dark:bg-slate-800 rounded-xl font-bold flex items-center justify-center gap-2"
+                    >
+                      <FileDown className="w-4 h-4" /> .md
+                    </button>
+                    <Link
+                      href={activitySheetHref()}
+                      className="btn-brutal px-5 py-2.5 bg-secondary-500 hover:bg-secondary-400 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+                    >
+                      <ClipboardList className="w-4 h-4" /> Generate Activity Sheet
+                    </Link>
                     <button
                       onClick={resetAll}
                       className="px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl font-medium text-sm hover:bg-secondary-50 dark:hover:bg-slate-700"
@@ -542,29 +547,22 @@ export default function NewProjectPage() {
                     <span className="text-[10px] font-bold text-slate-400 tracking-wide">BOSKET&apos;S EDUSHEET</span>
                   </div>
                   <div className="border-b-2 border-slate-900 pb-4 mb-6 text-center">
-                    <h1 className="text-2xl font-bold uppercase tracking-wide">{result.title}</h1>
+                    <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">{result.title}</h1>
                     <p className="text-sm font-medium text-slate-600">{selectedSubject} • Chapter: {selectedChapter}</p>
-                    <div className="flex justify-between items-center text-xs mt-4 pt-2 border-t border-slate-200">
-                      <span>Name: ________________________</span>
-                      <span>Class: {selectedClass}</span>
-                    </div>
                   </div>
 
                   <div className="space-y-6 text-sm">
                     {result.sections.map((sec, idx) => (
                       <div key={idx} className="space-y-2">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                          sec.audience === 'teacher' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {sec.audience === 'teacher' ? <><User className="w-3 h-3" /> For Teachers/Parents</> : <><GraduationCap className="w-3 h-3" /> For Students</>}
+                        </span>
                         <h4 className="font-bold text-base">{sec.heading}</h4>
-                        <p className="text-justify leading-relaxed">{sec.content}</p>
+                        {sec.audience === 'teacher' ? <LessonPlanContent content={sec.content} /> : <p className="text-justify leading-relaxed">{sec.content}</p>}
                       </div>
                     ))}
-                    {result.bibliography.length > 0 && (
-                      <div className="space-y-2 border-t border-slate-200 pt-4">
-                        <h4 className="font-bold text-base">Bibliography</h4>
-                        {result.bibliography.map((b, idx) => (
-                          <p key={idx}>{idx + 1}. {b}</p>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -596,7 +594,7 @@ export default function NewProjectPage() {
 
       {!result && currentStep === 5 && (
         <div className="text-center mt-2">
-          <Link href="/projects" className="text-xs text-slate-400 hover:text-primary-600">View saved projects</Link>
+          <Link href="/study-material" className="text-xs text-slate-400 hover:text-primary-600">View saved study material</Link>
         </div>
       )}
     </div>

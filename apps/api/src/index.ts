@@ -9,6 +9,8 @@ import { generalLimiter } from './middleware/rateLimiter';
 import curriculumRoutes from './routes/curriculumRoutes';
 import worksheetRoutes from './routes/worksheetRoutes';
 import projectRoutes from './routes/projectRoutes';
+import studyMaterialRoutes from './routes/studyMaterialRoutes';
+import activitySheetRoutes from './routes/activitySheetRoutes';
 import behaviorRoutes from './routes/behaviorRoutes';
 import favoriteRoutes from './routes/favoriteRoutes';
 import notificationRoutes from './routes/notificationRoutes';
@@ -41,6 +43,8 @@ app.get('/health', (req, res) => {
 app.use('/api/curriculum', curriculumRoutes);
 app.use('/api/worksheets', worksheetRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/study-materials', studyMaterialRoutes);
+app.use('/api/activity-sheets', activitySheetRoutes);
 app.use('/api/behavior', behaviorRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/notifications', notificationRoutes);

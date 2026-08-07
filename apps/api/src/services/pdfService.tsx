@@ -234,6 +234,34 @@ const ImageDiagramView = ({ diagram, showLabels }: { diagram: DiagramSpec; showL
   );
 };
 
+// Shows the real generated image WITHOUT pinpoint markers -- used whenever
+// label positions haven't been verified against the actual image (see
+// worksheetService.ts's attachGeneratedImages / AIProvider.verifyImageLabels).
+// The AI's pre-generation label guesses were confirmed wrong often enough in
+// practice that pinning them on the image would just be confidently
+// mislabeling it; a plain numbered list next to the picture never claims a
+// precise position, so it can't be wrong the same way.
+const ImageWithLegendView = ({ diagram, showLabels }: { diagram: DiagramSpec; showLabels: boolean }) => {
+  const points: DiagramLabelPoint[] = Array.isArray(diagram.labelPoints) ? diagram.labelPoints : [];
+  const renderHeight = DIAGRAM_IMAGE_RENDER_WIDTH * DIAGRAM_IMAGE_ASPECT;
+
+  return (
+    <View style={diagramStyles.wrapper} wrap={false}>
+      <View style={diagramStyles.frame}>
+        <Image src={diagram.imageUrl!} style={{ width: DIAGRAM_IMAGE_RENDER_WIDTH, height: renderHeight }} />
+      </View>
+      <View style={diagramStyles.legend}>
+        {points.map((pt, idx) => (
+          <View key={idx} style={diagramStyles.legendItem}>
+            <Text style={diagramStyles.legendMarker}>{idx + 1}</Text>
+            <Text style={{ fontSize: 8 }}>{showLabels ? (typeof pt?.label === 'string' ? pt.label : '') : '_______________'}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+};
+
 // Legacy fallback for worksheets saved before real image generation existed
 // -- renders the old shape-based vector wireframe from `diagram.shapes`.
 const ShapeDiagramView = ({ diagram, showLabels }: { diagram: DiagramSpec; showLabels: boolean }) => {
@@ -320,9 +348,16 @@ const TextOnlyLegend = ({ labels, showLabels }: { labels: string[]; showLabels: 
 // Prefers a real generated image (current schema) over the legacy vector
 // shapes (only present on worksheets saved before real image generation was
 // added) -- see DiagramSpec's comment in packages/ai for why both exist.
+// Pinpoint markers are only trusted when labelPointsVerified is true (a
+// vision model actually confirmed them against the real image) -- otherwise
+// the image is shown with a plain, unpinned legend instead.
 const DiagramView = ({ diagram, showLabels }: { diagram: DiagramSpec; showLabels: boolean }) => {
   if (!diagram) return null;
-  if (diagram.imageUrl) return <ImageDiagramView diagram={diagram} showLabels={showLabels} />;
+  if (diagram.imageUrl) {
+    return diagram.labelPointsVerified
+      ? <ImageDiagramView diagram={diagram} showLabels={showLabels} />
+      : <ImageWithLegendView diagram={diagram} showLabels={showLabels} />;
+  }
   if (Array.isArray(diagram.shapes) && diagram.shapes.length > 0) {
     return <ShapeDiagramView diagram={diagram} showLabels={showLabels} />;
   }
@@ -594,4 +629,183 @@ const ProjectDocument = ({ project, sections, bibliography }: { project: Project
 
 export const generateProjectPDF = async (project: ProjectMeta, sections: ProjectSection[], bibliography?: string[]): Promise<Buffer> => {
   return renderToBuffer(<ProjectDocument project={project} sections={sections} bibliography={bibliography} />);
+};
+
+interface StudyMaterialSection {
+  heading: string;
+  content: string;
+  audience: 'teacher' | 'student';
+}
+
+const studyMaterialStyles = StyleSheet.create({
+  audienceTag: { fontSize: 9, fontWeight: 'bold', marginBottom: 2, letterSpacing: 0.5 },
+  teacherTag: { color: '#8A5A00' },
+  studentTag: { color: '#1B6B3A' },
+  sectionHeading: { fontSize: 13, fontWeight: 'bold', marginBottom: 6, color: '#1B2A6B' },
+  sectionContent: { textAlign: 'justify' },
+  lessonStepLabel: { fontWeight: 'bold', color: '#1B2A6B' },
+  lessonStepBlock: { marginBottom: 6 },
+});
+
+// "teacher" sections are prompted to write each lesson-plan step as its own
+// "**Label:** text" paragraph separated by blank lines (see
+// buildStudyMaterialSystemPrompt) -- react-pdf has no markdown support, so
+// this splits that convention into a bold label + plain text per step. Falls
+// back to one plain block if the AI didn't follow the convention exactly.
+function renderLessonPlanContent(content: string) {
+  const blocks = content.split(/\n\s*\n/).filter((b) => b.trim());
+  const labelPattern = /^\*\*(.+?):\*\*\s*([\s\S]*)$/;
+
+  return blocks.map((block, i) => {
+    const match = block.trim().match(labelPattern);
+    if (match) {
+      return (
+        <Text key={i} style={studyMaterialStyles.lessonStepBlock}>
+          <Text style={studyMaterialStyles.lessonStepLabel}>{match[1]}: </Text>
+          {match[2]}
+        </Text>
+      );
+    }
+    return <Text key={i} style={studyMaterialStyles.lessonStepBlock}>{block.trim()}</Text>;
+  });
+}
+
+// Renders teacher and student sections in one document but visually
+// distinguishes them (a small colored "FOR TEACHERS"/"FOR STUDENTS" tag above
+// each heading) since they're written for different readers even though this
+// tool deliberately generates them as a single combined PDF.
+const StudyMaterialDocument = ({ material, sections }: { material: ProjectMeta; sections: StudyMaterialSection[] }) => (
+  <Document>
+    <Page size="A4" style={isDevanagariLanguage(material.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+      <View style={styles.pageBorder} fixed />
+      <View style={styles.brandMark} fixed>
+        <PdfLogo />
+        <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+      </View>
+
+      <View style={styles.header}>
+        <View style={styles.headerCol}>
+          <Text>Class: {material.class || '___'}</Text>
+        </View>
+        <View style={styles.headerCol}>
+          <Text>Subject: {material.subject || '___'}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.title}>{material.title}</Text>
+
+      {sections.map((s, i) => (
+        <View key={i} style={styles.section}>
+          <Text style={[studyMaterialStyles.audienceTag, s.audience === 'teacher' ? studyMaterialStyles.teacherTag : studyMaterialStyles.studentTag]}>
+            {s.audience === 'teacher' ? 'FOR TEACHERS / PARENTS' : 'FOR STUDENTS'}
+          </Text>
+          <Text style={studyMaterialStyles.sectionHeading}>{s.heading}</Text>
+          {s.audience === 'teacher'
+            ? renderLessonPlanContent(s.content)
+            : <Text style={studyMaterialStyles.sectionContent}>{s.content}</Text>}
+        </View>
+      ))}
+
+      <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+        `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+      )} fixed />
+    </Page>
+  </Document>
+);
+
+export const generateStudyMaterialPDF = async (material: ProjectMeta, sections: StudyMaterialSection[]): Promise<Buffer> => {
+  return renderToBuffer(<StudyMaterialDocument material={material} sections={sections} />);
+};
+
+interface ActivitySheetContent {
+  title: string;
+  materials: string[];
+  steps: string[];
+  reflectionQuestions: string[];
+  facilitationNotes: string;
+}
+
+const activitySheetStyles = StyleSheet.create({
+  sectionHeading: { fontSize: 13, fontWeight: 'bold', marginBottom: 8, color: '#1B2A6B' },
+  materialRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  checkbox: { width: 10, height: 10, border: '1pt solid #1B2A6B', marginRight: 8 },
+  stepRow: { flexDirection: 'row', marginBottom: 10 },
+  stepNum: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#1B2A6B', color: 'white', fontSize: 10, fontWeight: 'bold', textAlign: 'center', paddingTop: 5, marginRight: 10 },
+  stepText: { flex: 1, paddingTop: 3 },
+  reflectionQuestion: { marginBottom: 4, fontWeight: 'bold' },
+  facilitationBox: { marginTop: 10, padding: 12, backgroundColor: '#FFF7E6', border: '1pt solid #F0C36D', borderRadius: 4 },
+  facilitationLabel: { fontSize: 9, fontWeight: 'bold', color: '#8A5A00', marginBottom: 4, letterSpacing: 0.5 },
+});
+
+const ActivitySheetDocument = ({ meta, activity }: { meta: ProjectMeta; activity: ActivitySheetContent }) => (
+  <Document>
+    <Page size="A4" style={isDevanagariLanguage(meta.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+      <View style={styles.pageBorder} fixed />
+      <View style={styles.brandMark} fixed>
+        <PdfLogo />
+        <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+      </View>
+
+      <View style={styles.header}>
+        <View style={styles.headerCol}>
+          <Text>Student Name: _________________</Text>
+          <Text>Class: {meta.class || '___'}</Text>
+        </View>
+        <View style={styles.headerCol}>
+          <Text>Date: _________________</Text>
+          <Text>Subject: {meta.subject || '___'}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.title}>{activity.title}</Text>
+
+      <View style={styles.section}>
+        <Text style={activitySheetStyles.sectionHeading}>What You&apos;ll Need</Text>
+        {activity.materials.map((m, i) => (
+          <View key={i} style={activitySheetStyles.materialRow}>
+            <View style={activitySheetStyles.checkbox} />
+            <Text>{m}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={activitySheetStyles.sectionHeading}>What To Do</Text>
+        {activity.steps.map((s, i) => (
+          <View key={i} style={activitySheetStyles.stepRow}>
+            <Text style={activitySheetStyles.stepNum}>{i + 1}</Text>
+            <Text style={activitySheetStyles.stepText}>{s}</Text>
+          </View>
+        ))}
+      </View>
+
+      {activity.reflectionQuestions.length > 0 && (
+        <View style={styles.section}>
+          <Text style={activitySheetStyles.sectionHeading}>Think About It</Text>
+          {activity.reflectionQuestions.map((q, i) => (
+            <View key={i} style={{ marginBottom: 12 }}>
+              <Text style={activitySheetStyles.reflectionQuestion}>{q}</Text>
+              <View style={styles.blankLine} />
+              <View style={[styles.blankLine, { marginTop: 10 }]} />
+            </View>
+          ))}
+        </View>
+      )}
+
+      {activity.facilitationNotes && (
+        <View style={activitySheetStyles.facilitationBox}>
+          <Text style={activitySheetStyles.facilitationLabel}>FOR THE GROWN-UP RUNNING THIS ACTIVITY</Text>
+          <Text>{activity.facilitationNotes}</Text>
+        </View>
+      )}
+
+      <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+        `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+      )} fixed />
+    </Page>
+  </Document>
+);
+
+export const generateActivitySheetPDF = async (meta: ProjectMeta, activity: ActivitySheetContent): Promise<Buffer> => {
+  return renderToBuffer(<ActivitySheetDocument meta={meta} activity={activity} />);
 };

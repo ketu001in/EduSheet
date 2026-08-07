@@ -267,7 +267,7 @@ export default function CustomWorksheetPage() {
             <button
               onClick={handleGenerate}
               disabled={!isValid}
-              className="px-8 py-4 bg-gradient-to-r from-primary-600 to-indigo-600 text-white rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-xl shadow-primary-500/25 flex items-center gap-3 disabled:opacity-50 disabled:hover:scale-100"
+              className="btn-brutal px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-full font-display font-medium text-lg flex items-center gap-3 disabled:opacity-50"
             >
               <Sparkles className="w-6 h-6" /> Generate Worksheet
             </button>

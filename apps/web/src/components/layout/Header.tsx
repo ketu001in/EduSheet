@@ -42,6 +42,12 @@ export default function Header() {
     if (hasLoadedProfile) return;
     const supabase = createClient();
     supabase.auth.getUser().then(({ data, error }) => {
+      // Bail out entirely if there's no signed-in user -- in particular,
+      // this guards the role fetch below. resetSession() (see useLogout)
+      // flips hasLoadedProfile back to false on logout, which re-triggers
+      // this effect while the session has already been cleared; without
+      // this guard, the api.get call below fires with no auth token and
+      // logs a 401 on every logout.
       if (error || !data.user) return;
       const meta = data.user.user_metadata || {};
       updateProfile({
@@ -50,6 +56,17 @@ export default function Header() {
         board: meta.board || 'CBSE',
         grade: meta.grade ? `Class ${meta.grade}` : '',
       });
+
+      // Role must come from the backend (public.users.role), not Supabase Auth
+      // user_metadata -- that only ever reflects the role picked at signup and
+      // goes stale the moment someone self-changes their role from Profile
+      // settings. This is what actually gates the Study Material nav item.
+      api.get<{ success: boolean; data: { users?: { role?: string } } }>('/api/users/profile')
+        .then((res) => {
+          const role = res.data.users?.role;
+          if (role) updateProfile({ role: role as any });
+        })
+        .catch((err) => console.error('Failed to load user role:', err));
     });
   }, [hasLoadedProfile, updateProfile]);
 
@@ -90,16 +107,16 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-slate-800/80 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40 transition-colors">
+    <header className="h-16 border-b-[3px] border-slate-900 dark:border-[#FDF3D9] bg-surface-light dark:bg-surface-dark flex items-center justify-between px-6 sticky top-0 z-40 transition-colors">
       <div className="flex-1 max-w-md">
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             placeholder="Search worksheets, subjects, topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800/80 rounded-full border border-transparent focus:border-primary-500/50 outline-none focus:ring-2 focus:ring-primary-500/20 text-sm transition-all"
+            className="w-full pl-10 pr-4 py-2 bg-surface-light dark:bg-surface-dark rounded-full border-2 border-slate-900 dark:border-[#FDF3D9]/80 focus:border-primary-600 outline-none text-sm transition-colors"
           />
         </div>
       </div>
@@ -126,8 +143,8 @@ export default function Header() {
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="absolute right-0 mt-2 w-80 glass-card rounded-2xl overflow-hidden z-50">
+              <div className="flex items-center justify-between px-4 py-3 border-b-2 border-slate-900 dark:border-[#FDF3D9]/40">
                 <span className="font-bold text-sm">Notifications</span>
                 {unreadCount > 0 && (
                   <button onClick={markAllRead} className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline">
@@ -159,7 +176,7 @@ export default function Header() {
 
         <div className="relative" ref={menuRef}>
           <button onClick={() => setMenuOpen((v) => !v)} className="flex items-center gap-3 rounded-xl px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-primary-800 text-white font-bold flex items-center justify-center text-sm shadow-md shadow-primary-500/20">
+            <div className="w-9 h-9 rounded-xl bg-primary-600 border-2 border-slate-900 dark:border-[#FDF3D9]/80 text-white font-bold flex items-center justify-center text-sm">
               {getInitials(userProfile?.name)}
             </div>
             <div className="hidden md:block text-left text-xs">
@@ -170,7 +187,7 @@ export default function Header() {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 py-1.5">
+            <div className="absolute right-0 mt-2 w-56 glass-card rounded-2xl overflow-hidden z-50 py-1.5">
               <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
                 <User className="w-4 h-4" /> Edit Profile
               </Link>

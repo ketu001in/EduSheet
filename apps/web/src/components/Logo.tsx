@@ -19,25 +19,19 @@ export function Logo({ size = 32, className = '' }: LogoProps) {
       role="img"
       aria-label="Bosket's EduSheet"
     >
-      <rect width="32" height="32" rx="8" fill="url(#logo-tile)" />
+      <rect width="32" height="32" rx="8" fill="#2F5FE0" stroke="#1A1A1A" strokeWidth="1.4" />
       {/* Worksheet page */}
-      <rect x="9" y="12.5" width="14" height="13.5" rx="1.6" fill="white" fillOpacity="0.96" />
-      <line x1="11.6" y1="17" x2="18.5" y2="17" stroke="#1B2A6B" strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
-      <line x1="11.6" y1="20" x2="20.4" y2="20" stroke="#1B2A6B" strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
+      <rect x="9" y="12.5" width="14" height="13.5" rx="1.6" fill="white" stroke="#1A1A1A" strokeWidth="1.1" />
+      <line x1="11.6" y1="17" x2="18.5" y2="17" stroke="#1A1A1A" strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
+      <line x1="11.6" y1="20" x2="20.4" y2="20" stroke="#1A1A1A" strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
       {/* Graduation cap */}
-      <polygon points="16,4.2 27,9 16,13.8 5,9" fill="#E2963A" />
-      <path d="M11 10.6V15C11 16.4 13.2 17.5 16 17.5C18.8 17.5 21 16.4 21 15V10.6" stroke="#E2963A" strokeWidth="1.3" fill="none" strokeLinecap="round" />
-      <line x1="27" y1="9" x2="27" y2="14.5" stroke="#E2963A" strokeWidth="1.3" strokeLinecap="round" />
-      <circle cx="27" cy="15.6" r="1.1" fill="#E2963A" />
+      <polygon points="16,4.2 27,9 16,13.8 5,9" fill="#FF5A5F" stroke="#1A1A1A" strokeWidth="1" strokeLinejoin="round" />
+      <path d="M11 10.6V15C11 16.4 13.2 17.5 16 17.5C18.8 17.5 21 16.4 21 15V10.6" stroke="#1A1A1A" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <line x1="27" y1="9" x2="27" y2="14.5" stroke="#1A1A1A" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="27" cy="15.6" r="1.1" fill="#1A1A1A" />
       {/* Checkmark badge */}
-      <circle cx="23.5" cy="23.5" r="5.4" fill="#2F8F6F" stroke="white" strokeWidth="1.3" />
+      <circle cx="23.5" cy="23.5" r="5.4" fill="#35A06A" stroke="#1A1A1A" strokeWidth="1.2" />
       <path d="M21 23.6L22.8 25.4L26.2 21.7" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <defs>
-        <linearGradient id="logo-tile" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#2F4CC7" />
-          <stop offset="1" stopColor="#1B2A6B" />
-        </linearGradient>
-      </defs>
     </svg>
   );
 }

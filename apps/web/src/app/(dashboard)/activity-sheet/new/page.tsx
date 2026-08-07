@@ -1,16 +1,19 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import {
   fetchBoards, fetchClasses, fetchSubjects, fetchChapters, fetchTopics,
   Board, ClassLevel, Subject, Chapter, Topic,
 } from '@/lib/curriculum';
-import { downloadProjectPdf, ProjectSection } from '@/lib/project';
+import { downloadActivitySheetPdf, activitySheetToMarkdown } from '@/lib/activitySheet';
+import { downloadMarkdownFile } from '@/lib/studyMaterial';
 import { Logo } from '@/components/Logo';
+import RoleGate from '@/components/RoleGate';
 import {
   ChevronRight, ChevronLeft, Sparkles, Check, Calculator, BookA, Leaf, Languages,
-  FlaskConical, Globe, ScrollText, Printer, AlertTriangle, Loader2,
+  FlaskConical, Globe, ScrollText, Printer, AlertTriangle, Loader2, FileDown,
 } from 'lucide-react';
 
 function iconForSubject(name: string) {
@@ -24,20 +27,32 @@ function iconForSubject(name: string) {
   return BookA;
 }
 
-const LENGTH_OPTIONS = [
-  { id: 'short', label: 'Short', hint: '4-5 sections, ~600 words' },
-  { id: 'medium', label: 'Medium', hint: '6-8 sections, ~1200 words' },
-  { id: 'long', label: 'Long', hint: '8-10 sections, ~2200 words' },
-] as const;
-
-interface GeneratedProjectResult {
+interface GeneratedActivitySheetResult {
   id: string;
   title: string;
-  sections: ProjectSection[];
-  bibliography: string[];
+  materials: string[];
+  steps: string[];
+  reflectionQuestions: string[];
+  facilitationNotes: string;
 }
 
-export default function NewProjectPage() {
+export default function NewActivitySheetPage() {
+  return (
+    <RoleGate allow={['teacher', 'parent']}>
+      <Suspense fallback={
+        <div className="max-w-4xl mx-auto py-24 flex items-center justify-center gap-2 text-slate-400">
+          <Loader2 className="w-5 h-5 animate-spin" /> Loading...
+        </div>
+      }>
+        <NewActivitySheetPageContent />
+      </Suspense>
+    </RoleGate>
+  );
+}
+
+function NewActivitySheetPageContent() {
+  const searchParams = useSearchParams();
+
   const [currentStep, setCurrentStep] = useState(1);
 
   const [boards, setBoards] = useState<Board[]>([]);
@@ -59,54 +74,101 @@ export default function NewProjectPage() {
   const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
   const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [length, setLength] = useState<'short' | 'medium' | 'long'>('medium');
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [result, setResult] = useState<GeneratedProjectResult | null>(null);
+  const [result, setResult] = useState<GeneratedActivitySheetResult | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+
+  // Prefill shortcut from the Study Material screen's "Generate Activity
+  // Sheet" button -- if class/subject/chapter arrive via query params, skip
+  // straight to the final step instead of re-walking the picker. The caller
+  // resolves boardId from the subject's own board_id (subjects, unlike
+  // classes, always belong to exactly one board -- CBSE Class 5 has "EVS",
+  // ICSE Class 5 has "Science" instead, as entirely different subject rows,
+  // so getting the board wrong means the subject/chapter lookup below will
+  // never match). boardId falls back to CBSE only for a genuinely fresh
+  // visit with no prefill params at all.
+  const prefillApplied = !!(searchParams.get('classId') && searchParams.get('subjectId') && searchParams.get('chapterId'));
 
   useEffect(() => {
     (async () => {
       try {
         const boardsRes = await fetchBoards();
         setBoards(boardsRes.data);
-        const cbse = boardsRes.data.find((b) => b.code === 'CBSE');
-        if (cbse) setSelectedBoardId(cbse.id);
+        const boardIdParam = searchParams.get('boardId');
+        if (boardIdParam) {
+          setSelectedBoardId(boardIdParam);
+        } else {
+          const cbse = boardsRes.data.find((b) => b.code === 'CBSE');
+          if (cbse) setSelectedBoardId(cbse.id);
+        }
       } catch (err) {
         console.error(err);
         setCatalogError('Could not load boards from the server. Is the API running?');
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Alternative-pedagogy boards (Montessori/Reggio Emilia/Steiner-Waldorf)
-  // have their own age-stage classes scoped to them, not the shared
-  // Class 1-12/LKG/UKG list.
   useEffect(() => {
     if (!selectedBoardId) { setClasses([]); return; }
     fetchClasses(selectedBoardId)
-      .then((res) => setClasses(res.data))
+      .then((res) => {
+        setClasses(res.data);
+        if (prefillApplied) {
+          const classId = searchParams.get('classId')!;
+          const cls = res.data.find((c) => c.id === classId);
+          if (cls) { setSelectedClassId(cls.id); setSelectedClass(cls.name); }
+        }
+      })
       .catch((err) => { console.error(err); setClasses([]); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBoardId]);
 
   useEffect(() => {
     if (!selectedClassId || !selectedBoardId) { setSubjects([]); return; }
     setLoadingSubjects(true);
     fetchSubjects(selectedClassId, selectedBoardId)
-      .then((res) => setSubjects(res.data))
+      .then((res) => {
+        setSubjects(res.data);
+        if (prefillApplied) {
+          const subjectId = searchParams.get('subjectId')!;
+          const subj = res.data.find((s) => s.id === subjectId);
+          if (subj) { setSelectedSubjectId(subj.id); setSelectedSubject(subj.name); }
+        }
+      })
       .catch((err) => { console.error(err); setSubjects([]); })
       .finally(() => setLoadingSubjects(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClassId, selectedBoardId]);
 
   useEffect(() => {
     if (!selectedSubjectId) { setChapters([]); return; }
     setLoadingChapters(true);
     fetchChapters(selectedSubjectId)
-      .then((res) => setChapters(res.data))
+      .then((res) => {
+        setChapters(res.data);
+        if (prefillApplied) {
+          const chapterId = searchParams.get('chapterId')!;
+          const chap = res.data.find((c) => c.id === chapterId);
+          if (chap) {
+            setSelectedChapterId(chap.id);
+            setSelectedChapter(chap.title);
+            const topicIdsParam = searchParams.get('topicIds');
+            const topicsParam = searchParams.get('topics');
+            if (topicIdsParam && topicsParam) {
+              setSelectedTopicIds(topicIdsParam.split('|').filter(Boolean));
+              setSelectedTopics(topicsParam.split('|').filter(Boolean));
+            }
+            setCurrentStep(5);
+          }
+        }
+      })
       .catch((err) => { console.error(err); setChapters([]); })
       .finally(() => setLoadingChapters(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSubjectId]);
 
   useEffect(() => {
@@ -172,8 +234,8 @@ export default function NewProjectPage() {
     setIsGenerating(true);
     setGenerationError(null);
     try {
-      const res = await api.post<{ success: boolean; data: { project: any; sections: ProjectSection[]; bibliography: string[] } }>(
-        '/api/projects/generate',
+      const res = await api.post<{ success: boolean; data: { activitySheet: any; materials: string[]; steps: string[]; reflectionQuestions: string[]; facilitationNotes: string } }>(
+        '/api/activity-sheets/generate',
         {
           board: boards.find((b) => b.id === selectedBoardId)?.name,
           classId: selectedClassId,
@@ -184,15 +246,14 @@ export default function NewProjectPage() {
           chapterName: selectedChapter || undefined,
           topicIds: selectedTopicIds,
           topics: effectiveTopics,
-          length,
         }
       );
 
-      const { project, sections, bibliography } = res.data;
-      setResult({ id: project.id, title: project.title, sections, bibliography });
+      const { activitySheet, materials, steps, reflectionQuestions, facilitationNotes } = res.data;
+      setResult({ id: activitySheet.id, title: activitySheet.title, materials, steps, reflectionQuestions, facilitationNotes });
     } catch (err: any) {
-      console.error('Project generation error:', err);
-      setGenerationError(err.message || 'Error generating project. Please try again.');
+      console.error('Activity sheet generation error:', err);
+      setGenerationError(err.message || 'Error generating activity sheet. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -203,7 +264,7 @@ export default function NewProjectPage() {
     setPdfError(null);
     setDownloadingPdf(true);
     try {
-      await downloadProjectPdf(result.id);
+      await downloadActivitySheetPdf(result.id);
     } catch (err) {
       console.error('Failed to open PDF:', err);
       setPdfError('The PDF isn\'t ready yet — it finishes shortly after generation. Try again in a few seconds.');
@@ -212,13 +273,20 @@ export default function NewProjectPage() {
     }
   };
 
+  const handleDownloadMarkdown = () => {
+    if (!result) return;
+    downloadMarkdownFile(
+      `${result.title.replace(/[^a-z0-9]+/gi, '-')}.md`,
+      activitySheetToMarkdown(result.title, result.materials, result.steps, result.reflectionQuestions, result.facilitationNotes)
+    );
+  };
+
   const resetAll = () => {
     setCurrentStep(1);
     setSelectedClassId(null); setSelectedClass(null);
     setSelectedSubjectId(null); setSelectedSubject(null);
     setSelectedChapterId(null); setSelectedChapter(null);
     setSelectedTopicIds([]); setSelectedTopics([]);
-    setLength('medium');
     setResult(null);
     setGenerationError(null);
   };
@@ -226,8 +294,8 @@ export default function NewProjectPage() {
   return (
     <div className="max-w-4xl mx-auto pb-20 select-none">
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-semibold mb-2">Create Project / Assignment</h1>
-        <p className="text-slate-500">Generate a written project report — objective, content sections, conclusion, and bibliography — ready to submit.</p>
+        <h1 className="font-display text-3xl font-semibold mb-2">Create Activity Sheet</h1>
+        <p className="text-slate-500">Generate a hands-on activity for your student -- materials, step-by-step instructions, and reflection questions -- plus a short guide for you.</p>
       </div>
 
       {catalogError && (
@@ -248,7 +316,7 @@ export default function NewProjectPage() {
       <div className="glass-card p-6 md:p-8 rounded-3xl min-h-[400px]">
         {currentStep === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-6">Select Board</h2>
+            <h2 className="font-display text-2xl font-semibold mb-6">Select Board</h2>
             <div className="grid grid-cols-2 gap-4">
               {boards.length === 0 && !catalogError && (
                 <div className="col-span-2 text-sm text-slate-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading boards...</div>
@@ -266,7 +334,7 @@ export default function NewProjectPage() {
                       : 'bg-surface-light dark:bg-surface-dark hover:shadow-[4px_4px_0_var(--color-ink)]'
                   }`}
                 >
-                  <span className={`block text-2xl font-bold ${selectedBoardId === b.id ? 'text-white' : ''}`}>{b.code}</span>
+                  <span className={`block font-display text-2xl font-semibold ${selectedBoardId === b.id ? 'text-white' : ''}`}>{b.code}</span>
                   <span className={`text-sm ${selectedBoardId === b.id ? 'text-primary-50' : 'text-slate-500'}`}>{b.is_active ? b.name : 'Coming Soon'}</span>
                 </button>
               ))}
@@ -276,9 +344,9 @@ export default function NewProjectPage() {
 
         {currentStep === 2 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">{classes[0]?.board_id ? 'Select Stage' : 'Select Class'}</h2>
+            <h2 className="font-display text-2xl font-semibold mb-2">{classes[0]?.board_id ? 'Select Stage' : 'Select Class'}</h2>
             <p className="text-slate-500 text-sm mb-6">
-              {classes[0]?.board_id ? 'Choose the developmental stage for the project.' : 'Choose the grade level for the project.'}
+              {classes[0]?.board_id ? 'Choose the developmental stage for this activity.' : 'Choose the grade level for this activity.'}
             </p>
             {classes[0]?.board_id ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -323,7 +391,7 @@ export default function NewProjectPage() {
 
         {currentStep === 3 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">Select Subject</h2>
+            <h2 className="font-display text-2xl font-semibold mb-2">Select Subject</h2>
             <p className="text-slate-500 text-sm mb-6">Choose the subject for {selectedClass || 'your class'}.</p>
             {loadingSubjects && (
               <div className="text-sm text-slate-400 flex items-center gap-2 py-8 justify-center"><Loader2 className="w-4 h-4 animate-spin" /> Loading subjects...</div>
@@ -355,7 +423,7 @@ export default function NewProjectPage() {
 
         {currentStep === 4 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">Select Chapter</h2>
+            <h2 className="font-display text-2xl font-semibold mb-2">Select Chapter</h2>
             <p className="text-slate-500 text-sm mb-6">Choose a chapter from {selectedSubject || 'your subject'}.</p>
             {loadingChapters && (
               <div className="text-sm text-slate-400 flex items-center gap-2 py-8 justify-center"><Loader2 className="w-4 h-4 animate-spin" /> Loading chapters...</div>
@@ -389,81 +457,58 @@ export default function NewProjectPage() {
         {currentStep === 5 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
             {!result && (
-              <>
-                <div>
-                  <div className="flex justify-between items-end mb-4">
-                    <div>
-                      <h2 className="text-2xl font-bold mb-1">Select Topics</h2>
-                      <p className="text-slate-500 text-sm">Choose specific topics to focus the project on (optional).</p>
-                    </div>
-                    {topics.length > 0 && (
-                      <button
-                        onClick={() => {
-                          if (selectedTopicIds.length === topics.length) {
-                            setSelectedTopicIds([]); setSelectedTopics([]);
-                          } else {
-                            setSelectedTopicIds(topics.map((t) => t.id));
-                            setSelectedTopics(topics.map((t) => t.title));
-                          }
-                        }}
-                        className="text-sm font-semibold text-primary-600 hover:text-primary-700"
-                      >
-                        {selectedTopicIds.length === topics.length ? 'Deselect All' : 'Select All'}
-                      </button>
-                    )}
+              <div>
+                <div className="flex justify-between items-end mb-4">
+                  <div>
+                    <h2 className="font-display text-2xl font-semibold mb-1">Select Topics</h2>
+                    <p className="text-slate-500 text-sm">Choose specific topics to focus the activity on (optional).</p>
                   </div>
-                  {loadingTopics && (
-                    <div className="text-sm text-slate-400 flex items-center gap-2 py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading topics...</div>
+                  {topics.length > 0 && (
+                    <button
+                      onClick={() => {
+                        if (selectedTopicIds.length === topics.length) {
+                          setSelectedTopicIds([]); setSelectedTopics([]);
+                        } else {
+                          setSelectedTopicIds(topics.map((t) => t.id));
+                          setSelectedTopics(topics.map((t) => t.title));
+                        }
+                      }}
+                      className="text-sm font-semibold text-primary-600 hover:text-primary-700"
+                    >
+                      {selectedTopicIds.length === topics.length ? 'Deselect All' : 'Select All'}
+                    </button>
                   )}
-                  {!loadingTopics && topics.length === 0 && (
-                    <div className="text-sm text-slate-400 py-4">No specific topics listed for this chapter &mdash; the AI will cover the chapter as a whole.</div>
-                  )}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {topics.map((topic) => {
-                      const isSelected = selectedTopicIds.includes(topic.id);
-                      return (
-                        <label
-                          key={topic.id}
-                          className={`p-3 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all ${
-                            isSelected
-                              ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 font-bold shadow-[3px_3px_0_var(--color-ink)]'
-                              : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
-                          }`}
-                        >
-                          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
-                            isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-slate-300 dark:border-slate-600'
-                          }`}>
-                            {isSelected && <Check className="w-3.5 h-3.5" />}
-                          </div>
-                          <span className="font-medium text-sm">{topic.title}</span>
-                          <input type="checkbox" className="hidden" checked={isSelected} onChange={() => toggleTopic(topic)} />
-                        </label>
-                      );
-                    })}
-                  </div>
                 </div>
-
-                <div className="border-t-2 border-slate-900 dark:border-slate-800 pt-8">
-                  <h2 className="font-display text-2xl font-semibold mb-1">Project Length</h2>
-                  <p className="text-slate-500 text-sm mb-6">How in-depth should the report be?</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {LENGTH_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => setLength(opt.id)}
-                        className={`p-4 rounded-xl border-2 border-slate-900 dark:border-slate-700 text-center transition-all ${
-                          length === opt.id
-                            ? 'bg-primary-600 text-white font-bold shadow-[3px_3px_0_var(--color-ink)]'
-                            : 'bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                {loadingTopics && (
+                  <div className="text-sm text-slate-400 flex items-center gap-2 py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading topics...</div>
+                )}
+                {!loadingTopics && topics.length === 0 && (
+                  <div className="text-sm text-slate-400 py-4">No specific topics listed for this chapter &mdash; the AI will cover the chapter as a whole.</div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {topics.map((topic) => {
+                    const isSelected = selectedTopicIds.includes(topic.id);
+                    return (
+                      <label
+                        key={topic.id}
+                        className={`p-3 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 font-bold shadow-[3px_3px_0_var(--color-ink)]'
+                            : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                         }`}
                       >
-                        <span className="block text-sm font-bold">{opt.label}</span>
-                        <span className={`block text-xs mt-1 ${length === opt.id ? 'text-primary-100' : 'text-slate-500'}`}>{opt.hint}</span>
-                      </button>
-                    ))}
-                  </div>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
+                          isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-slate-300 dark:border-slate-600'
+                        }`}>
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </div>
+                        <span className="font-medium text-sm">{topic.title}</span>
+                        <input type="checkbox" className="hidden" checked={isSelected} onChange={() => toggleTopic(topic)} />
+                      </label>
+                    );
+                  })}
                 </div>
-              </>
+              </div>
             )}
 
             {!isGenerating && !result && (
@@ -473,7 +518,7 @@ export default function NewProjectPage() {
                 </p>
                 {generationError === 'AI_KEY_REQUIRED' && (
                   <div className="w-full max-w-md p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl text-amber-800 dark:text-amber-300 text-sm font-medium space-y-3">
-                    <p className="flex items-center gap-3"><AlertTriangle className="w-5 h-5 shrink-0" /> You need an AI key to generate projects.</p>
+                    <p className="flex items-center gap-3"><AlertTriangle className="w-5 h-5 shrink-0" /> You need an AI key to generate an activity sheet.</p>
                     <Link href="/profile#ai-provider" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-xs">
                       Set up your key
                     </Link>
@@ -488,7 +533,7 @@ export default function NewProjectPage() {
                   onClick={handleGenerate}
                   className="btn-brutal px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-full font-display font-medium text-lg flex items-center gap-3"
                 >
-                  <Sparkles className="w-6 h-6" /> Generate Project Report
+                  <Sparkles className="w-6 h-6" /> Generate Activity Sheet
                 </button>
               </div>
             )}
@@ -500,8 +545,8 @@ export default function NewProjectPage() {
                   <Sparkles className="w-10 h-10 text-primary-600 animate-pulse" />
                 </div>
                 <div>
-                  <h3 className="font-display text-2xl font-semibold mb-2">Writing Your Project Report...</h3>
-                  <p className="text-primary-600 dark:text-primary-400 font-medium animate-pulse">Asking your AI provider to draft the report...</p>
+                  <h3 className="font-display text-2xl font-semibold mb-2">Designing Your Activity...</h3>
+                  <p className="text-primary-600 dark:text-primary-400 font-medium animate-pulse">Working out materials, steps, and reflection questions...</p>
                 </div>
               </div>
             )}
@@ -514,8 +559,8 @@ export default function NewProjectPage() {
                       <Check className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-display text-lg font-semibold text-accent-900 dark:text-accent-200">Project Generated & Saved! 🎉</h3>
-                      <p className="text-sm text-accent-700 dark:text-accent-400">Your AI-drafted project report is ready to print & download.</p>
+                      <h3 className="font-display text-lg font-semibold text-accent-900 dark:text-accent-200">Activity Sheet Generated & Saved! 🎉</h3>
+                      <p className="text-sm text-accent-700 dark:text-accent-400">Ready to print and hand to your student.</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3 w-full md:w-auto">
@@ -524,7 +569,13 @@ export default function NewProjectPage() {
                       disabled={downloadingPdf}
                       className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Download PDF
+                      {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} PDF
+                    </button>
+                    <button
+                      onClick={handleDownloadMarkdown}
+                      className="btn-brutal px-5 py-2.5 bg-white dark:bg-slate-800 rounded-xl font-bold flex items-center justify-center gap-2"
+                    >
+                      <FileDown className="w-4 h-4" /> .md
                     </button>
                     <button
                       onClick={resetAll}
@@ -542,27 +593,44 @@ export default function NewProjectPage() {
                     <span className="text-[10px] font-bold text-slate-400 tracking-wide">BOSKET&apos;S EDUSHEET</span>
                   </div>
                   <div className="border-b-2 border-slate-900 pb-4 mb-6 text-center">
-                    <h1 className="text-2xl font-bold uppercase tracking-wide">{result.title}</h1>
+                    <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">{result.title}</h1>
                     <p className="text-sm font-medium text-slate-600">{selectedSubject} • Chapter: {selectedChapter}</p>
-                    <div className="flex justify-between items-center text-xs mt-4 pt-2 border-t border-slate-200">
-                      <span>Name: ________________________</span>
-                      <span>Class: {selectedClass}</span>
-                    </div>
                   </div>
 
                   <div className="space-y-6 text-sm">
-                    {result.sections.map((sec, idx) => (
-                      <div key={idx} className="space-y-2">
-                        <h4 className="font-bold text-base">{sec.heading}</h4>
-                        <p className="text-justify leading-relaxed">{sec.content}</p>
-                      </div>
-                    ))}
-                    {result.bibliography.length > 0 && (
-                      <div className="space-y-2 border-t border-slate-200 pt-4">
-                        <h4 className="font-bold text-base">Bibliography</h4>
-                        {result.bibliography.map((b, idx) => (
-                          <p key={idx}>{idx + 1}. {b}</p>
+                    <div>
+                      <h4 className="font-bold text-base mb-2">What You&apos;ll Need</h4>
+                      <ul className="space-y-1.5">
+                        {result.materials.map((m, i) => (
+                          <li key={i} className="flex items-center gap-2">
+                            <span className="w-3.5 h-3.5 border border-slate-400 rounded-sm shrink-0" /> {m}
+                          </li>
                         ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base mb-2">What To Do</h4>
+                      <ol className="space-y-2">
+                        {result.steps.map((s, i) => (
+                          <li key={i} className="flex gap-3">
+                            <span className="w-6 h-6 rounded-full bg-primary-600 border border-slate-900 text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                            <span className="pt-0.5">{s}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                    {result.reflectionQuestions.length > 0 && (
+                      <div>
+                        <h4 className="font-bold text-base mb-2">Think About It</h4>
+                        <ul className="space-y-1.5 list-disc list-inside">
+                          {result.reflectionQuestions.map((q, i) => <li key={i}>{q}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {result.facilitationNotes && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wide mb-1.5">For the Grown-Up Running This Activity</p>
+                        <p className="text-justify leading-relaxed">{result.facilitationNotes}</p>
                       </div>
                     )}
                   </div>
@@ -596,7 +664,7 @@ export default function NewProjectPage() {
 
       {!result && currentStep === 5 && (
         <div className="text-center mt-2">
-          <Link href="/projects" className="text-xs text-slate-400 hover:text-primary-600">View saved projects</Link>
+          <Link href="/activity-sheet" className="text-xs text-slate-400 hover:text-primary-600">View saved activity sheets</Link>
         </div>
       )}
     </div>

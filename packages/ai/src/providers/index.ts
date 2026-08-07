@@ -10,6 +10,12 @@ export function createAIProvider(config: AIConfig): AIProvider {
       return new OpenAICompatibleProvider({ ...config, model: config.model || 'gpt-4o-mini', baseURL: 'https://api.openai.com/v1' });
     case 'gemini':
       return new OpenAICompatibleProvider({ ...config, model: config.model || 'gemini-2.0-flash', baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai' });
+    case 'sarvam':
+      // Sarvam AI (sarvam.ai) -- Indian sovereign-AI provider, OpenAI-compatible
+      // chat completions endpoint. sarvam-105b is the only chat model it
+      // currently exposes; it does support response_format: json_object,
+      // which every prompt in this codebase relies on.
+      return new OpenAICompatibleProvider({ ...config, model: config.model || 'sarvam-105b', baseURL: 'https://api.sarvam.ai/v1' });
     case 'anthropic':
       // Note: Anthropic's native Messages API is not OpenAI-chat-completions
       // compatible at this base URL -- this path is unverified/likely to

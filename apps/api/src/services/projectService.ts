@@ -4,6 +4,7 @@ import { uploadProjectPDF } from './storageService';
 
 export interface GenerateProjectInput {
   title?: string;
+  board?: string;
   classId: string;
   className: string;
   subjectId: string;
@@ -28,7 +29,7 @@ function inferLanguage(subjectName: string, explicit?: string): string {
 }
 
 export interface AIProviderOverride {
-  provider: 'groq' | 'openai' | 'gemini' | 'anthropic';
+  provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'sarvam';
   apiKey: string;
 }
 
@@ -64,6 +65,7 @@ export const generateProject = async (
     topics: input.topics,
     length: input.length,
     language,
+    board: input.board,
   };
 
   const provider = createAIProvider({ provider: aiOverride.provider, apiKey: aiOverride.apiKey });

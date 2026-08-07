@@ -10,6 +10,11 @@ export interface WorksheetPromptConfig {
   // to the curriculum tables) -- extra instructions layered on top of the
   // standard prompt, e.g. "focus on real-life examples involving cricket".
   customInstructions?: string;
+  // The board/pedagogy name (e.g. "CBSE", "Montessori", "Reggio Emilia",
+  // "Steiner / Waldorf") -- alternative pedagogies need a fundamentally
+  // different tone/structure than a standard exam board, not just an
+  // easier reading level (see prompts/systemPrompt.ts and worksheetPrompt.ts).
+  board?: string;
 }
 
 // Legacy vector-shape schema -- kept only so already-saved worksheets (whose
@@ -54,6 +59,13 @@ export interface DiagramSpec {
   imagePrompt?: string;
   imageUrl?: string;
   labelPoints?: DiagramLabelPoint[];
+  // True only when `labelPoints` came from a vision model that actually
+  // looked at the generated image (AIProvider.verifyImageLabels) -- the AI's
+  // original labelPoints are a blind guess made before the image exists, and
+  // often don't match where the image model actually drew each part. Callers
+  // must NOT render pinpoint markers unless this is true; render a plain
+  // unpinned list instead (see pdfService.tsx's ImageWithLegendView).
+  labelPointsVerified?: boolean;
 
   // "tracing" questions: the short text to trace (e.g. "A", "3", "cat").
   traceContent?: string;
@@ -112,6 +124,9 @@ export interface ProjectPromptConfig {
   language?: string;
   // Free-text ask from the "custom" generation flow -- see WorksheetPromptConfig.
   customInstructions?: string;
+  // See WorksheetPromptConfig's `board` -- same pedagogy-awareness applies to
+  // project/report generation.
+  board?: string;
 }
 
 export interface ProjectSection {
@@ -125,8 +140,59 @@ export interface GeneratedProject {
   bibliography: string[];
 }
 
+export interface StudyMaterialPromptConfig {
+  classLevel: string;
+  subject: string;
+  chapter?: string;
+  topics: string[];
+  language?: string;
+  // See WorksheetPromptConfig's `board` -- same pedagogy-awareness applies to
+  // study material generation.
+  board?: string;
+}
+
+export interface StudyMaterialSection {
+  heading: string;
+  content: string;
+  // Which reader this section is written for -- a single document combines
+  // both, per the teacher/parent user's explicit choice to get educator
+  // teaching-notes AND child-facing revision-notes in one generation rather
+  // than two separate documents.
+  audience: 'teacher' | 'student';
+}
+
+export interface GeneratedStudyMaterial {
+  title: string;
+  sections: StudyMaterialSection[];
+}
+
+export interface ActivitySheetPromptConfig {
+  classLevel: string;
+  subject: string;
+  chapter?: string;
+  topics: string[];
+  language?: string;
+  // See WorksheetPromptConfig's `board` -- same pedagogy-awareness applies to
+  // activity sheet generation.
+  board?: string;
+}
+
+// Deliberately a different shape than GeneratedWorksheet (no questions/
+// answers/marks) and different than GeneratedStudyMaterial (no audience-
+// tagged prose sections) -- an activity sheet is a hands-on "do this" task
+// for the student, not a quiz and not notes to read.
+export interface GeneratedActivitySheet {
+  title: string;
+  materials: string[];
+  steps: string[];
+  reflectionQuestions: string[];
+  // Short guidance for the adult running the activity -- what to watch for,
+  // how to help without doing it for the student, how to extend/simplify it.
+  facilitationNotes: string;
+}
+
 export interface AIConfig {
-  provider: 'groq' | 'openai' | 'gemini' | 'anthropic';
+  provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'sarvam';
   apiKey: string;
   model?: string;
 }
@@ -147,4 +213,36 @@ export abstract class AIProvider {
    * @returns A promise that resolves to the generated project.
    */
   abstract generateProject(config: ProjectPromptConfig): Promise<GeneratedProject>;
+
+  /**
+   * Generates a combined teacher-notes + student-revision-notes study
+   * material document based on the provided configuration.
+   * @param config - The configuration for the study material prompt.
+   * @returns A promise that resolves to the generated study material.
+   */
+  abstract generateStudyMaterial(config: StudyMaterialPromptConfig): Promise<GeneratedStudyMaterial>;
+
+  /**
+   * Generates a hands-on activity sheet (materials, numbered steps,
+   * reflection questions, facilitation notes) for a teacher/parent to run
+   * with a student -- distinct from a worksheet (no quiz questions) and
+   * from study material (no prose notes to read).
+   * @param config - The configuration for the activity sheet prompt.
+   * @returns A promise that resolves to the generated activity sheet.
+   */
+  abstract generateActivitySheet(config: ActivitySheetPromptConfig): Promise<GeneratedActivitySheet>;
+
+  /**
+   * Given a real generated image and a list of part names, asks a
+   * vision-capable model to identify each part's actual x/y position
+   * (0-100 percentages) in the image -- used to place accurate labels AFTER
+   * the image exists, instead of the AI's blind pre-generation guess.
+   * Returns null if this provider has no vision-capable model available
+   * (the default here) or the call fails for any reason -- callers must
+   * treat null as "cannot verify" and fall back to a safe, non-pinpoint
+   * presentation rather than trusting an unverified guess.
+   */
+  async verifyImageLabels(_imageUrl: string, _labels: string[]): Promise<DiagramLabelPoint[] | null> {
+    return null;
+  }
 }

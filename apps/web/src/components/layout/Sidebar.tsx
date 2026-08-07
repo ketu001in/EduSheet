@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, LogOut, BookOpen, ClipboardList } from 'lucide-react';
 import { useWizardStore } from '@/store/useWizardStore';
+import { useWorksheetStore } from '@/store/useWorksheetStore';
 import { Logo } from '@/components/Logo';
 import { useLogout } from '@/hooks/useLogout';
 import { NavLinkContent } from './NavLinkContent';
@@ -11,19 +12,28 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
   const resetWizard = useWizardStore((s) => s.reset);
+  const role = useWorksheetStore((s) => s.userProfile.role);
+  // Additive: students keep exactly today's flow. Teachers/parents get
+  // everything students get, plus Study Material. See middleware/auth.ts's
+  // requireRole for the server-side enforcement this UI gating mirrors.
+  const isTeacherOrParent = role === 'teacher' || role === 'parent';
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/generate', label: 'Generate', icon: Sparkles, onClick: resetWizard },
     { href: '/worksheets', label: 'My Worksheets', icon: FileText },
     { href: '/projects', label: 'My Projects', icon: FileStack },
+    ...(isTeacherOrParent ? [
+      { href: '/study-material', label: 'Study Material', icon: BookOpen },
+      { href: '/activity-sheet', label: 'Activity Sheet', icon: ClipboardList },
+    ] : []),
     { href: '/favorites', label: 'Favorites', icon: Heart },
     { href: '/profile', label: 'Profile', icon: User },
   ];
 
   return (
-    <aside className="w-64 border-r border-slate-200 dark:border-slate-800/80 bg-surface-light dark:bg-surface-dark flex-col h-full hidden lg:flex select-none transition-colors">
-      <Link href="/dashboard" className="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+    <aside className="w-64 border-r-[3px] border-slate-900 dark:border-[#FDF3D9] bg-surface-light dark:bg-surface-dark flex-col h-full hidden lg:flex select-none transition-colors">
+      <Link href="/dashboard" className="p-6 flex items-center gap-3 border-b-[3px] border-slate-900 dark:border-[#FDF3D9] hover:bg-secondary-50 dark:hover:bg-slate-800/40 transition-colors">
         <Logo size={36} />
         <div className="min-w-0">
           <span className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-white leading-tight block truncate">
@@ -41,10 +51,10 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               onClick={item.onClick}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all active:scale-[0.97] font-medium text-sm cursor-pointer ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all active:scale-[0.97] font-medium text-sm cursor-pointer border-2 ${
                 isActive
-                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25 font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-primary-600 text-white border-slate-900 dark:border-[#FDF3D9] shadow-[3px_3px_0_var(--color-ink)] dark:shadow-[3px_3px_0_rgba(253,243,217,0.9)] font-bold'
+                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-secondary-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white hover:border-slate-900 dark:hover:border-[#FDF3D9]/60'
               }`}
             >
               <NavLinkContent icon={item.icon} label={item.label} isActive={isActive} />
@@ -53,7 +63,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 space-y-3">
+      <div className="p-4 border-t-[3px] border-slate-900 dark:border-[#FDF3D9] space-y-3">
         <button
           onClick={logout}
           disabled={isLoggingOut}

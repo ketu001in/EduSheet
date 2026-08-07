@@ -53,13 +53,12 @@ export default function GeneratePage() {
     setField, setSettings, nextStep, prevStep, reset,
   } = useWizardStore();
 
-  // Load boards + classes once.
+  // Load boards once.
   useEffect(() => {
     (async () => {
       try {
-        const [boardsRes, classesRes] = await Promise.all([fetchBoards(), fetchClasses()]);
+        const boardsRes = await fetchBoards();
         setBoards(boardsRes.data);
-        setClasses(classesRes.data);
         const cbse = boardsRes.data.find((b) => b.code === 'CBSE');
         if (cbse && !selectedBoardId) {
           setField('selectedBoardId', cbse.id);
@@ -67,11 +66,34 @@ export default function GeneratePage() {
         }
       } catch (err) {
         console.error(err);
-        setCatalogError('Could not load boards/classes from the server. Is the API running?');
+        setCatalogError('Could not load boards from the server. Is the API running?');
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Clear a previous result the moment the user navigates away from the
+  // final step (e.g. clicking Back to change a selection, then Next again)
+  // -- without this, returning to step 6 kept showing the OLD generated
+  // worksheet with no way to trigger a new one, since nothing but "Create
+  // Another" ever cleared it, and the Back button on step 6 was never
+  // disabled just because a result existed.
+  useEffect(() => {
+    if (currentStep !== 6) {
+      setGeneratedWorksheet(null);
+      setGenerationError(null);
+    }
+  }, [currentStep]);
+
+  // Load classes whenever the board changes -- alternative-pedagogy boards
+  // (Montessori/Reggio Emilia/Steiner-Waldorf) have their own age-stage
+  // classes scoped to them, not the shared Class 1-12/LKG/UKG list.
+  useEffect(() => {
+    if (!selectedBoardId) { setClasses([]); return; }
+    fetchClasses(selectedBoardId)
+      .then((res) => setClasses(res.data))
+      .catch((err) => { console.error(err); setClasses([]); });
+  }, [selectedBoardId]);
 
   // Load subjects whenever class or board changes.
   useEffect(() => {
@@ -102,6 +124,19 @@ export default function GeneratePage() {
       .catch((err) => { console.error(err); setTopics([]); })
       .finally(() => setLoadingTopics(false));
   }, [selectedChapterId]);
+
+  const pickBoard = (b: Board) => {
+    setField('selectedBoardId', b.id);
+    setField('selectedBoard', b.name);
+    setField('selectedClassId', null);
+    setField('selectedClass', null);
+    setField('selectedSubjectId', null);
+    setField('selectedSubject', null);
+    setField('selectedChapterId', null);
+    setField('selectedChapter', null);
+    setField('selectedTopicIds', []);
+    setField('selectedTopics', []);
+  };
 
   const pickClass = (cls: ClassLevel) => {
     setField('selectedClassId', cls.id);
@@ -228,7 +263,7 @@ export default function GeneratePage() {
   return (
     <div className="max-w-4xl mx-auto pb-20 select-none">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Create Worksheet</h1>
+        <h1 className="font-display text-3xl font-semibold mb-2">Create Worksheet</h1>
         <p className="text-slate-500">Design a custom learning experience in seconds using your own AI key.</p>
       </div>
 
@@ -242,7 +277,7 @@ export default function GeneratePage() {
       <div className="flex items-center justify-between mb-8 relative">
         <div className="absolute left-0 right-0 top-1/2 h-1 bg-slate-200 dark:bg-slate-800 -z-10 -translate-y-1/2"></div>
         {[1, 2, 3, 4, 5, 6].map((step) => (
-          <div key={step} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep >= step ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'bg-surface-light dark:bg-surface-dark border-2 border-slate-200 dark:border-slate-800 text-slate-400'}`}>
+          <div key={step} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border-2 border-slate-900 dark:border-slate-700 ${currentStep >= step ? 'bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]' : 'bg-surface-light dark:bg-surface-dark text-slate-400'}`}>
             {step}
           </div>
         ))}
@@ -260,17 +295,17 @@ export default function GeneratePage() {
                 <button
                   key={b.id}
                   disabled={!b.is_active}
-                  onClick={() => { setField('selectedBoardId', b.id); setField('selectedBoard', b.name); }}
-                  className={`p-6 border-2 rounded-2xl text-center transition-all shadow-md ${
+                  onClick={() => pickBoard(b)}
+                  className={`p-6 border-2 border-slate-900 dark:border-slate-700 rounded-2xl text-center transition-all ${
                     !b.is_active
-                      ? 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark opacity-50 cursor-not-allowed'
+                      ? 'bg-surface-light dark:bg-surface-dark opacity-50 cursor-not-allowed'
                       : selectedBoardId === b.id
-                      ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/40'
-                      : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                      ? 'bg-primary-600 shadow-[4px_4px_0_var(--color-ink)]'
+                      : 'bg-surface-light dark:bg-surface-dark hover:shadow-[4px_4px_0_var(--color-ink)]'
                   }`}
                 >
-                  <span className={`block text-2xl font-bold ${selectedBoardId === b.id ? 'text-primary-700 dark:text-primary-300' : ''}`}>{b.code}</span>
-                  <span className={`text-sm ${selectedBoardId === b.id ? 'text-primary-600 dark:text-primary-400' : 'text-slate-500'}`}>{b.is_active ? b.name : 'Coming Soon'}</span>
+                  <span className={`block text-2xl font-bold ${selectedBoardId === b.id ? 'text-white' : ''}`}>{b.code}</span>
+                  <span className={`text-sm ${selectedBoardId === b.id ? 'text-primary-50' : 'text-slate-500'}`}>{b.is_active ? b.name : 'Coming Soon'}</span>
                 </button>
               ))}
             </div>
@@ -279,26 +314,51 @@ export default function GeneratePage() {
 
         {currentStep === 2 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">Select Class</h2>
-            <p className="text-slate-500 text-sm mb-6">Choose the grade level for the worksheet.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-              {classes.map((cls) => (
-                <button
-                  key={cls.id}
-                  onClick={() => pickClass(cls)}
-                  className={`p-4 rounded-2xl text-center transition-all ${
-                    selectedClassId === cls.id
-                      ? 'border-2 border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 scale-105 shadow-md font-bold'
-                      : 'border border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:border-primary-300'
-                  }`}
-                >
-                  <span className={`block font-bold ${selectedClassId === cls.id ? 'text-primary-600 dark:text-primary-400 text-xl' : 'text-slate-700 dark:text-slate-300'}`}>
-                    {cls.grade_number > 0 ? cls.grade_number : cls.name}
-                  </span>
-                  {cls.grade_number > 0 && <span className="text-xs text-slate-500 block">Class</span>}
-                </button>
-              ))}
-            </div>
+            <h2 className="text-2xl font-bold mb-2">{classes[0]?.board_id ? 'Select Stage' : 'Select Class'}</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              {classes[0]?.board_id ? 'Choose the developmental stage for the worksheet.' : 'Choose the grade level for the worksheet.'}
+            </p>
+            {classes[0]?.board_id ? (
+              // Alternative-pedagogy boards use named age stages, not numbered
+              // grades -- a wide, full-name card reads far better than a
+              // compact numbered grid designed for "Class 1".."Class 10".
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {classes.map((cls) => (
+                  <button
+                    key={cls.id}
+                    onClick={() => pickClass(cls)}
+                    className={`p-4 rounded-2xl text-left transition-all ${
+                      selectedClassId === cls.id
+                        ? 'border-2 border-slate-900 bg-primary-600 text-white shadow-[4px_4px_0_var(--color-ink)] font-bold'
+                        : 'border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)]'
+                    }`}
+                  >
+                    <span className={`block font-bold ${selectedClassId === cls.id ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                      {cls.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                {classes.map((cls) => (
+                  <button
+                    key={cls.id}
+                    onClick={() => pickClass(cls)}
+                    className={`p-4 rounded-2xl text-center transition-all ${
+                      selectedClassId === cls.id
+                        ? 'border-2 border-slate-900 bg-primary-600 text-white scale-105 shadow-[4px_4px_0_var(--color-ink)] font-bold'
+                        : 'border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)]'
+                    }`}
+                  >
+                    <span className={`block font-bold ${selectedClassId === cls.id ? 'text-white text-xl' : 'text-slate-700 dark:text-slate-300'}`}>
+                      {cls.grade_number > 0 ? cls.grade_number : cls.name}
+                    </span>
+                    {cls.grade_number > 0 && <span className={`text-xs block ${selectedClassId === cls.id ? 'text-primary-100' : 'text-slate-500'}`}>Class</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -321,11 +381,11 @@ export default function GeneratePage() {
                     onClick={() => pickSubject(sub)}
                     className={`p-6 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all ${
                       selectedSubjectId === sub.id
-                        ? 'border-2 border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 scale-105 shadow-md font-bold'
-                        : 'border border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:border-primary-300'
+                        ? 'border-2 border-slate-900 bg-primary-600 text-white scale-105 shadow-[4px_4px_0_var(--color-ink)] font-bold'
+                        : 'border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)]'
                     }`}
                   >
-                    <Icon className={`w-8 h-8 ${selectedSubjectId === sub.id ? 'text-primary-500' : 'text-slate-500'}`} />
+                    <Icon className={`w-8 h-8 ${selectedSubjectId === sub.id ? 'text-white' : 'text-slate-500'}`} />
                     <span className="font-semibold text-center">{sub.name}</span>
                   </button>
                 );
@@ -351,8 +411,8 @@ export default function GeneratePage() {
                   onClick={() => pickChapter(chap)}
                   className={`p-4 rounded-2xl text-left transition-all flex items-center gap-4 ${
                     selectedChapterId === chap.id
-                      ? 'border-2 border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 shadow-md font-bold'
-                      : 'border border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:border-primary-300'
+                      ? 'border-2 border-slate-900 bg-primary-600 text-white shadow-[4px_4px_0_var(--color-ink)] font-bold'
+                      : 'border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)]'
                   }`}
                 >
                   <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold ${
@@ -404,10 +464,10 @@ export default function GeneratePage() {
                   return (
                     <label
                       key={topic.id}
-                      className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                      className={`p-3 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all ${
                         isSelected
-                          ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 font-bold'
-                          : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                          ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 font-bold shadow-[3px_3px_0_var(--color-ink)]'
+                          : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                       }`}
                     >
                       <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
@@ -423,8 +483,8 @@ export default function GeneratePage() {
               </div>
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
-              <h2 className="text-2xl font-bold mb-1">Worksheet Settings</h2>
+            <div className="border-t-2 border-slate-900 dark:border-slate-800 pt-8">
+              <h2 className="font-display text-2xl font-semibold mb-1">Worksheet Settings</h2>
               <p className="text-slate-500 text-sm mb-6">Customize difficulty, question types, and format.</p>
 
               <div className="space-y-6">
@@ -439,10 +499,10 @@ export default function GeneratePage() {
                       <button
                         key={diff.id}
                         onClick={() => setSettings({ difficulty: diff.id as any })}
-                        className={`p-3 rounded-xl border text-center transition-all ${
+                        className={`p-3 rounded-xl border-2 border-slate-900 dark:border-slate-700 text-center transition-all ${
                           worksheetSettings.difficulty === diff.id
-                            ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 font-bold shadow-sm'
-                            : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                            ? 'bg-primary-600 text-white font-bold shadow-[3px_3px_0_var(--color-ink)]'
+                            : 'bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                         }`}
                       >
                         <span className="block text-xl mb-1">{diff.emoji}</span>
@@ -459,10 +519,10 @@ export default function GeneratePage() {
                       <button
                         key={count}
                         onClick={() => setSettings({ questionCount: count })}
-                        className={`px-5 py-2.5 rounded-xl border font-bold text-sm transition-all ${
+                        className={`px-5 py-2.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 font-bold text-sm transition-all ${
                           worksheetSettings.questionCount === count
-                            ? 'border-primary-600 bg-primary-600 text-white shadow-md'
-                            : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                            ? 'bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]'
+                            : 'bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                         }`}
                       >
                         {count} Questions
@@ -480,10 +540,10 @@ export default function GeneratePage() {
                         <button
                           key={qt.key}
                           onClick={() => toggleQuestionType(qt.key)}
-                          className={`px-4 py-2 rounded-full border text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          className={`px-4 py-2 rounded-full border-2 border-slate-900 dark:border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 ${
                             isSelected
-                              ? 'border-primary-500 bg-primary-600 text-white shadow-sm'
-                              : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark text-slate-600 dark:text-slate-300 hover:border-primary-300'
+                              ? 'bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]'
+                              : 'bg-surface-light dark:bg-surface-dark text-slate-600 dark:text-slate-300 hover:shadow-[3px_3px_0_var(--color-ink)]'
                           }`}
                         >
                           {isSelected && <Check className="w-3 h-3" />} {qt.label}
@@ -522,11 +582,11 @@ export default function GeneratePage() {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
             {!isGenerating && !generatedWorksheet && (
               <div className="flex flex-col items-center justify-center py-12 space-y-6 text-center">
-                <div className="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center animate-bounce">
-                  <Sparkles className="w-10 h-10 text-primary-500" />
+                <div className="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 border-2 border-slate-900 dark:border-primary-800 rounded-full flex items-center justify-center animate-bounce">
+                  <Sparkles className="w-10 h-10 text-primary-600" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Ready to Generate!</h3>
+                  <h3 className="font-display text-2xl font-semibold mb-2">Ready to Generate!</h3>
                   <p className="text-slate-500 max-w-md">
                     {selectedClass || 'Class 5'} • {selectedSubject || 'Mathematics'} • {selectedChapter || 'Shapes and Space'}
                   </p>
@@ -549,7 +609,7 @@ export default function GeneratePage() {
                 )}
                 <button
                   onClick={handleGenerate}
-                  className="px-8 py-4 bg-gradient-to-r from-primary-600 to-indigo-600 text-white rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-xl shadow-primary-500/25 flex items-center gap-3"
+                  className="btn-brutal px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-full font-display font-medium text-lg flex items-center gap-3"
                 >
                   <Sparkles className="w-6 h-6" /> Generate Magic Worksheet
                 </button>
@@ -563,7 +623,7 @@ export default function GeneratePage() {
                   <Sparkles className="w-10 h-10 text-primary-600 animate-pulse" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Creating Your Magic Worksheet...</h3>
+                  <h3 className="font-display text-2xl font-semibold mb-2">Creating Your Magic Worksheet...</h3>
                   <p className="text-primary-600 dark:text-primary-400 font-medium animate-pulse">{generationStatus}</p>
                 </div>
               </div>
@@ -571,23 +631,23 @@ export default function GeneratePage() {
 
             {generatedWorksheet && (
               <div className="space-y-6">
-                <div className="p-6 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="p-6 bg-accent-50 dark:bg-accent-950/30 border-2 border-slate-900 dark:border-accent-800 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-green-500 text-white rounded-xl">
+                    <div className="p-3 bg-accent-500 text-white rounded-xl border-2 border-slate-900">
                       <Check className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-green-900 dark:text-green-200">Worksheet Generated & Saved to History! 🎉</h3>
-                      <p className="text-sm text-green-700 dark:text-green-400">Your AI-curated worksheet with answer key is ready to print & download.</p>
+                      <h3 className="font-display text-lg font-semibold text-accent-900 dark:text-accent-200">Worksheet Generated & Saved to History! 🎉</h3>
+                      <p className="text-sm text-accent-700 dark:text-accent-400">Your AI-curated worksheet with answer key is ready to print & download.</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3 w-full md:w-auto">
                     <button
                       onClick={() => toggleFavorite(generatedWorksheet.id)}
-                      className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 border ${
+                      className={`btn-brutal px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 ${
                         generatedWorksheet.isFavorite
-                          ? 'bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900'
-                          : 'bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700'
+                          ? 'bg-secondary-50 text-secondary-600 dark:bg-secondary-950/40'
+                          : 'bg-white text-slate-700 dark:bg-slate-800'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${generatedWorksheet.isFavorite ? 'fill-current' : ''}`} /> Favorite
@@ -595,20 +655,20 @@ export default function GeneratePage() {
                     <button
                       onClick={() => handleDownloadPdf(generatedWorksheet.id, 'worksheet')}
                       disabled={downloadingPdf !== null}
-                      className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105 disabled:opacity-50"
+                      className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {downloadingPdf === 'worksheet' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Download PDF
                     </button>
                     <button
                       onClick={() => handleDownloadPdf(generatedWorksheet.id, 'answer-key')}
                       disabled={downloadingPdf !== null}
-                      className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm shadow flex items-center justify-center gap-2 transition-transform hover:scale-105 disabled:opacity-50"
+                      className="btn-brutal px-5 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {downloadingPdf === 'answer-key' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Answer Key PDF
                     </button>
                     <button
                       onClick={() => { setGeneratedWorksheet(null); setGenerationError(null); reset(); }}
-                      className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                      className="px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl font-medium text-sm hover:bg-secondary-50 dark:hover:bg-slate-700"
                     >
                       Create Another
                     </button>
@@ -703,14 +763,14 @@ export default function GeneratePage() {
       </div>
 
       <div className="flex justify-between mt-8 print:hidden">
-        <button onClick={prevStep} disabled={currentStep === 1 || isGenerating} className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium disabled:opacity-50 flex items-center gap-2">
+        <button onClick={prevStep} disabled={currentStep === 1 || isGenerating} className="btn-brutal px-6 py-3 bg-white dark:bg-slate-800 rounded-xl font-medium disabled:opacity-50 flex items-center gap-2">
           <ChevronLeft className="w-5 h-5" /> Back
         </button>
         {currentStep < 6 && (
           <button
             onClick={nextStep}
             disabled={!stepValid(currentStep)}
-            className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next <ChevronRight className="w-5 h-5" />
           </button>

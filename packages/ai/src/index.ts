@@ -5,5 +5,8 @@ export * from './providers/index';
 export * from './prompts/systemPrompt';
 export * from './prompts/worksheetPrompt';
 export * from './prompts/projectPrompt';
+export * from './prompts/studyMaterialPrompt';
+export * from './prompts/activitySheetPrompt';
 export * from './prompts/questionTypes';
+export * from './prompts/pedagogy';
 export * from './utils/parser';

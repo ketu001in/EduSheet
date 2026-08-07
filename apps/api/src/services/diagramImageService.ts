@@ -6,12 +6,14 @@ import { supabaseAdmin } from '../lib/supabase';
 // rate limit if the app starts hitting it, but nothing here requires one.
 const POLLINATIONS_BASE = 'https://image.pollinations.ai/prompt';
 
-// Real diagram-image generation is comparatively slow (10-30s) and this is a
+// Real diagram-image generation is comparatively slow and this is a
 // third-party best-effort service with no uptime guarantee -- give up well
 // before the caller's own request would time out, so a slow/dead image
 // provider degrades to "no image" rather than hanging the whole worksheet
-// generation request.
-const FETCH_TIMEOUT_MS = 25_000;
+// generation request. Kept short (not 25-30s) because worksheetService.ts
+// enforces a hard overall time budget across all of a worksheet's images --
+// a single slow attempt shouldn't eat a large share of that budget.
+const FETCH_TIMEOUT_MS = 15_000;
 
 // Pollinations' free anonymous tier is rate-limited to roughly one request
 // per ~15s per IP -- empirically, even 13s spacing still drew an occasional
@@ -60,17 +62,18 @@ async function requestOnce(prompt: string, seed: number): Promise<{ buffer: Buff
 // Fetches a single generated image for the given prompt. Returns null (never
 // throws) if the request fails or times out -- diagram images are always a
 // best-effort enhancement, never something that should fail worksheet
-// generation or PDF rendering. A 429 specifically gets one retry after an
-// extra backoff, since it's a transient/self-inflicted condition (not a real
-// failure) that a longer wait reliably clears.
+// generation or PDF rendering.
+//
+// Deliberately does NOT retry on 429: in practice, when Pollinations is
+// struggling, a retry (which costs another full MIN_REQUEST_SPACING_MS wait
+// plus another attempt) failed just as often as the first try, while roughly
+// doubling worst-case latency for no reliable benefit. One clean attempt per
+// image, paced by waitForRateLimitSlot, keeps total worksheet generation time
+// bounded and predictable (see worksheetService.ts's overall image-time
+// budget) instead of silently compounding into minutes.
 async function fetchGeneratedImage(prompt: string, seed: number): Promise<Buffer | null> {
-  const first = await requestOnce(prompt, seed);
-  if (first.buffer) return first.buffer;
-  if (!first.rateLimited) return null;
-
-  await new Promise((resolve) => setTimeout(resolve, MIN_REQUEST_SPACING_MS));
-  const retry = await requestOnce(prompt, seed);
-  return retry.buffer;
+  const result = await requestOnce(prompt, seed);
+  return result.buffer;
 }
 
 // Generates a real illustrative image for a diagram question and uploads it
