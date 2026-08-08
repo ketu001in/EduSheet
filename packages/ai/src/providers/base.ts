@@ -191,6 +191,72 @@ export interface GeneratedActivitySheet {
   facilitationNotes: string;
 }
 
+// "Tech Lab" -- Robotics/AI/Coding builds. Deliberately NOT curriculum-linked
+// (no subject/chapter/topic) -- see tech_projects table comment in schema.sql
+// for why. Open to all roles (unlike study material/activity sheet).
+export interface TechProjectPromptConfig {
+  classLevel: string;
+  board?: string;
+  category: 'robotics' | 'ai' | 'coding';
+  // The chosen idea/theme -- either picked from the curated idea gallery or
+  // typed freeform by the user.
+  ideaPrompt: string;
+  language?: string;
+}
+
+export interface TechProjectStep {
+  number: number;
+  title: string;
+  instruction: string;
+  // A real illustration prompt, same mechanism as worksheet diagrams (see
+  // DiagramSpec.imagePrompt) -- imageUrl is filled in by apps/api after
+  // generation. Rendered with a "verify before use" disclaimer in the PDF/UI
+  // since the free image model isn't reliably accurate for technical
+  // diagrams -- see apps/api/src/services/pdfService.tsx.
+  imagePrompt?: string;
+  imageUrl?: string;
+}
+
+export interface TechProjectHardwareItem {
+  name: string;
+  purpose: string;
+  approxCostINR?: string;
+}
+
+// Always optional -- `materials` (the free software/simulation path) must
+// stand alone as a complete, genuinely free way to do the whole project.
+// This is an upgrade, never a requirement.
+export interface TechProjectHardwareUpgrade {
+  available: boolean;
+  items: TechProjectHardwareItem[];
+  note?: string;
+}
+
+export interface TechProjectSimulationGuide {
+  tool: string;
+  toolUrl: string;
+  instructions: string;
+}
+
+export interface TechProjectTroubleshootingItem {
+  issue: string;
+  fix: string;
+}
+
+export interface GeneratedTechProject {
+  title: string;
+  purpose: string;
+  materials: string[];
+  hardwareUpgrade?: TechProjectHardwareUpgrade;
+  steps: TechProjectStep[];
+  simulationGuide?: TechProjectSimulationGuide;
+  codeSnippet?: string;
+  codeLanguage?: string;
+  troubleshooting: TechProjectTroubleshootingItem[];
+  safetyNotes: string[];
+  extensions: string[];
+}
+
 export interface AIConfig {
   provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'sarvam';
   apiKey: string;
@@ -231,6 +297,16 @@ export abstract class AIProvider {
    * @returns A promise that resolves to the generated activity sheet.
    */
   abstract generateActivitySheet(config: ActivitySheetPromptConfig): Promise<GeneratedActivitySheet>;
+
+  /**
+   * Generates a Robotics/AI/Coding "Tech Lab" project: purpose, a free
+   * software/simulation-only materials path, numbered build steps, an
+   * optional hardware upgrade tier, a simulation-tool guide, code where
+   * relevant, safety notes, troubleshooting, and extension ideas.
+   * @param config - The configuration for the tech project prompt.
+   * @returns A promise that resolves to the generated tech project.
+   */
+  abstract generateTechProject(config: TechProjectPromptConfig): Promise<GeneratedTechProject>;
 
   /**
    * Given a real generated image and a list of part names, asks a

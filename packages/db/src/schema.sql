@@ -8,6 +8,7 @@ CREATE TYPE question_type AS ENUM ('mcq', 'fill_in_blank', 'true_false', 'match_
 CREATE TYPE difficulty_level AS ENUM ('easy', 'medium', 'hard', 'mixed');
 CREATE TYPE linking_status AS ENUM ('pending', 'approved', 'rejected');
 CREATE TYPE favorite_type AS ENUM ('topic', 'chapter', 'worksheet');
+CREATE TYPE tech_project_category AS ENUM ('robotics', 'ai', 'coding');
 
 -- Helper function for updated_at
 CREATE OR REPLACE FUNCTION handle_updated_at()
@@ -205,6 +206,74 @@ CREATE TABLE public.activity_sheets (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8e. tech_projects ("Tech Lab" -- Robotics/AI/Coding builds). Open to ALL
+-- roles (no requireRole gate, same access model as worksheets/projects) --
+-- unlike study_materials/activity_sheets, this is explicitly for students
+-- too. Deliberately NOT linked to subjects/chapters/topics (no official
+-- CBSE/ICSE Computer Science/AI curriculum is seeded in this app yet, and
+-- the user chose to keep this curriculum-loose rather than block on that
+-- research) -- board_id/class_id are kept directly on the row (not derived
+-- via a subject join) specifically because study_materials' lack of a
+-- direct board_id caused a real bug earlier (the Activity Sheet prefill
+-- silently defaulted to the wrong board) -- don't repeat that here.
+CREATE TABLE public.tech_projects (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  creator_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE,
+  category tech_project_category NOT NULL,
+  idea_prompt TEXT NOT NULL, -- the chosen/typed project idea or theme
+  settings JSONB,
+  purpose TEXT NOT NULL, -- why this project, what concept it teaches
+  materials JSONB NOT NULL, -- string[] -- the always-free software/simulation-path materials
+  -- { available: boolean, items: [{ name, purpose, approxCostINR }], note } --
+  -- optional, never required; the free `materials` path above always stands alone.
+  hardware_upgrade JSONB,
+  -- [{ number, title, instruction, imagePrompt?, imageUrl? }] -- imageUrl filled in
+  -- by apps/api after generation, same pattern as worksheet_questions.diagram.
+  steps JSONB NOT NULL,
+  simulation_guide JSONB, -- { tool, toolUrl, instructions } -- e.g. Tinkercad/Wokwi/Scratch
+  code_snippet TEXT, -- only for coding/AI projects that involve actual code
+  code_language TEXT,
+  troubleshooting JSONB, -- [{ issue, fix }]
+  safety_notes JSONB, -- string[] -- populated for anything electrical/hardware-adjacent
+  extensions JSONB, -- string[] -- ideas to extend the project further
+  pdf_storage_path TEXT,
+  is_public BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8f. chemistry_experiment_attempts ("Chem Lab" -- interactive Robotics-Lab
+-- sibling for Chemistry). The experiment SCRIPTS themselves (reaction steps,
+-- equations, safety notes) are deliberately NOT stored here -- they live as
+-- curated, hand-authored static data in packages/content (never AI-generated
+-- at request time; see that package's header comment for the safety
+-- rationale: a wrong AI guess about a real chemical reaction is dangerous,
+-- not just a bad worksheet answer). This table only tracks a user's PROGRESS
+-- through one of those curated experiments -- their predict-then-observe
+-- answer and filled-in observations -- so `experiment_id` is a plain TEXT key
+-- matching packages/content's CHEMISTRY_EXPERIMENTS[].id, not a DB foreign
+-- key. Open to ALL roles, same access model as tech_projects, but scoped to
+-- own-or-parent (no is_public sharing -- this is a personal lab notebook,
+-- not a document meant to be shared/browsed).
+CREATE TABLE public.chemistry_experiment_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  experiment_id TEXT NOT NULL,
+  experiment_title TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE SET NULL,
+  predict_answer_index INT,
+  predict_correct BOOLEAN,
+  observations JSONB, -- { [promptIndex]: studentAnswerText }
+  completed_at TIMESTAMPTZ,
+  pdf_storage_path TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 9. worksheet_questions
 CREATE TABLE public.worksheet_questions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -370,6 +439,8 @@ CREATE TRIGGER set_worksheets_updated_at BEFORE UPDATE ON public.worksheets FOR 
 CREATE TRIGGER set_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_study_materials_updated_at BEFORE UPDATE ON public.study_materials FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_activity_sheets_updated_at BEFORE UPDATE ON public.activity_sheets FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_tech_projects_updated_at BEFORE UPDATE ON public.tech_projects FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_chemistry_experiment_attempts_updated_at BEFORE UPDATE ON public.chemistry_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_user_behavior_updated_at BEFORE UPDATE ON public.user_behavior FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_parent_children_updated_at BEFORE UPDATE ON public.parent_children FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_teacher_classrooms_updated_at BEFORE UPDATE ON public.teacher_classrooms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
@@ -416,6 +487,8 @@ ALTER TABLE public.worksheets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.study_materials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_sheets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tech_projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chemistry_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
@@ -508,6 +581,34 @@ USING (creator_id = auth.uid() OR is_admin());
 
 CREATE POLICY "Activity sheets DELETE own or admin" ON public.activity_sheets FOR DELETE TO authenticated
 USING (creator_id = auth.uid() OR is_admin());
+
+-- Tech Projects (open to all roles, same access model as Projects/Worksheets --
+-- no role-gating, server-side or otherwise)
+CREATE POLICY "Tech projects SELECT public or related" ON public.tech_projects FOR SELECT TO authenticated
+USING (is_public = true OR creator_id = auth.uid() OR is_parent_of(creator_id) OR is_admin());
+
+CREATE POLICY "Tech projects INSERT own" ON public.tech_projects FOR INSERT TO authenticated
+WITH CHECK (creator_id = auth.uid());
+
+CREATE POLICY "Tech projects UPDATE own or admin" ON public.tech_projects FOR UPDATE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Tech projects DELETE own or admin" ON public.tech_projects FOR DELETE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+-- Chemistry Experiment Attempts (open to all roles, own-or-parent only --
+-- a personal lab notebook, not a shareable document)
+CREATE POLICY "Chem attempts SELECT own or related" ON public.chemistry_experiment_attempts FOR SELECT TO authenticated
+USING (user_id = auth.uid() OR is_parent_of(user_id) OR is_admin());
+
+CREATE POLICY "Chem attempts INSERT own" ON public.chemistry_experiment_attempts FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Chem attempts UPDATE own or admin" ON public.chemistry_experiment_attempts FOR UPDATE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Chem attempts DELETE own or admin" ON public.chemistry_experiment_attempts FOR DELETE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
 
 -- Worksheet Questions
 CREATE POLICY "Questions SELECT if worksheet accessible" ON public.worksheet_questions FOR SELECT TO authenticated

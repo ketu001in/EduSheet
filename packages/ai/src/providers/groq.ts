@@ -1,11 +1,12 @@
 import { Groq } from 'groq-sdk';
-import { AIProvider, AIConfig, WorksheetPromptConfig, GeneratedWorksheet, ProjectPromptConfig, GeneratedProject, StudyMaterialPromptConfig, GeneratedStudyMaterial, ActivitySheetPromptConfig, GeneratedActivitySheet } from './base';
-import { buildSystemPrompt, buildProjectSystemPrompt, buildStudyMaterialSystemPrompt, buildActivitySheetSystemPrompt } from '../prompts/systemPrompt';
+import { AIProvider, AIConfig, WorksheetPromptConfig, GeneratedWorksheet, ProjectPromptConfig, GeneratedProject, StudyMaterialPromptConfig, GeneratedStudyMaterial, ActivitySheetPromptConfig, GeneratedActivitySheet, TechProjectPromptConfig, GeneratedTechProject } from './base';
+import { buildSystemPrompt, buildProjectSystemPrompt, buildStudyMaterialSystemPrompt, buildActivitySheetSystemPrompt, buildTechProjectSystemPrompt } from '../prompts/systemPrompt';
 import { buildWorksheetPrompt } from '../prompts/worksheetPrompt';
 import { buildProjectPrompt } from '../prompts/projectPrompt';
 import { buildStudyMaterialPrompt } from '../prompts/studyMaterialPrompt';
 import { buildActivitySheetPrompt } from '../prompts/activitySheetPrompt';
-import { parseAIResponse, parseProjectAIResponse, parseStudyMaterialAIResponse, parseActivitySheetAIResponse } from '../utils/parser';
+import { buildTechProjectPrompt } from '../prompts/techProjectPrompt';
+import { parseAIResponse, parseProjectAIResponse, parseStudyMaterialAIResponse, parseActivitySheetAIResponse, parseTechProjectAIResponse } from '../utils/parser';
 
 export class GroqProvider extends AIProvider {
   name = 'groq';
@@ -131,6 +132,35 @@ export class GroqProvider extends AIProvider {
     } catch (error) {
       console.error('GroqProvider Error:', error);
       throw new Error(`Failed to generate activity sheet: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  async generateTechProject(config: TechProjectPromptConfig): Promise<GeneratedTechProject> {
+    const systemPrompt = buildTechProjectSystemPrompt(config.category, config.board);
+    const userPrompt = buildTechProjectPrompt(config);
+
+    try {
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 8500,
+        response_format: { type: 'json_object' }
+      });
+
+      const choice = response.choices[0];
+      const content = choice?.message?.content;
+      if (!content) {
+        throw new Error('No content returned from Groq API');
+      }
+
+      return parseTechProjectAIResponse(content, choice.finish_reason);
+    } catch (error) {
+      console.error('GroqProvider Error:', error);
+      throw new Error(`Failed to generate tech project: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

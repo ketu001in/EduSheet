@@ -1,4 +1,4 @@
-import { GeneratedWorksheet, GeneratedProject, GeneratedStudyMaterial, GeneratedActivitySheet, DiagramLabelPoint } from '../providers/base';
+import { GeneratedWorksheet, GeneratedProject, GeneratedStudyMaterial, GeneratedActivitySheet, GeneratedTechProject, DiagramLabelPoint } from '../providers/base';
 
 // Extracts the JSON object/array substring from a raw model response,
 // stripping markdown code fences if present.
@@ -172,6 +172,88 @@ export function parseActivitySheetAIResponse(responseText: string, finishReason?
   } catch (error) {
     console.error('Failed to parse AI activity sheet response:', error, 'Raw response:', responseText);
     throw new Error('Failed to parse the AI generated activity sheet. The response may be malformed.');
+  }
+}
+
+/**
+ * Parses the AI response and ensures it is valid JSON matching the GeneratedTechProject schema.
+ * @param responseText The raw response text from the AI
+ * @returns Parsed GeneratedTechProject object
+ */
+export function parseTechProjectAIResponse(responseText: string, finishReason?: string): GeneratedTechProject {
+  if (finishReason === 'length') {
+    throw new Error(
+      'The AI response was cut off before it finished (the project was too long for the configured limit). ' +
+      'Try a shorter/simpler project idea.'
+    );
+  }
+
+  try {
+    const parsed = JSON.parse(extractJsonString(responseText));
+
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Parsed response is not an object');
+    }
+
+    if (!Array.isArray(parsed.materials) || !Array.isArray(parsed.steps)) {
+      throw new Error('Parsed response missing materials/steps arrays');
+    }
+
+    const steps = parsed.steps
+      .filter((s: any) => s && typeof s.instruction === 'string')
+      .map((s: any, i: number) => ({
+        number: typeof s.number === 'number' ? s.number : i + 1,
+        title: typeof s.title === 'string' ? s.title : `Step ${i + 1}`,
+        instruction: s.instruction,
+        imagePrompt: typeof s.imagePrompt === 'string' ? s.imagePrompt : undefined,
+      }));
+
+    const hw = parsed.hardwareUpgrade;
+    const hardwareUpgrade = hw && typeof hw === 'object'
+      ? {
+          available: !!hw.available,
+          items: Array.isArray(hw.items)
+            ? hw.items
+                .filter((it: any) => it && typeof it.name === 'string')
+                .map((it: any) => ({
+                  name: it.name,
+                  purpose: typeof it.purpose === 'string' ? it.purpose : '',
+                  approxCostINR: typeof it.approxCostINR === 'string' ? it.approxCostINR : undefined,
+                }))
+            : [],
+          note: typeof hw.note === 'string' ? hw.note : undefined,
+        }
+      : undefined;
+
+    const sim = parsed.simulationGuide;
+    const simulationGuide = sim && typeof sim === 'object' && typeof sim.tool === 'string'
+      ? {
+          tool: sim.tool,
+          toolUrl: typeof sim.toolUrl === 'string' ? sim.toolUrl : '',
+          instructions: typeof sim.instructions === 'string' ? sim.instructions : '',
+        }
+      : undefined;
+
+    return {
+      title: parsed.title,
+      purpose: typeof parsed.purpose === 'string' ? parsed.purpose : '',
+      materials: parsed.materials.filter((m: any) => typeof m === 'string'),
+      hardwareUpgrade,
+      steps,
+      simulationGuide,
+      codeSnippet: typeof parsed.codeSnippet === 'string' ? parsed.codeSnippet : undefined,
+      codeLanguage: typeof parsed.codeLanguage === 'string' ? parsed.codeLanguage : undefined,
+      troubleshooting: Array.isArray(parsed.troubleshooting)
+        ? parsed.troubleshooting
+            .filter((t: any) => t && typeof t.issue === 'string')
+            .map((t: any) => ({ issue: t.issue, fix: typeof t.fix === 'string' ? t.fix : '' }))
+        : [],
+      safetyNotes: Array.isArray(parsed.safetyNotes) ? parsed.safetyNotes.filter((s: any) => typeof s === 'string') : [],
+      extensions: Array.isArray(parsed.extensions) ? parsed.extensions.filter((e: any) => typeof e === 'string') : [],
+    };
+  } catch (error) {
+    console.error('Failed to parse AI tech project response:', error, 'Raw response:', responseText);
+    throw new Error('Failed to parse the AI generated tech project. The response may be malformed.');
   }
 }
 

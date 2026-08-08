@@ -2,6 +2,8 @@ import React from 'react';
 import path from 'path';
 import { Document, Page, Text, View, StyleSheet, renderToStream, Svg, Rect, Line, Circle, Ellipse, Path, Polygon, Defs, LinearGradient, Stop, Font, Image } from '@react-pdf/renderer';
 import type { DiagramSpec, DiagramShape, DiagramLabelPoint } from '@edusheets/ai';
+import type { ChemistryExperiment } from '@edusheets/content';
+import { CHEM_REAGENTS, CHEM_EQUIPMENT } from '@edusheets/content';
 
 // Helvetica (react-pdf's default) is a base-14 PDF font with Latin glyphs
 // only -- Hindi/Sanskrit worksheets are generated in Devanagari script, and
@@ -808,4 +810,405 @@ const ActivitySheetDocument = ({ meta, activity }: { meta: ProjectMeta; activity
 
 export const generateActivitySheetPDF = async (meta: ProjectMeta, activity: ActivitySheetContent): Promise<Buffer> => {
   return renderToBuffer(<ActivitySheetDocument meta={meta} activity={activity} />);
+};
+
+// Tech Lab (Robotics/AI/Coding). Deliberately NOT curriculum-linked -- see
+// tech_projects table comment in schema.sql -- so this meta has a `category`
+// in place of the other documents' `subject`, rather than reusing ProjectMeta
+// as-is.
+interface TechProjectMeta {
+  title: string;
+  class?: string;
+  category?: 'robotics' | 'ai' | 'coding';
+  language?: string;
+}
+
+interface TechProjectStepContent {
+  number: number;
+  title: string;
+  instruction: string;
+  imagePrompt?: string;
+  imageUrl?: string;
+}
+
+interface TechProjectHardwareItemContent {
+  name: string;
+  purpose: string;
+  approxCostINR?: string;
+}
+
+interface TechProjectHardwareUpgradeContent {
+  available: boolean;
+  items: TechProjectHardwareItemContent[];
+  note?: string;
+}
+
+interface TechProjectSimulationGuideContent {
+  tool: string;
+  toolUrl: string;
+  instructions: string;
+}
+
+interface TechProjectTroubleshootingItemContent {
+  issue: string;
+  fix: string;
+}
+
+interface TechProjectContent {
+  title: string;
+  purpose: string;
+  materials: string[];
+  hardwareUpgrade?: TechProjectHardwareUpgradeContent;
+  steps: TechProjectStepContent[];
+  simulationGuide?: TechProjectSimulationGuideContent;
+  codeSnippet?: string;
+  codeLanguage?: string;
+  troubleshooting: TechProjectTroubleshootingItemContent[];
+  safetyNotes: string[];
+  extensions: string[];
+}
+
+const CATEGORY_LABEL: Record<string, string> = { robotics: 'Robotics', ai: 'Artificial Intelligence', coding: 'Coding' };
+
+const techProjectStyles = StyleSheet.create({
+  sectionHeading: { fontSize: 13, fontWeight: 'bold', marginBottom: 8, color: '#1B2A6B' },
+  materialRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  checkbox: { width: 10, height: 10, border: '1pt solid #1B2A6B', marginRight: 8 },
+  hardwareBox: { padding: 12, backgroundColor: '#F0F5FF', border: '1pt solid #B3C7F0', borderRadius: 4 },
+  hardwareLabel: { fontSize: 9, fontWeight: 'bold', color: '#1B2A6B', marginBottom: 6, letterSpacing: 0.5 },
+  hardwareItemRow: { marginBottom: 5 },
+  hardwareItemName: { fontWeight: 'bold' },
+  hardwareItemMeta: { fontSize: 9, color: '#475569' },
+  stepBlock: { marginBottom: 14 },
+  stepHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  stepNum: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#1B2A6B', color: 'white', fontSize: 10, fontWeight: 'bold', textAlign: 'center', paddingTop: 5, marginRight: 10 },
+  stepTitle: { fontWeight: 'bold', flex: 1 },
+  stepInstruction: { marginLeft: 32, textAlign: 'justify' },
+  stepImageWrap: { marginLeft: 32, marginTop: 6, alignItems: 'flex-start' },
+  stepImageFrame: { border: '1pt solid #cbd5e1', borderRadius: 4, padding: 4 },
+  stepImageDisclaimer: { fontSize: 8, color: '#8A5A00', marginTop: 3, maxWidth: DIAGRAM_IMAGE_RENDER_WIDTH, fontStyle: 'italic' },
+  simulationBox: { padding: 12, backgroundColor: '#EAFBF3', border: '1pt solid #9EDFC2', borderRadius: 4 },
+  simulationLabel: { fontSize: 9, fontWeight: 'bold', color: '#1B6B3A', marginBottom: 4, letterSpacing: 0.5 },
+  simulationLink: { color: '#1B6B3A', textDecoration: 'underline', marginTop: 2 },
+  codeBlock: { padding: 10, backgroundColor: '#1e293b', borderRadius: 4 },
+  codeText: { fontFamily: 'Courier', fontSize: 9, color: '#e2e8f0', lineHeight: 1.4 },
+  codeLangTag: { fontSize: 8, color: '#94a3b8', marginBottom: 4, letterSpacing: 0.5 },
+  troubleRow: { marginBottom: 6 },
+  troubleIssue: { fontWeight: 'bold' },
+  troubleFix: { color: '#475569' },
+  safetyBox: { padding: 12, backgroundColor: '#FDECEC', border: '1pt solid #F0A3A3', borderRadius: 4 },
+  safetyLabel: { fontSize: 9, fontWeight: 'bold', color: '#B91C1C', marginBottom: 4, letterSpacing: 0.5 },
+  safetyItem: { marginBottom: 3 },
+  extensionItem: { marginBottom: 3 },
+});
+
+// Per the plan's Q3 answer, step diagrams are generated the same
+// free/best-effort way as worksheet diagrams -- so they carry the same
+// accuracy risk. Unlike a worksheet diagram (illustrative only), a Tech Lab
+// step image can depict wiring/connections, so every image gets an explicit
+// "verify before use" disclaimer rather than being trusted at face value.
+const TechProjectStepImage = ({ imageUrl }: { imageUrl: string }) => {
+  const renderHeight = DIAGRAM_IMAGE_RENDER_WIDTH * DIAGRAM_IMAGE_ASPECT;
+  return (
+    <View style={techProjectStyles.stepImageWrap} wrap={false}>
+      <View style={techProjectStyles.stepImageFrame}>
+        <Image src={imageUrl} style={{ width: DIAGRAM_IMAGE_RENDER_WIDTH, height: renderHeight }} />
+      </View>
+      <Text style={techProjectStyles.stepImageDisclaimer}>
+        AI-generated illustration -- verify against the written steps before wiring or connecting anything.
+      </Text>
+    </View>
+  );
+};
+
+const TechProjectDocument = ({ meta, content }: { meta: TechProjectMeta; content: TechProjectContent }) => (
+  <Document>
+    <Page size="A4" style={isDevanagariLanguage(meta.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+      <View style={styles.pageBorder} fixed />
+      <View style={styles.brandMark} fixed>
+        <PdfLogo />
+        <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+      </View>
+
+      <View style={styles.header}>
+        <View style={styles.headerCol}>
+          <Text>Student Name: _________________</Text>
+          <Text>Class: {meta.class || '___'}</Text>
+        </View>
+        <View style={styles.headerCol}>
+          <Text>Date: _________________</Text>
+          <Text>Category: {meta.category ? CATEGORY_LABEL[meta.category] || meta.category : '___'}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.title}>{content.title}</Text>
+
+      <View style={styles.section}>
+        <Text style={techProjectStyles.sectionHeading}>Purpose &amp; Core Idea</Text>
+        <Text style={{ textAlign: 'justify' }}>{content.purpose}</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={techProjectStyles.sectionHeading}>What You&apos;ll Need</Text>
+        {content.materials.map((m, i) => (
+          <View key={i} style={techProjectStyles.materialRow}>
+            <View style={techProjectStyles.checkbox} />
+            <Text>{m}</Text>
+          </View>
+        ))}
+      </View>
+
+      {content.hardwareUpgrade?.available && content.hardwareUpgrade.items.length > 0 && (
+        <View style={styles.section}>
+          <Text style={techProjectStyles.sectionHeading}>Optional Hardware Upgrade</Text>
+          <View style={techProjectStyles.hardwareBox}>
+            <Text style={techProjectStyles.hardwareLabel}>OPTIONAL -- THE PROJECT WORKS FULLY WITHOUT THIS</Text>
+            {content.hardwareUpgrade.items.map((item, i) => (
+              <View key={i} style={techProjectStyles.hardwareItemRow}>
+                <Text style={techProjectStyles.hardwareItemName}>{item.name}{item.approxCostINR ? ` (~${item.approxCostINR})` : ''}</Text>
+                <Text style={techProjectStyles.hardwareItemMeta}>{item.purpose}</Text>
+              </View>
+            ))}
+            {content.hardwareUpgrade.note && <Text style={{ fontSize: 9, marginTop: 4, color: '#475569' }}>{content.hardwareUpgrade.note}</Text>}
+          </View>
+        </View>
+      )}
+
+      <View style={styles.section}>
+        <Text style={techProjectStyles.sectionHeading}>Step-by-Step Build</Text>
+        {content.steps.map((s) => (
+          <View key={s.number} style={techProjectStyles.stepBlock} wrap={false}>
+            <View style={techProjectStyles.stepHeaderRow}>
+              <Text style={techProjectStyles.stepNum}>{s.number}</Text>
+              <Text style={techProjectStyles.stepTitle}>{s.title}</Text>
+            </View>
+            <Text style={techProjectStyles.stepInstruction}>{s.instruction}</Text>
+            {s.imageUrl && <TechProjectStepImage imageUrl={s.imageUrl} />}
+          </View>
+        ))}
+      </View>
+
+      {content.simulationGuide && (
+        <View style={styles.section}>
+          <Text style={techProjectStyles.sectionHeading}>Try It in Simulation</Text>
+          <View style={techProjectStyles.simulationBox}>
+            <Text style={techProjectStyles.simulationLabel}>{content.simulationGuide.tool.toUpperCase()}</Text>
+            <Text style={techProjectStyles.simulationLink}>{content.simulationGuide.toolUrl}</Text>
+            <Text style={{ marginTop: 6 }}>{content.simulationGuide.instructions}</Text>
+          </View>
+        </View>
+      )}
+
+      {content.codeSnippet && (
+        <View style={styles.section}>
+          <Text style={techProjectStyles.sectionHeading}>Code</Text>
+          <View style={techProjectStyles.codeBlock}>
+            {content.codeLanguage && <Text style={techProjectStyles.codeLangTag}>{content.codeLanguage.toUpperCase()}</Text>}
+            <Text style={techProjectStyles.codeText}>{content.codeSnippet}</Text>
+          </View>
+        </View>
+      )}
+
+      {content.troubleshooting.length > 0 && (
+        <View style={styles.section}>
+          <Text style={techProjectStyles.sectionHeading}>Troubleshooting</Text>
+          {content.troubleshooting.map((t, i) => (
+            <View key={i} style={techProjectStyles.troubleRow}>
+              <Text style={techProjectStyles.troubleIssue}>{t.issue}</Text>
+              <Text style={techProjectStyles.troubleFix}>{t.fix}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {content.safetyNotes.length > 0 && (
+        <View style={styles.section}>
+          <View style={techProjectStyles.safetyBox}>
+            <Text style={techProjectStyles.safetyLabel}>SAFETY NOTES</Text>
+            {content.safetyNotes.map((n, i) => (
+              <Text key={i} style={techProjectStyles.safetyItem}>• {n}</Text>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {content.extensions.length > 0 && (
+        <View style={styles.section}>
+          <Text style={techProjectStyles.sectionHeading}>Go Further</Text>
+          {content.extensions.map((e, i) => (
+            <Text key={i} style={techProjectStyles.extensionItem}>• {e}</Text>
+          ))}
+        </View>
+      )}
+
+      <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+        `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+      )} fixed />
+    </Page>
+  </Document>
+);
+
+export const generateTechProjectPDF = async (meta: TechProjectMeta, content: TechProjectContent): Promise<Buffer> => {
+  return renderToBuffer(<TechProjectDocument meta={meta} content={content} />);
+};
+
+// Chem Lab lab report. The experiment SCRIPT (steps, equation, safety notes)
+// comes straight from packages/content's curated, hand-authored data -- see
+// that package's header comment for why this is never AI-generated. Only
+// the student's own predict-answer and typed observations are per-user data.
+interface ChemLabReportMeta {
+  class?: string;
+  language?: string;
+}
+
+const chemLabStyles = StyleSheet.create({
+  sectionHeading: { fontSize: 13, fontWeight: 'bold', marginBottom: 8, color: '#1B2A6B' },
+  predictBox: { padding: 12, borderRadius: 4, marginBottom: 4 },
+  predictCorrect: { backgroundColor: '#EAFBF3', border: '1pt solid #9EDFC2' },
+  predictIncorrect: { backgroundColor: '#FFF7E6', border: '1pt solid #F0C36D' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 4 },
+  chip: { fontSize: 9, backgroundColor: '#F1F5F9', color: '#334155', paddingVertical: 3, paddingHorizontal: 8, borderRadius: 10 },
+  observationBox: { marginBottom: 8 },
+  observationPrompt: { fontWeight: 'bold', fontSize: 10, marginBottom: 2 },
+  observationAnswer: { color: '#334155' },
+  safetyBox: { padding: 12, backgroundColor: '#FDECEC', border: '1pt solid #F0A3A3', borderRadius: 4 },
+  safetyLabel: { fontSize: 9, fontWeight: 'bold', color: '#B91C1C', marginBottom: 4, letterSpacing: 0.5 },
+  noteBox: { padding: 10, backgroundColor: '#FFF7E6', border: '1pt solid #F0C36D', borderRadius: 4 },
+});
+
+const ChemLabReportDocument = ({
+  meta, experiment, observations, predictAnswerIndex, predictCorrect,
+}: {
+  meta: ChemLabReportMeta;
+  experiment: ChemistryExperiment;
+  observations: Record<string, string>;
+  predictAnswerIndex: number;
+  predictCorrect: boolean;
+}) => {
+  const apparatusNames = experiment.apparatusIds.map((id) => CHEM_EQUIPMENT.find((a) => a.id === id)?.name || id);
+  const reagentNames = experiment.reagentIds.map((id) => CHEM_REAGENTS.find((r) => r.id === id)?.name || id);
+
+  return (
+    <Document>
+      <Page size="A4" style={isDevanagariLanguage(meta.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+        <View style={styles.pageBorder} fixed />
+        <View style={styles.brandMark} fixed>
+          <PdfLogo />
+          <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+        </View>
+
+        <View style={styles.header}>
+          <View style={styles.headerCol}>
+            <Text>Student Name: _________________</Text>
+            <Text>Class: {meta.class || '___'}</Text>
+          </View>
+          <View style={styles.headerCol}>
+            <Text>Date: _________________</Text>
+            <Text>Chem Lab Report</Text>
+          </View>
+        </View>
+
+        <Text style={styles.title}>{experiment.title}</Text>
+
+        <View style={styles.section}>
+          <Text style={chemLabStyles.sectionHeading}>Purpose</Text>
+          <Text style={{ textAlign: 'justify' }}>{experiment.purpose}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={chemLabStyles.sectionHeading}>Prediction</Text>
+          <View style={[chemLabStyles.predictBox, predictCorrect ? chemLabStyles.predictCorrect : chemLabStyles.predictIncorrect]}>
+            <Text style={{ marginBottom: 4 }}>{experiment.predictPrompt}</Text>
+            <Text style={{ fontWeight: 'bold' }}>Student answered: {experiment.predictOptions[predictAnswerIndex] || '-'}</Text>
+            <Text>Correct answer: {experiment.predictOptions[experiment.correctPredictIndex]}</Text>
+            <Text style={{ marginTop: 2, fontWeight: 'bold' }}>{predictCorrect ? 'Correct prediction!' : 'Prediction did not match -- a normal part of learning through experiment.'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={chemLabStyles.sectionHeading}>Apparatus &amp; Reagents Used</Text>
+          <View style={chemLabStyles.chipRow}>
+            {apparatusNames.map((n, i) => <Text key={`a-${i}`} style={chemLabStyles.chip}>{n}</Text>)}
+          </View>
+          <View style={chemLabStyles.chipRow}>
+            {reagentNames.map((n, i) => <Text key={`r-${i}`} style={chemLabStyles.chip}>{n}</Text>)}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={chemLabStyles.sectionHeading}>Steps Followed</Text>
+          {experiment.steps.map((s) => (
+            <Text key={s.number} style={{ marginBottom: 4 }}>{s.number}. {s.instruction}</Text>
+          ))}
+        </View>
+
+        {experiment.balancedEquation && (
+          <View style={styles.section}>
+            <Text style={chemLabStyles.sectionHeading}>Balanced Equation</Text>
+            <Text style={{ fontFamily: 'Courier' }}>{experiment.balancedEquation}</Text>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <Text style={chemLabStyles.sectionHeading}>Explanation</Text>
+          <Text style={{ textAlign: 'justify' }}>{experiment.explanation}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={chemLabStyles.sectionHeading}>Student Observations</Text>
+          {experiment.observationPrompts.map((prompt, i) => (
+            <View key={i} style={chemLabStyles.observationBox}>
+              <Text style={chemLabStyles.observationPrompt}>{prompt}</Text>
+              <Text style={chemLabStyles.observationAnswer}>{observations[String(i)] || observations[i as unknown as string] || '(not answered)'}</Text>
+            </View>
+          ))}
+        </View>
+
+        {experiment.realWorldApplications.length > 0 && (
+          <View style={styles.section}>
+            <Text style={chemLabStyles.sectionHeading}>Real-World Applications</Text>
+            {experiment.realWorldApplications.map((a, i) => <Text key={i} style={{ marginBottom: 2 }}>• {a}</Text>)}
+          </View>
+        )}
+
+        {experiment.safetyNotes.length > 0 && (
+          <View style={styles.section}>
+            <View style={chemLabStyles.safetyBox}>
+              <Text style={chemLabStyles.safetyLabel}>SAFETY NOTES</Text>
+              {experiment.safetyNotes.map((n, i) => <Text key={i} style={{ marginBottom: 2 }}>• {n}</Text>)}
+            </View>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <View style={chemLabStyles.noteBox}>
+            <Text>{experiment.realLifeNote}</Text>
+          </View>
+        </View>
+
+        {experiment.extensions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={chemLabStyles.sectionHeading}>Go Further</Text>
+            {experiment.extensions.map((e, i) => <Text key={i} style={{ marginBottom: 2 }}>• {e}</Text>)}
+          </View>
+        )}
+
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+          `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        )} fixed />
+      </Page>
+    </Document>
+  );
+};
+
+export const generateLabReportPDF = async (
+  meta: ChemLabReportMeta,
+  experiment: ChemistryExperiment,
+  observations: Record<string, string>,
+  predictAnswerIndex: number,
+  predictCorrect: boolean
+): Promise<Buffer> => {
+  return renderToBuffer(
+    <ChemLabReportDocument meta={meta} experiment={experiment} observations={observations} predictAnswerIndex={predictAnswerIndex} predictCorrect={predictCorrect} />
+  );
 };

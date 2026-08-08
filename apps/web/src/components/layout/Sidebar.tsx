@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, LogOut, BookOpen, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, LogOut, BookOpen, ClipboardList, Cpu, FlaskConical } from 'lucide-react';
 import { useWizardStore } from '@/store/useWizardStore';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
 import { Logo } from '@/components/Logo';
@@ -23,6 +23,12 @@ export default function Sidebar() {
     { href: '/generate', label: 'Generate', icon: Sparkles, onClick: resetWizard },
     { href: '/worksheets', label: 'My Worksheets', icon: FileText },
     { href: '/projects', label: 'My Projects', icon: FileStack },
+    // Tech Lab (Robotics/AI/Coding) is open to every role -- unlike Study
+    // Material/Activity Sheet, students build these for themselves too. See
+    // apps/api/src/routes/techProjectRoutes.ts (requireAuth only, no
+    // requireRole gate).
+    { href: '/tech-lab', label: 'Tech Lab', icon: Cpu },
+    { href: '/chem-lab', label: 'Chem Lab', icon: FlaskConical },
     ...(isTeacherOrParent ? [
       { href: '/study-material', label: 'Study Material', icon: BookOpen },
       { href: '/activity-sheet', label: 'Activity Sheet', icon: ClipboardList },

@@ -7,6 +7,7 @@ export * from './prompts/worksheetPrompt';
 export * from './prompts/projectPrompt';
 export * from './prompts/studyMaterialPrompt';
 export * from './prompts/activitySheetPrompt';
+export * from './prompts/techProjectPrompt';
 export * from './prompts/questionTypes';
 export * from './prompts/pedagogy';
 export * from './utils/parser';

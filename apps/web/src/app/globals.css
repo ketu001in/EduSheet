@@ -178,6 +178,58 @@ html[data-font="merriweather"] body { --font-sans: var(--font-merriweather), Geo
   }
 }
 
+/* Chem Lab reaction-stage animations -- small, closed vocabulary of visual
+   effects driven by ReactionVisualState (packages/content), reused by every
+   curated experiment rather than any per-experiment custom animation. */
+@keyframes chem-bubble-rise {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-90px) scale(1); opacity: 0; }
+}
+.chem-bubble {
+  animation: chem-bubble-rise 1.6s ease-in infinite;
+}
+@keyframes chem-flask-fizz {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+.chem-fizzing {
+  animation: chem-flask-fizz 0.35s ease-in-out infinite;
+}
+@keyframes chem-flame-flicker {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  50% { transform: scaleY(1.08) scaleX(0.95); }
+}
+.chem-flame {
+  animation: chem-flame-flicker 0.6s ease-in-out infinite;
+}
+@keyframes chem-precipitate-fall {
+  0% { transform: translateY(-10px); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(30px); opacity: 0.9; }
+}
+.chem-precipitate {
+  animation: chem-precipitate-fall 1.2s ease-out infinite;
+}
+/* Gas escaping out of the mouth of the vessel into the air above it --
+   distinct from chem-bubble (which rises INSIDE the liquid) -- these wisps
+   start right at the rim, drift up and slightly sideways, and fade out,
+   the classic "steam/vapor rising off a reaction" look. */
+@keyframes chem-gas-escape {
+  0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+  20% { opacity: 0.75; }
+  100% { transform: translate(var(--chem-gas-drift, 8px), -60px) scale(1.8); opacity: 0; }
+}
+.chem-gas-wisp {
+  animation: chem-gas-escape 2.4s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chem-bubble, .chem-fizzing, .chem-flame, .chem-precipitate, .chem-gas-wisp { animation: none; }
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

@@ -139,3 +139,43 @@ Expected JSON Output Format:
   "facilitationNotes": "..."
 }`;
 }
+
+const CATEGORY_GUIDANCE: Record<string, string> = {
+  robotics: `This is a ROBOTICS project. Prefer a design that can be fully built and tested as a simulation (see "simulationGuide") -- e.g. in Tinkercad Circuits (breadboard + Arduino code, simulates in-browser) or Wokwi (Arduino/ESP32/Raspberry Pi Pico simulator, free, no signup for basic use). The "steps" should work whether the student is wiring a real breadboard or wiring the simulated one on screen -- the instructions are the same either way.`,
+  ai: `This is an AI project. Prefer tools that need NO account and NO coding for younger classes -- Google's Teachable Machine (train an image/sound/pose classifier in the browser, free, no signup) is ideal for Class 6-9. For Class 10+ or students who can code, a short Python notebook (e.g. via Google Colab, free) using a small pretrained model or simple dataset is appropriate. Explain the AI concept in plain language as part of "purpose" -- what the model is actually learning to do, not just "train an AI".`,
+  coding: `This is a CODING project. Prefer Scratch (block-based, free, ages ~7-13, no signup needed to try it) for younger classes, and Python (free, via a browser tool like Trinket or Replit, or a proper local install for older classes) for Class 8+. If the project produces a real program, "codeSnippet" and "codeLanguage" MUST be filled in with genuinely correct, runnable code that matches the steps -- not pseudocode.`,
+};
+
+export function buildTechProjectSystemPrompt(category: 'robotics' | 'ai' | 'coding', board?: string): string {
+  return `You are an expert Indian school Robotics/AI/Coding educator designing hands-on "Tech Lab" projects for CBSE and ICSE students -- the kind of project a school's Atal Tinkering Lab or computer/AI class would actually run.
+${CATEGORY_GUIDANCE[category] || ''}
+
+Guidelines:
+1. "materials" is the ALWAYS-FREE path: things needed to do this project with just a computer/phone and free software or a simulator -- no purchase required. This must be a genuinely complete way to finish the whole project, not a stripped-down version. Never list paid software or a specific paid kit here.
+2. "hardwareUpgrade" is OPTIONAL and clearly separate: real components (e.g. an Arduino Uno, a servo motor, an ultrasonic sensor) that would let a student build the physical version if they have access to them. Set "available": false and leave "items" empty if a physical version wouldn't meaningfully add anything (e.g. a pure coding/AI project). Every "items" entry needs a realistic approxCostINR (India rupee pricing, e.g. "Rs 250-350") -- never invent a fake precise price, give a believable range from real component pricing.
+3. "steps": numbered, concrete, one clear action per step, in the order a student actually does them -- specific enough that a student could follow it without a teacher explaining further. This must be a COMPLETE, detailed walkthrough, not a summary -- always at least 6 steps (more for higher classes or more involved builds), covering setup, build/code, test, and a final working check. Where a picture would genuinely help (e.g. what a finished wiring layout or block-code arrangement looks like), add "imagePrompt" -- ONLY use this for steps where it will actually help.
+4. "simulationGuide" must name a REAL, currently-available free tool (see category guidance above), a real URL to it, and 2-3 sentences on how to use it for this specific project.
+5. "safetyNotes": required (non-empty) whenever the project involves any physical building, electricity, batteries, or tools of any kind, even in the optional hardware tier -- real, specific safety guidance (e.g. "Never use mains/wall electricity -- battery power only", "Ask an adult before using a hot glue gun"), not generic disclaimers. Leave as an empty array only for a purely on-screen software/coding project with no physical component at all.
+6. "troubleshooting": REQUIRED, never leave empty -- exactly 3-4 realistic problems a student would actually hit while building or running this specific project, and how to fix each one. Generic/vague entries are not acceptable.
+7. "extensions": REQUIRED, never leave empty -- exactly 2-3 genuine, specific ideas to make THIS project harder or more interesting once the basic version works.
+8. "codeSnippet": include real, correct, runnable code whenever the project involves writing any code at all (Arduino/C++, Python, JavaScript, etc.) -- even a robotics project built in a simulator should include the actual sketch/program being simulated. Only omit entirely for a project with zero code (e.g. a pure block-based Scratch project where the blocks ARE the program -- describe that program in the steps instead).
+9. Language complexity and project difficulty must suit the target class exactly -- a Class 3 robotics project and a Class 10 one should look nothing alike in complexity.
+10. Your output MUST be in structured JSON format matching the schema below. Do not include any text outside the JSON structure.
+
+Expected JSON Output Format:
+{
+  "title": "A clear, specific project title",
+  "purpose": "What this project does and what real concept it teaches, in plain language",
+  "materials": ["item 1 (free/software path)", "item 2"],
+  "hardwareUpgrade": { "available": true, "items": [{ "name": "Arduino Uno", "purpose": "Runs the control logic", "approxCostINR": "Rs 500-700" }], "note": "Optional -- everything above works fully in simulation too." },
+  "steps": [
+    { "number": 1, "title": "Short step title", "instruction": "Exactly what to do", "imagePrompt": "A clear textbook-style illustration of ..." }
+  ],
+  "simulationGuide": { "tool": "Tinkercad Circuits", "toolUrl": "https://www.tinkercad.com/circuits", "instructions": "..." },
+  "codeSnippet": "... real, correct code, or omit entirely if not a coding project ...",
+  "codeLanguage": "python",
+  "troubleshooting": [{ "issue": "...", "fix": "..." }],
+  "safetyNotes": ["..."],
+  "extensions": ["...", "..."]
+}`;
+}

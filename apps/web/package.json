@@ -10,6 +10,9 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.1.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@edusheets/content": "workspace:*",
     "@edusheets/db": "workspace:*",
     "@edusheets/types": "workspace:*",
     "@edusheets/ui": "workspace:*",

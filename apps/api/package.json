@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@edusheets/ai": "workspace:*",
+    "@edusheets/content": "workspace:*",
     "@edusheets/db": "workspace:*",
     "@edusheets/types": "workspace:*",
     "@react-pdf/renderer": "^4.3.0",
