@@ -1,4 +1,5 @@
 import React from 'react';
+import fs from 'fs';
 import path from 'path';
 import { Document, Page, Text, View, StyleSheet, renderToStream, Svg, Rect, Line, Circle, Ellipse, Path, Polygon, Defs, LinearGradient, Stop, Font, Image } from '@react-pdf/renderer';
 import type { DiagramSpec, DiagramShape, DiagramLabelPoint } from '@edusheets/ai';
@@ -11,13 +12,33 @@ import { CHEM_REAGENTS, CHEM_EQUIPMENT, PHYSICS_EQUIPMENT } from '@edusheets/con
 // missing/blank text. Register a Devanagari-capable font and switch to it
 // for any worksheet/project generated in Hindi or Sanskrit.
 const DEVANAGARI_FONT = 'NotoSansDevanagari';
-Font.register({
-  family: DEVANAGARI_FONT,
-  src: path.resolve(__dirname, '../assets/fonts/NotoSansDevanagari-Variable.ttf'),
-});
-// The default hyphenation engine assumes Latin word-breaking rules, which
-// can mis-break Devanagari conjuncts -- disable hyphenation entirely.
-Font.registerHyphenationCallback((word) => [word]);
+
+// __dirname only exists when this runs as CommonJS (local dev via tsx). On
+// Vercel this file is bundled to a single ESM file (no __dirname), so the
+// asset's absolute path there is unknown ahead of time -- probe the handful
+// of locations it could realistically end up at instead of hardcoding one.
+// Missing the font degrades gracefully (falls back to the default font for
+// just that PDF) rather than crashing the entire server on startup, since
+// this runs at module load time for every route, not just PDF generation.
+function resolveDevanagariFontPath(): string | null {
+  const relative = ['src', 'assets', 'fonts', 'NotoSansDevanagari-Variable.ttf'];
+  const candidates = [
+    typeof __dirname !== 'undefined' ? path.resolve(__dirname, '../assets/fonts/NotoSansDevanagari-Variable.ttf') : null,
+    path.resolve(process.cwd(), 'apps/api', ...relative),
+    path.resolve(process.cwd(), ...relative),
+  ].filter((p): p is string => !!p);
+  return candidates.find((p) => fs.existsSync(p)) || null;
+}
+
+const devanagariFontPath = resolveDevanagariFontPath();
+if (devanagariFontPath) {
+  Font.register({ family: DEVANAGARI_FONT, src: devanagariFontPath });
+  // The default hyphenation engine assumes Latin word-breaking rules, which
+  // can mis-break Devanagari conjuncts -- disable hyphenation entirely.
+  Font.registerHyphenationCallback((word) => [word]);
+} else {
+  console.warn('Devanagari font asset not found -- Hindi/Sanskrit PDFs will fall back to the default font.');
+}
 
 function isDevanagariLanguage(language?: string): boolean {
   if (!language) return false;

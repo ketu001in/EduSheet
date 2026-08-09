@@ -41,10 +41,17 @@ async function requestOnce(prompt: string, seed: number): Promise<{ buffer: Buff
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
+    // Cast away from the ambient global `fetch` Response type -- its exact
+    // shape depends on which @types/node minor version resolves at install
+    // time (varies between local node_modules and a clean CI/Vercel
+    // install), which has caused this same call to typecheck locally but
+    // fail a fresh build elsewhere. The fields used below (ok, status,
+    // arrayBuffer) are part of the standard Fetch API response in every
+    // Node 18+ version this app supports, so this is safe.
+    const res = (await fetch(url, {
       signal: controller.signal,
       headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
-    });
+    })) as unknown as { ok: boolean; status: number; arrayBuffer: () => Promise<ArrayBuffer> };
     if (!res.ok) {
       console.error(`Diagram image generation failed (${res.status}) for prompt: ${prompt}`);
       return { buffer: null, rateLimited: res.status === 429 };

@@ -22,16 +22,25 @@ import searchRoutes from './routes/searchRoutes';
 import adminRoutes from './routes/adminRoutes';
 
 import path from 'path';
-// Only meaningful for local dev -- on Vercel, env vars come from the
-// project's own Environment Variables settings, and this file simply won't
-// exist, which dotenv handles silently (it never throws on a missing file).
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+// Only meaningful for local dev (tsx runs this as CommonJS, where
+// __dirname exists) -- on Vercel this file is bundled as ESM, where
+// __dirname is simply not defined (referencing it directly throws;
+// `typeof` is the safe way to check without doing that), and env vars come
+// from the project's own Environment Variables settings instead.
+if (typeof __dirname !== 'undefined') {
+  dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+}
 
 // The Express app itself, with no app.listen() call -- kept separate from
 // index.ts (local dev entrypoint) and api/index.ts (Vercel serverless
 // entrypoint) so both can import the exact same configured app instead of
 // duplicating this setup.
 const app: Express = express();
+
+// Running behind Vercel's own proxy -- without this, Express doesn't trust
+// the X-Forwarded-For header it receives, which breaks express-rate-limit's
+// per-IP tracking (it logs a ValidationError on every request otherwise).
+app.set('trust proxy', 1);
 
 // Global Middlewares
 app.use(helmet());
