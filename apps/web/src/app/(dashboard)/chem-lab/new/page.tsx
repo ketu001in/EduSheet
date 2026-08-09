@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { fetchBoards, fetchClasses, Board, ClassLevel } from '@/lib/curriculum';
 import { submitChemAttempt, downloadChemAttemptPdf } from '@/lib/chemLab';
 import {
-  CHEMISTRY_EXPERIMENTS, chemGradeBandForClass, ChemistryExperiment, ChemExperimentCategory,
+  CHEMISTRY_EXPERIMENTS, chemGradeBandForClass, ChemistryExperiment, ChemExperimentCategory, ChemBranch,
 } from '@edusheets/content';
 import { LabBench } from '@/components/chemlab/LabBench';
 import {
   Loader2, AlertTriangle, FlaskConical, Beaker, TestTube, Zap, Search, Printer,
-  Check, ChevronLeft,
+  Check, ChevronLeft, Atom,
 } from 'lucide-react';
 
 const CATEGORY_LABEL: Record<ChemExperimentCategory, string> = {
@@ -60,6 +60,7 @@ export default function NewChemExperimentPage() {
   const [selectedClassName, setSelectedClassName] = useState<string | null>(null);
   const [selectedGradeNumber, setSelectedGradeNumber] = useState<number | null>(null);
   const [selectedExperiment, setSelectedExperiment] = useState<ChemistryExperiment | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<ChemBranch | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -93,11 +94,21 @@ export default function NewChemExperimentPage() {
     setSelectedClassName(cls.name);
     setSelectedGradeNumber(cls.grade_number);
     setSelectedExperiment(null);
+    setSelectedBranch(null);
     setResult(null);
   };
 
   const gradeBand = selectedGradeNumber != null ? chemGradeBandForClass(selectedGradeNumber) : null;
-  const experiments = gradeBand ? CHEMISTRY_EXPERIMENTS.filter((e) => e.gradeBand === gradeBand.id) : [];
+  // Organic vs Inorganic only becomes a real, curriculum-grounded choice at
+  // Class 11-12 -- that's the only band where both branches are actually
+  // populated (organic chemistry properly starts there). Showing an
+  // Organic/Inorganic toggle for younger classes would mostly just show an
+  // empty "Organic" side, which reads as broken rather than helpful.
+  const showBranchFilter = gradeBand?.id === 'plusTwo';
+  const experimentsForBand = gradeBand ? CHEMISTRY_EXPERIMENTS.filter((e) => e.gradeBand === gradeBand.id) : [];
+  const experiments = showBranchFilter && selectedBranch
+    ? experimentsForBand.filter((e) => e.branch === selectedBranch)
+    : experimentsForBand;
 
   const handleComplete = async (data: { predictAnswerIndex: number; predictCorrect: boolean; observations: Record<string, string> }) => {
     if (!selectedExperiment) return;
@@ -237,6 +248,37 @@ export default function NewChemExperimentPage() {
           <div>
             <h2 className="font-display text-xl font-semibold mb-1">3. Choose an Experiment</h2>
             <p className="text-sm text-slate-500 mb-4">Curated for {gradeBand.label}.</p>
+
+            {showBranchFilter && (
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                {([
+                  { value: null, label: `All (${experimentsForBand.length})` },
+                  { value: 'inorganic' as ChemBranch, label: `Inorganic (${experimentsForBand.filter((e) => e.branch === 'inorganic').length})` },
+                  { value: 'organic' as ChemBranch, label: `Organic (${experimentsForBand.filter((e) => e.branch === 'organic').length})` },
+                ]).map((opt) => (
+                  <button
+                    key={opt.label}
+                    onClick={() => { setSelectedBranch(opt.value); setSelectedExperiment(null); }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                      selectedBranch === opt.value
+                        ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]'
+                        : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+                {selectedBranch === 'organic' && (
+                  <Link
+                    href="/chem-lab/aromatic"
+                    className="ml-auto text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                  >
+                    <Atom className="w-3.5 h-3.5" /> Also see Aromatic Chemistry (Benzene)
+                  </Link>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {experiments.map((exp) => {
                 const Icon = CATEGORY_ICON[exp.category];

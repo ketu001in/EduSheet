@@ -42,4 +42,19 @@ export const CHEM_REAGENTS: ChemReagent[] = [
   { id: 'ethanol', name: 'Ethanol', formulaOrDescription: 'C2H5OH -- a simple alcohol' },
   { id: 'acetic-acid', name: 'Glacial Acetic Acid', formulaOrDescription: 'Concentrated CH3COOH', hazardNote: 'Corrosive and has a sharp smell -- the real version needs a fume hood and adult supervision.' },
   { id: 'conc-sulphuric-acid', name: 'Concentrated Sulphuric Acid (catalyst)', formulaOrDescription: 'Used here only as a catalyst, in a small amount', hazardNote: 'Highly corrosive -- this step is teacher-demonstration-only in a real lab, never student-handled.' },
+
+  // Organic Lab reagents
+  { id: 'vegetable-oil', name: 'Vegetable Oil', formulaOrDescription: 'An unsaturated glyceryl ester (fat) -- contains carbon-carbon double bonds' },
+  { id: 'liquid-paraffin', name: 'Liquid Paraffin', formulaOrDescription: 'A saturated hydrocarbon oil -- no carbon-carbon double bonds, used as a control' },
+  { id: 'bromine-water', name: 'Bromine Water', formulaOrDescription: 'A dilute orange solution of bromine in water', hazardNote: 'Corrosive with a sharp, choking smell -- the real version needs a fume hood and teacher supervision.' },
+  { id: 'potassium-permanganate-dilute', name: 'Dilute Alkaline Potassium Permanganate', formulaOrDescription: 'A dilute purple solution of KMnO4 in NaOH', hazardNote: 'Stains skin and clothing -- handle the real version with gloves.' },
+  { id: 'fehling-solution-a', name: "Fehling's Solution A", formulaOrDescription: 'Copper sulphate solution -- combines with Solution B just before use' },
+  { id: 'fehling-solution-b', name: "Fehling's Solution B", formulaOrDescription: 'Alkaline sodium potassium tartrate solution' },
+  { id: 'tollens-reagent', name: "Tollens' Reagent", formulaOrDescription: 'Freshly prepared ammoniacal silver nitrate solution', hazardNote: 'Must be freshly prepared and used the same day -- if left standing it can form an explosive compound. Real version is teacher-prepared and supervised only.' },
+  { id: 'glucose-solution', name: 'Glucose Solution', formulaOrDescription: 'A reducing sugar containing an aldehyde group, dissolved in water' },
+  { id: 'acetone', name: 'Acetone', formulaOrDescription: 'CH3COCH3 -- a simple methyl ketone', hazardNote: 'Flammable and has a strong smell -- the real version needs good ventilation.' },
+  { id: 'iodine-solution', name: 'Iodine Solution', formulaOrDescription: 'A dilute solution of iodine, used as a test reagent here' },
+  { id: 'yeast-culture', name: 'Yeast (mixed with warm water)', formulaOrDescription: 'A living microorganism that ferments sugar into ethanol and carbon dioxide' },
+  { id: 'white-glue', name: 'White (PVA) Glue', formulaOrDescription: 'A water-based suspension of long polyvinyl acetate polymer chains' },
+  { id: 'borax-solution', name: 'Borax Solution', formulaOrDescription: 'A mild household mineral solution that cross-links polymer chains', hazardNote: 'Should be measured and handled by an adult -- not for eating or rubbing in eyes.' },
 ];

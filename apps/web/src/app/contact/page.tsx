@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 
-export const metadata = { title: "Contact Us - Bosket's EduSheet" };
+export const metadata = { title: "Contact Us - Bosket's EDStudio" };
 
 export default function ContactPage() {
   return (
@@ -10,7 +10,7 @@ export default function ContactPage() {
       <header className="max-w-3xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <Logo size={32} />
-          <span className="font-display text-lg font-semibold">Bosket&apos;s EduSheet</span>
+          <span className="font-display text-lg font-semibold">Bosket&apos;s EDStudio</span>
         </Link>
         <Link href="/" className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">Back to Home</Link>
       </header>
@@ -20,7 +20,7 @@ export default function ContactPage() {
           <span className="text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider">Get in touch</span>
           <h1 className="font-display text-4xl font-semibold mt-2 mb-3">Contact Us</h1>
           <p className="text-slate-600 dark:text-slate-400 max-w-lg">
-            Questions about your account, a worksheet, or Bosket&apos;s EduSheet in general &mdash; we&apos;re happy to help.
+            Questions about your account, a worksheet, or Bosket&apos;s EDStudio in general &mdash; we&apos;re happy to help.
           </p>
         </div>
 

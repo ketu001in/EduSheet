@@ -1,0 +1,466 @@
+'use client';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import {
+  ChevronLeft, Sparkles, Play, Pause, RotateCcw, Zap, ArrowRight, PartyPopper,
+  Loader2, CheckCircle2, XCircle, Printer, AlertTriangle, Gauge, Eye, Waves,
+} from 'lucide-react';
+import { PHYSICS_EXPERIMENTS, PhysicsExperiment, PhysicsBranch, physicsGradeBandForClass } from '@edusheets/content';
+import PhysicsStage from '@/components/physicslab/PhysicsStage';
+import { submitPhysicsAttempt, downloadPhysicsAttemptPdf } from '@/lib/physicsLab';
+import { fetchBoards, fetchClasses, Board, ClassLevel } from '@/lib/curriculum';
+
+type Phase = 'pick' | 'predict' | 'simulate' | 'observe' | 'explain' | 'done';
+
+const BRANCH_ICON: Record<PhysicsBranch, typeof Gauge> = {
+  mechanics: Gauge,
+  optics: Eye,
+  electricity: Zap,
+  'waves-sound': Waves,
+};
+
+const BRANCH_LABEL: Record<PhysicsBranch, string> = {
+  mechanics: 'Mechanics',
+  optics: 'Optics',
+  electricity: 'Electricity & Magnetism',
+  'waves-sound': 'Waves & Sound',
+};
+
+function isNumericGradeBoard(code: string) {
+  return code === 'CBSE' || code === 'ICSE';
+}
+
+function BackBar() {
+  return (
+    <div className="sticky top-0 z-30 isolate px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
+      <Link href="/physics-lab" className="text-sm font-medium text-slate-500 hover:text-primary-600 flex items-center gap-1.5">
+        <ChevronLeft className="w-4 h-4" /> Back to Physics Lab
+      </Link>
+    </div>
+  );
+}
+
+export default function NewPhysicsExperimentPage() {
+  const [phase, setPhase] = useState<Phase>('pick');
+  const [experiment, setExperiment] = useState<PhysicsExperiment | null>(null);
+  const [params, setParams] = useState<Record<string, number>>({});
+  const [stepIndex, setStepIndex] = useState(0);
+  const [resetKey, setResetKey] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [smallAngle, setSmallAngle] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [predictIndex, setPredictIndex] = useState<number | null>(null);
+  const [observations, setObservations] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [classes, setClasses] = useState<ClassLevel[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedClassName, setSelectedClassName] = useState<string | null>(null);
+  const [selectedGradeNumber, setSelectedGradeNumber] = useState<number | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<PhysicsBranch | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const boardsRes = await fetchBoards();
+        const usable = boardsRes.data.filter((b) => isNumericGradeBoard(b.code));
+        setBoards(usable);
+        const cbse = usable.find((b) => b.code === 'CBSE');
+        if (cbse) setSelectedBoardId(cbse.id);
+      } catch (err) {
+        console.error(err);
+        setCatalogError('Could not load boards from the server. Is the API running?');
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedBoardId) { setClasses([]); return; }
+    fetchClasses(selectedBoardId)
+      .then((res) => setClasses(res.data))
+      .catch((err) => { console.error(err); setClasses([]); });
+  }, [selectedBoardId]);
+
+  const pickClass = (cls: ClassLevel) => {
+    setSelectedClassId(cls.id);
+    setSelectedClassName(cls.name);
+    setSelectedGradeNumber(cls.grade_number);
+    setSelectedBranch(null);
+  };
+
+  const gradeBand = selectedGradeNumber != null ? physicsGradeBandForClass(selectedGradeNumber) : null;
+  const experimentsForBand = gradeBand ? PHYSICS_EXPERIMENTS.filter((e) => e.gradeBand === gradeBand.id) : [];
+  const branchesInBand = Array.from(new Set(experimentsForBand.map((e) => e.branch)));
+  const experimentsToShow = selectedBranch ? experimentsForBand.filter((e) => e.branch === selectedBranch) : experimentsForBand;
+
+  const pickExperiment = (exp: PhysicsExperiment) => {
+    setExperiment(exp);
+    setParams({ ...exp.defaultParams });
+    setStepIndex(0);
+    setPredictIndex(null);
+    setObservations({});
+    setSmallAngle(true);
+    setPhase('predict');
+  };
+
+  const startSimulating = () => {
+    setPhase('simulate');
+    setRunning(true);
+    setResetKey((k) => k + 1);
+  };
+
+  const nextStep = () => {
+    if (!experiment) return;
+    const next = stepIndex + 1;
+    if (next >= experiment.steps.length) {
+      setPhase('observe');
+      setRunning(false);
+      return;
+    }
+    const step = experiment.steps[next];
+    if (step.paramChanges) setParams((prev) => ({ ...prev, ...step.paramChanges }));
+    setStepIndex(next);
+    setResetKey((k) => k + 1);
+    setRunning(true);
+  };
+
+  const resetSim = () => {
+    setResetKey((k) => k + 1);
+    setRunning(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!experiment || predictIndex === null) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await submitPhysicsAttempt({
+        experimentId: experiment.id,
+        experimentTitle: experiment.title,
+        boardId: selectedBoardId || undefined,
+        classId: selectedClassId || undefined,
+        className: selectedClassName || undefined,
+        predictAnswerIndex: predictIndex,
+        predictCorrect: predictIndex === experiment.correctPredictIndex,
+        observations,
+        finalParams: params,
+      });
+      setAttemptId(res.data.attempt.id);
+      setPhase('done');
+    } catch (err) {
+      console.error(err);
+      setSubmitError('Could not save this attempt. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const currentStep = experiment?.steps[stepIndex];
+
+  const formulaReadout = useMemo(() => {
+    if (!experiment) return '';
+    return experiment.formulaVars
+      .map((key) => {
+        const cfg = experiment.paramConfig.find((p) => p.key === key);
+        const val = params[key] ?? experiment.defaultParams[key];
+        return `${cfg?.label || key} = ${val}${cfg?.unit || ''}`;
+      })
+      .join(',  ');
+  }, [experiment, params]);
+
+  return (
+    <div className={`${phase === 'pick' ? 'max-w-5xl' : 'max-w-3xl'} mx-auto pb-16 space-y-6`}>
+      <BackBar />
+
+      {phase === 'pick' && (
+        <div className="space-y-6 select-none">
+          <div>
+            <h1 className="font-display text-3xl font-semibold mb-2 flex items-center gap-2"><Sparkles className="w-7 h-7 text-primary-600" /> New Physics Experiment</h1>
+            <p className="text-slate-500 text-sm">Pick your board and class to see hands-on experiments matched to your level.</p>
+          </div>
+
+          {catalogError && (
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-2xl text-amber-800 dark:text-amber-300 text-sm font-medium flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 shrink-0" /> {catalogError}
+            </div>
+          )}
+
+          <div className="glass-card p-6 md:p-8 rounded-3xl space-y-8">
+            <div>
+              <h2 className="font-display text-xl font-semibold mb-4">1. Select Board</h2>
+              <div className="grid grid-cols-2 gap-4 max-w-md">
+                {boards.map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => { setSelectedBoardId(b.id); setSelectedClassId(null); setSelectedGradeNumber(null); setSelectedBranch(null); }}
+                    className={`p-4 border-2 border-slate-900 dark:border-slate-700 rounded-2xl text-center transition-all ${
+                      selectedBoardId === b.id ? 'bg-primary-600 text-white shadow-[4px_4px_0_var(--color-ink)]' : 'bg-surface-light dark:bg-surface-dark hover:shadow-[4px_4px_0_var(--color-ink)]'
+                    }`}
+                  >
+                    <span className="block font-display text-xl font-semibold">{b.code}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="font-display text-xl font-semibold mb-4">2. Select Class</h2>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                {classes.map((cls) => (
+                  <button
+                    key={cls.id}
+                    onClick={() => pickClass(cls)}
+                    className={`p-3 rounded-xl text-center transition-all border-2 ${
+                      selectedClassId === cls.id
+                        ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)] font-bold'
+                        : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                    }`}
+                  >
+                    <span className="font-bold">{cls.grade_number}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {gradeBand && (
+              <div>
+                <h2 className="font-display text-xl font-semibold mb-1">3. Choose an Experiment</h2>
+                <p className="text-sm text-slate-500 mb-4">Hands-on experiments curated for {gradeBand.label}.</p>
+
+                {branchesInBand.length > 1 && (
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <button
+                      onClick={() => setSelectedBranch(null)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                        selectedBranch === null ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]' : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                      }`}
+                    >
+                      All ({experimentsForBand.length})
+                    </button>
+                    {branchesInBand.map((branch) => (
+                      <button
+                        key={branch}
+                        onClick={() => setSelectedBranch(branch)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-all ${
+                          selectedBranch === branch ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]' : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                        }`}
+                      >
+                        {BRANCH_LABEL[branch]} ({experimentsForBand.filter((e) => e.branch === branch).length})
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {experimentsToShow.map((exp) => {
+                    const Icon = BRANCH_ICON[exp.branch];
+                    return (
+                      <button
+                        key={exp.id}
+                        onClick={() => pickExperiment(exp)}
+                        className="p-4 rounded-2xl text-left border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)] transition-all"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon className="w-4 h-4 text-primary-600" />
+                          <span className="text-[10px] font-bold text-primary-600 uppercase tracking-wide">{BRANCH_LABEL[exp.branch]}</span>
+                        </div>
+                        <p className="font-bold text-sm mb-1">{exp.title}</p>
+                        <p className="text-xs text-slate-500 line-clamp-2">{exp.purpose}</p>
+                      </button>
+                    );
+                  })}
+                  {experimentsToShow.length === 0 && (
+                    <div className="col-span-2 text-sm text-slate-400 py-8 text-center">No hands-on experiments curated for this class yet -- more are being added regularly.</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {experiment && phase === 'predict' && (
+        <div className="glass-card rounded-3xl p-6 md:p-8 space-y-5">
+          <h2 className="font-display text-xl font-semibold">{experiment.title}</h2>
+          <p className="text-sm text-slate-500">{experiment.purpose}</p>
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
+            <p className="font-bold text-sm flex items-center gap-1.5"><Zap className="w-4 h-4 text-primary-600" /> Predict First</p>
+            <p className="text-sm">{experiment.predictPrompt}</p>
+            <div className="space-y-2">
+              {experiment.predictOptions.map((opt, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPredictIndex(i)}
+                  className={`w-full text-left px-4 py-2.5 rounded-xl border-2 text-sm transition-all ${predictIndex === i ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20 font-bold' : 'border-slate-200 dark:border-slate-800 hover:border-primary-300'}`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={startSimulating}
+            disabled={predictIndex === null}
+            className="btn-brutal w-full py-3 bg-primary-600 hover:bg-primary-500 disabled:opacity-40 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+          >
+            Start Simulating <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {experiment && phase === 'simulate' && currentStep && (
+        <div className="space-y-4">
+          <div className="glass-card rounded-3xl p-5 space-y-3">
+            <p className="text-xs font-bold text-primary-600 uppercase tracking-wide">Step {currentStep.number} of {experiment.steps.length}</p>
+            <p className="font-medium">{currentStep.instruction}</p>
+            {currentStep.hint && <p className="text-xs text-slate-400">Hint: {currentStep.hint}</p>}
+          </div>
+
+          <PhysicsStage
+            simType={experiment.simType}
+            params={params}
+            running={running}
+            resetKey={resetKey}
+            apparatusIds={experiment.apparatusIds}
+            smallAngle={smallAngle}
+            showOverlay={showOverlay}
+          />
+
+          <div className="glass-card rounded-2xl p-4 flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setRunning((r) => !r)} className="p-2.5 rounded-xl bg-primary-600 text-white hover:bg-primary-500">
+                {running ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              </button>
+              <button onClick={resetSim} className="p-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 hover:border-primary-400">
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              {experiment.hasSmallAngleToggle && (
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 ml-2">
+                  <input type="checkbox" checked={!smallAngle} onChange={(e) => { setSmallAngle(!e.target.checked); setResetKey((k) => k + 1); }} /> Full nonlinear model
+                </label>
+              )}
+              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 ml-2">
+                <input type="checkbox" checked={showOverlay} onChange={(e) => setShowOverlay(e.target.checked)} /> Show energy overlay
+              </label>
+            </div>
+            <p className="text-xs font-mono text-slate-400">{experiment.formula} &nbsp;|&nbsp; {formulaReadout}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {experiment.paramConfig.map((pc) => (
+              <label key={pc.key} className="text-xs font-bold text-slate-500 space-y-1 block">
+                {pc.label} ({params[pc.key] ?? experiment.defaultParams[pc.key]}{pc.unit})
+                <input
+                  type="range"
+                  min={pc.min}
+                  max={pc.max}
+                  step={pc.step}
+                  value={params[pc.key] ?? experiment.defaultParams[pc.key]}
+                  onChange={(e) => setParams((prev) => ({ ...prev, [pc.key]: parseFloat(e.target.value) }))}
+                  className="w-full accent-primary-600"
+                />
+              </label>
+            ))}
+          </div>
+
+          <button onClick={nextStep} className="btn-brutal w-full py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl flex items-center justify-center gap-2">
+            {stepIndex + 1 >= experiment.steps.length ? 'Continue to Observations' : 'Next Step'} <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {experiment && phase === 'observe' && (
+        <div className="glass-card rounded-3xl p-6 md:p-8 space-y-5">
+          <h2 className="font-display text-xl font-semibold">Your Observations</h2>
+          {experiment.observationPrompts.map((prompt, i) => (
+            <div key={i} className="space-y-1.5">
+              <p className="text-sm font-bold">{prompt}</p>
+              <textarea
+                value={observations[String(i)] || ''}
+                onChange={(e) => setObservations((prev) => ({ ...prev, [String(i)]: e.target.value }))}
+                rows={2}
+                className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-transparent p-3 text-sm focus:border-primary-500 outline-none"
+                placeholder="Write what you noticed..."
+              />
+            </div>
+          ))}
+          <button onClick={() => setPhase('explain')} className="btn-brutal w-full py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl flex items-center justify-center gap-2">
+            Continue <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {experiment && phase === 'explain' && (
+        <div className="glass-card rounded-3xl p-6 md:p-8 space-y-5">
+          <div className={`rounded-2xl p-4 flex items-center gap-3 ${predictIndex === experiment.correctPredictIndex ? 'bg-accent-50 dark:bg-accent-950/20' : 'bg-amber-50 dark:bg-amber-950/20'}`}>
+            {predictIndex === experiment.correctPredictIndex ? <CheckCircle2 className="w-6 h-6 text-accent-600 shrink-0" /> : <XCircle className="w-6 h-6 text-amber-600 shrink-0" />}
+            <p className="text-sm font-medium">
+              {predictIndex === experiment.correctPredictIndex ? 'Your prediction was correct!' : `Not quite -- the correct answer was "${experiment.predictOptions[experiment.correctPredictIndex]}".`}
+            </p>
+          </div>
+          <div>
+            <h3 className="font-bold text-sm mb-1.5">Why?</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{experiment.explanation}</p>
+          </div>
+          <div>
+            <h3 className="font-bold text-sm mb-1.5">Real-World Applications</h3>
+            <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+              {experiment.realWorldApplications.map((a, i) => <li key={i}>{a}</li>)}
+            </ul>
+          </div>
+          {experiment.safetyNotes.length > 0 && (
+            <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl p-4">
+              <p className="text-xs font-bold text-red-700 dark:text-red-400 uppercase mb-1">Safety Notes</p>
+              <ul className="text-sm text-red-700 dark:text-red-300 space-y-1 list-disc list-inside">
+                {experiment.safetyNotes.map((n, i) => <li key={i}>{n}</li>)}
+              </ul>
+            </div>
+          )}
+          <div className="bg-amber-50 dark:bg-amber-950/20 rounded-2xl p-4">
+            <p className="text-sm">{experiment.realLifeNote}</p>
+          </div>
+          <div>
+            <h3 className="font-bold text-sm mb-1.5">Go Further</h3>
+            <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+              {experiment.extensions.map((e, i) => <li key={i}>{e}</li>)}
+            </ul>
+          </div>
+          {submitError && <p className="text-xs text-red-600 font-medium">{submitError}</p>}
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="btn-brutal w-full py-3 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PartyPopper className="w-4 h-4" />} Save Lab Report
+          </button>
+        </div>
+      )}
+
+      {experiment && phase === 'done' && (
+        <div className="glass-card rounded-3xl p-8 text-center space-y-4">
+          <PartyPopper className="w-10 h-10 text-primary-600 mx-auto" />
+          <h2 className="font-display text-xl font-semibold">Lab Report Saved!</h2>
+          <p className="text-sm text-slate-500">Your {experiment.title} attempt is saved to Physics Lab.</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {attemptId && (
+              <button
+                onClick={() => downloadPhysicsAttemptPdf(attemptId)}
+                className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl text-sm flex items-center gap-2"
+              >
+                <Printer className="w-4 h-4" /> Download PDF
+              </button>
+            )}
+            <Link href="/physics-lab" className="btn-brutal px-5 py-2.5 border-2 border-slate-200 dark:border-slate-800 font-bold rounded-xl text-sm">
+              Back to Physics Lab
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, LogOut, BookOpen, ClipboardList, Cpu, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, LogOut, BookOpen, ClipboardList, Cpu, FlaskConical, Atom } from 'lucide-react';
 import { useWizardStore } from '@/store/useWizardStore';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
 import { Logo } from '@/components/Logo';
@@ -29,6 +29,7 @@ export default function Sidebar() {
     // requireRole gate).
     { href: '/tech-lab', label: 'Tech Lab', icon: Cpu },
     { href: '/chem-lab', label: 'Chem Lab', icon: FlaskConical },
+    { href: '/physics-lab', label: 'Physics Lab', icon: Atom },
     ...(isTeacherOrParent ? [
       { href: '/study-material', label: 'Study Material', icon: BookOpen },
       { href: '/activity-sheet', label: 'Activity Sheet', icon: ClipboardList },
@@ -43,7 +44,7 @@ export default function Sidebar() {
         <Logo size={36} />
         <div className="min-w-0">
           <span className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-white leading-tight block truncate">
-            Bosket&apos;s EduSheet
+            Bosket&apos;s EDStudio
           </span>
           <span className="block text-[10px] text-primary-600 dark:text-primary-300 font-bold uppercase tracking-wider">AI Study Companion</span>
         </div>

@@ -353,7 +353,7 @@ export default function ProfilePage() {
             <div>
               <h2 className="font-display text-xl font-semibold flex items-center gap-2"><Cpu className="w-5 h-5" /> AI Provider</h2>
               <p className="text-sm text-slate-500 mt-1">
-                Bosket&apos;s EduSheet doesn&apos;t come with a built-in AI key &mdash; add your own from any supported provider below to generate worksheets and projects.
+                Bosket&apos;s EDStudio doesn&apos;t come with a built-in AI key &mdash; add your own from any supported provider below to generate worksheets and projects.
               </p>
             </div>
 

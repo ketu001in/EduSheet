@@ -26,7 +26,7 @@ export function AiKeyBanner() {
         </div>
         <div>
           <h3 className="font-bold text-amber-900 dark:text-amber-200 text-sm">Add your AI key to start generating</h3>
-          <p className="text-xs text-amber-700 dark:text-amber-400">Bosket&apos;s EduSheet uses your own key from Groq, OpenAI, or Gemini &mdash; free options are available.</p>
+          <p className="text-xs text-amber-700 dark:text-amber-400">Bosket&apos;s EDStudio uses your own key from Groq, OpenAI, or Gemini &mdash; free options are available.</p>
         </div>
       </div>
       <Link

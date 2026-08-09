@@ -2,29 +2,23 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Sparkles, FlaskConical, Grid3x3, BarChart3, Wrench, Beaker, Trash2, Printer,
-  Eye, X, Loader2, RefreshCw, Check, Atom, Orbit,
+  Sparkles, Atom, Trash2, Printer, Eye, X, Loader2, RefreshCw, Check, Waves,
 } from 'lucide-react';
 import {
-  fetchChemAttempts, fetchChemAttempt, deleteChemAttempt, downloadChemAttemptPdf,
-  regenerateChemAttemptPdf, ChemAttemptSummary, ChemAttemptDetail,
-} from '@/lib/chemLab';
-import { CHEMISTRY_EXPERIMENTS } from '@edusheets/content';
+  fetchPhysicsAttempts, fetchPhysicsAttempt, deletePhysicsAttempt, downloadPhysicsAttemptPdf,
+  regeneratePhysicsAttemptPdf, PhysicsAttemptSummary, PhysicsAttemptDetail,
+} from '@/lib/physicsLab';
+import { PHYSICS_EXPERIMENTS } from '@edusheets/content';
 
 const QUICK_LINKS = [
-  { href: '/chem-lab/new', label: 'New Experiment', icon: Sparkles, accent: 'bg-primary-600 text-white' },
-  { href: '/chem-lab/periodic-table', label: 'Periodic Table', icon: Grid3x3, accent: 'bg-white dark:bg-slate-800' },
-  { href: '/chem-lab/charts', label: 'Reference Charts', icon: BarChart3, accent: 'bg-white dark:bg-slate-800' },
-  { href: '/chem-lab/equipment', label: 'Equipment Studio', icon: Wrench, accent: 'bg-white dark:bg-slate-800' },
-  { href: '/chem-lab/free-mix', label: 'Free Mix Sandbox', icon: Beaker, accent: 'bg-white dark:bg-slate-800' },
-  { href: '/chem-lab/aromatic', label: 'Aromatic Chemistry', icon: Atom, accent: 'bg-white dark:bg-slate-800' },
-  { href: '/chem-lab/atomic', label: 'Atomic Chemistry', icon: Orbit, accent: 'bg-white dark:bg-slate-800' },
+  { href: '/physics-lab/new', label: 'New Experiment', icon: Sparkles, accent: 'bg-primary-600 text-white' },
+  { href: '/physics-lab/playground', label: 'Free Play Sandbox', icon: Waves, accent: 'bg-white dark:bg-slate-800' },
 ];
 
-export default function ChemLabPage() {
-  const [attempts, setAttempts] = useState<ChemAttemptSummary[]>([]);
+export default function PhysicsLabPage() {
+  const [attempts, setAttempts] = useState<PhysicsAttemptSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selected, setSelected] = useState<ChemAttemptDetail | null>(null);
+  const [selected, setSelected] = useState<PhysicsAttemptDetail | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -32,16 +26,16 @@ export default function ChemLabPage() {
   const [regeneratingPdf, setRegeneratingPdf] = useState(false);
 
   useEffect(() => {
-    fetchChemAttempts()
+    fetchPhysicsAttempts()
       .then((res) => setAttempts(res.data))
-      .catch((err) => console.error('Failed to load Chem Lab attempts:', err))
+      .catch((err) => console.error('Failed to load Physics Lab attempts:', err))
       .finally(() => setIsLoading(false));
   }, []);
 
-  const openAttempt = async (a: ChemAttemptSummary) => {
+  const openAttempt = async (a: PhysicsAttemptSummary) => {
     setLoadingId(a.id);
     try {
-      const res = await fetchChemAttempt(a.id);
+      const res = await fetchPhysicsAttempt(a.id);
       setSelected(res.data);
     } catch (err) {
       console.error('Failed to load attempt:', err);
@@ -54,7 +48,7 @@ export default function ChemLabPage() {
     if (!confirm('Delete this lab report?')) return;
     setDeletingId(id);
     try {
-      await deleteChemAttempt(id);
+      await deletePhysicsAttempt(id);
       setAttempts((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
       console.error('Failed to delete attempt:', err);
@@ -67,7 +61,7 @@ export default function ChemLabPage() {
     setPdfError(null);
     setDownloadingPdf(true);
     try {
-      await downloadChemAttemptPdf(id);
+      await downloadPhysicsAttemptPdf(id);
     } catch {
       setPdfError('The PDF isn\'t ready yet -- try regenerating it below.');
     } finally {
@@ -79,7 +73,7 @@ export default function ChemLabPage() {
     setPdfError(null);
     setRegeneratingPdf(true);
     try {
-      await regenerateChemAttemptPdf(id);
+      await regeneratePhysicsAttemptPdf(id);
     } catch {
       setPdfError('Regeneration failed. Please try again in a moment.');
     } finally {
@@ -90,11 +84,11 @@ export default function ChemLabPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2"><FlaskConical className="w-7 h-7 text-primary-600" /> Chem Lab</h1>
-        <p className="text-slate-500 text-sm">Drag-and-drop chemistry experiments, a periodic table, reference charts, and an equipment studio -- {CHEMISTRY_EXPERIMENTS.length} curated experiments and counting.</p>
+        <h1 className="text-3xl font-bold flex items-center gap-2"><Atom className="w-7 h-7 text-primary-600" /> Physics Lab</h1>
+        <p className="text-slate-500 text-sm">Real, animated physics simulations -- curriculum-guided experiments plus a free-play sandbox -- {PHYSICS_EXPERIMENTS.length} curated experiments and counting.</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 gap-3 max-w-md">
         {QUICK_LINKS.map((l) => {
           const Icon = l.icon;
           return (
@@ -119,11 +113,11 @@ export default function ChemLabPage() {
         ) : attempts.length === 0 ? (
           <div className="glass-card p-12 rounded-3xl text-center max-w-md mx-auto space-y-4">
             <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 text-primary-600 rounded-2xl flex items-center justify-center mx-auto">
-              <FlaskConical className="w-8 h-8" />
+              <Atom className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold">No Experiments Yet</h3>
             <p className="text-sm text-slate-500">Run your first experiment to get a saved lab report here.</p>
-            <Link href="/chem-lab/new" className="inline-flex items-center gap-2 btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl text-sm">
+            <Link href="/physics-lab/new" className="inline-flex items-center gap-2 btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl text-sm">
               <Sparkles className="w-4 h-4" /> Start an Experiment
             </Link>
           </div>

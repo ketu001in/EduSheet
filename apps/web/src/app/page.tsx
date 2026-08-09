@@ -13,7 +13,7 @@ export default function Home() {
       <header className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between relative z-20">
         <div className="flex items-center gap-3">
           <Logo size={40} />
-          <span className="font-display text-xl sm:text-2xl font-semibold tracking-tight">Bosket&apos;s EduSheet</span>
+          <span className="font-display text-xl sm:text-2xl font-semibold tracking-tight">Bosket&apos;s EDStudio</span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -29,17 +29,17 @@ export default function Home() {
       {/* Hero Section */}
       <section className="max-w-5xl mx-auto px-6 pt-16 pb-24 text-center relative z-10 space-y-8">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-900/30 border-2 border-slate-900 dark:border-primary-700 text-xs font-bold text-primary-700 dark:text-primary-300 tracking-wide uppercase">
-          <Sparkles className="w-4 h-4 text-secondary-500" /> AI Worksheet Generator for CBSE, Classes 1&ndash;10
+          <Sparkles className="w-4 h-4 text-secondary-500" /> AI Learning Platform for CBSE &amp; ICSE, Classes 1&ndash;12
         </div>
 
         <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight leading-[1.08] text-balance">
-          Every worksheet your child needs,
+          Every worksheet, project, and lab
           <br />
-          <span className="text-gradient">checked and ready in seconds</span>
+          <span className="text-gradient">your child needs, ready in seconds</span>
         </h1>
 
         <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed">
-          Curriculum-accurate practice papers, complete answer keys, and instructor-quality PDFs &mdash; built for CBSE students, parents, and teachers.
+          Curriculum-accurate worksheets, study material, and hands-on Tech &amp; Chem Labs, with instructor-quality PDFs &mdash; built for CBSE &amp; ICSE students, parents, and teachers.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -147,7 +147,7 @@ export default function Home() {
           <div className="flex items-center gap-2.5">
             <Logo size={24} />
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              <span className="font-bold text-slate-700 dark:text-slate-300">Bosket&apos;s EduSheet</span> &bull; Developed by Bosket&apos;s Tech Ventures &bull; v1.0 &copy; {new Date().getFullYear()}
+              <span className="font-bold text-slate-700 dark:text-slate-300">Bosket&apos;s EDStudio</span> &bull; Developed by Bosket&apos;s Tech Ventures &bull; v1.0 &copy; {new Date().getFullYear()}
             </div>
           </div>
           <div className="flex gap-6 text-xs font-medium text-slate-500 dark:text-slate-400">

@@ -22,8 +22,8 @@ const fredoka = Fredoka({ subsets: ["latin"], variable: "--font-display", weight
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["500", "600"] });
 
 export const metadata: Metadata = {
-  title: "Bosket's EduSheet - AI CBSE Worksheet Generator",
-  description: "AI-powered CBSE worksheet platform by Bosket's Tech Ventures. Generate curriculum-aligned worksheets for Classes 1-10 in seconds.",
+  title: "Bosket's EDStudio - AI Learning Platform for CBSE & ICSE",
+  description: "AI-powered learning platform by Bosket's Tech Ventures -- worksheets, study material, Tech Lab, and Chem Lab for CBSE and ICSE, Classes 1-12.",
 };
 
 export default function RootLayout({

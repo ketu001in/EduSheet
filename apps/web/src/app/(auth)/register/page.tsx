@@ -53,7 +53,7 @@ export default function RegisterPage() {
     <div className="space-y-6">
       <div className="text-center md:text-left mb-8">
         <h2 className="font-display text-3xl font-semibold mb-2">Create an account</h2>
-        <p className="text-slate-500 dark:text-slate-400">Join EduSheets and start generating worksheets.</p>
+        <p className="text-slate-500 dark:text-slate-400">Join Bosket&apos;s EDStudio and start generating worksheets, projects, and labs.</p>
       </div>
 
       {error && (

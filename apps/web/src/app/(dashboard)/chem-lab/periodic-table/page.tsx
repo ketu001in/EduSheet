@@ -1,8 +1,12 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, X, Search, Thermometer, Layers, Hash, Scale, Flame, Wind, History } from 'lucide-react';
+import {
+  ChevronLeft, ChevronRight, X, Search, Thermometer, Layers, Hash, Scale,
+  Flame, Wind, History, Volume2, VolumeX,
+} from 'lucide-react';
 import { PERIODIC_TABLE, PeriodicElement } from '@edusheets/content';
+import { isSpeechSupported, speak, stopSpeaking } from '@/lib/speech';
 
 const CATEGORY_COLOR: Record<string, string> = {
   'alkali metal': 'bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-800 text-red-800 dark:text-red-300',
@@ -29,10 +33,26 @@ function colorFor(category: string) {
   return CATEGORY_COLOR[category] || CATEGORY_COLOR.unknown;
 }
 
+// One flowing spoken paragraph built from the same facts already shown on
+// the card -- narrated as a story rather than a stat sheet is genuinely a
+// different (and fuller-feeling) way to take the information in, without
+// risking 118 hand-written "bonus facts" drifting out of sync with the
+// data on screen.
+function composeNarration(el: PeriodicElement): string {
+  const stateLine = el.state === 'unknown (synthetic)'
+    ? "So little of it has ever been made that nobody actually knows what state it would be in at room temperature."
+    : `At room temperature, it's a ${el.state}, melting at ${el.meltingPointC} degrees and boiling at ${el.boilingPointC} degrees Celsius.`;
+  return `${el.name}, symbol ${el.symbol}. This is element number ${el.atomicNumber} on the periodic table, part of the ${el.category} family. ${stateLine} ${el.discovery}. ${el.summary}`;
+}
+
 export default function PeriodicTablePage() {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selected, setSelected] = useState<PeriodicElement | null>(null);
+  const [speechReady, setSpeechReady] = useState(false);
+  const [speaking, setSpeaking] = useState<'name' | 'full' | null>(null);
+
+  useEffect(() => setSpeechReady(isSpeechSupported()), []);
 
   const mainRows = PERIODIC_TABLE.filter((e) => e.group !== null);
   const lanthanides = PERIODIC_TABLE.filter((e) => e.category === 'lanthanide');
@@ -50,12 +70,38 @@ export default function PeriodicTablePage() {
   const isFiltering = !!normalizedQuery || !!activeCategory;
   const matchCount = useMemo(() => PERIODIC_TABLE.filter(matches).length, [normalizedQuery, activeCategory]);
 
-  const openElement = (el: PeriodicElement) => setSelected(el);
+  const announceName = (el: PeriodicElement) => {
+    if (!speechReady) return;
+    setSpeaking('name');
+    speak(el.name, { onEnd: () => setSpeaking((s) => (s === 'name' ? null : s)) });
+  };
+
+  const openElement = (el: PeriodicElement) => {
+    setSelected(el);
+    announceName(el);
+  };
   const navigate = (dir: 1 | -1) => {
     if (!selected) return;
     const next = PERIODIC_TABLE.find((e) => e.atomicNumber === selected.atomicNumber + dir);
-    if (next) setSelected(next);
+    if (next) { setSelected(next); announceName(next); }
   };
+  const closeModal = () => {
+    stopSpeaking();
+    setSpeaking(null);
+    setSelected(null);
+  };
+  const toggleFullNarration = () => {
+    if (!selected) return;
+    if (speaking === 'full') {
+      stopSpeaking();
+      setSpeaking(null);
+      return;
+    }
+    setSpeaking('full');
+    speak(composeNarration(selected), { onEnd: () => setSpeaking((s) => (s === 'full' ? null : s)) });
+  };
+
+  useEffect(() => () => stopSpeaking(), []);
 
   return (
     <div className="max-w-6xl mx-auto pb-16 space-y-6">
@@ -96,7 +142,9 @@ export default function PeriodicTablePage() {
 
       <div>
         <h1 className="font-display text-3xl font-semibold mb-2">Periodic Table</h1>
-        <p className="text-slate-500 text-sm">Search, filter by category, or tap any element for the full picture.</p>
+        <p className="text-slate-500 text-sm">
+          Search, filter by category, or tap any element for the full picture{speechReady ? ' -- it talks back too' : ''}.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -122,9 +170,9 @@ export default function PeriodicTablePage() {
                 key={el.atomicNumber}
                 onClick={() => openElement(el)}
                 style={{ gridColumn: el.group as number, gridRow: el.period }}
-                className={`aspect-square rounded-md border text-left p-1 transition-all duration-150 ${colorFor(el.category)} ${
+                className={`periodic-tile aspect-square rounded-md border text-left p-1 transition-all duration-200 ease-out ${colorFor(el.category)} ${
                   active
-                    ? 'hover:scale-110 hover:shadow-lg opacity-100'
+                    ? 'hover:shadow-lg hover:shadow-current/30 hover:-translate-y-0.5 opacity-100 cursor-pointer'
                     : 'opacity-20 hover:opacity-40'
                 } ${isFiltering && active ? 'ring-2 ring-primary-500 z-10 scale-105' : ''}`}
               >
@@ -146,8 +194,8 @@ export default function PeriodicTablePage() {
                 <button
                   key={el.atomicNumber}
                   onClick={() => openElement(el)}
-                  className={`w-[46px] aspect-square rounded-md border text-left p-1 transition-all duration-150 ${colorFor(el.category)} ${
-                    active ? 'hover:scale-110 opacity-100' : 'opacity-20 hover:opacity-40'
+                  className={`periodic-tile w-[46px] aspect-square rounded-md border text-left p-1 transition-all duration-200 ease-out ${colorFor(el.category)} ${
+                    active ? 'hover:shadow-lg hover:shadow-current/30 hover:-translate-y-0.5 opacity-100' : 'opacity-20 hover:opacity-40'
                   } ${isFiltering && active ? 'ring-2 ring-primary-500 scale-105' : ''}`}
                 >
                   <span className="block text-[8px] font-medium opacity-70">{el.atomicNumber}</span>
@@ -166,8 +214,8 @@ export default function PeriodicTablePage() {
                 <button
                   key={el.atomicNumber}
                   onClick={() => openElement(el)}
-                  className={`w-[46px] aspect-square rounded-md border text-left p-1 transition-all duration-150 ${colorFor(el.category)} ${
-                    active ? 'hover:scale-110 opacity-100' : 'opacity-20 hover:opacity-40'
+                  className={`periodic-tile w-[46px] aspect-square rounded-md border text-left p-1 transition-all duration-200 ease-out ${colorFor(el.category)} ${
+                    active ? 'hover:shadow-lg hover:shadow-current/30 hover:-translate-y-0.5 opacity-100' : 'opacity-20 hover:opacity-40'
                   } ${isFiltering && active ? 'ring-2 ring-primary-500 scale-105' : ''}`}
                 >
                   <span className="block text-[8px] font-medium opacity-70">{el.atomicNumber}</span>
@@ -181,11 +229,11 @@ export default function PeriodicTablePage() {
 
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelected(null)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={closeModal} />
           <div className="relative w-full max-w-md max-h-[90vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-y-auto animate-in zoom-in-95 fade-in duration-200">
             <div className={`p-8 pb-10 rounded-t-3xl ${colorFor(selected.category)} border-b-4 border-current/20`}>
               <div className="flex justify-end mb-6">
-                <button onClick={() => setSelected(null)} className="p-2 rounded-full bg-white/50 dark:bg-black/20 hover:bg-white/80 transition-colors">
+                <button onClick={closeModal} className="p-2 rounded-full bg-white/50 dark:bg-black/20 hover:bg-white/80 transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -194,7 +242,7 @@ export default function PeriodicTablePage() {
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <div className="text-center">
-                  <div className="w-24 h-24 mx-auto rounded-3xl border-2 border-current/30 bg-white/60 dark:bg-black/20 flex flex-col items-center justify-center mb-4">
+                  <div className={`w-24 h-24 mx-auto rounded-3xl border-2 border-current/30 bg-white/60 dark:bg-black/20 flex flex-col items-center justify-center mb-4 transition-shadow ${speaking === 'name' ? 'periodic-speaking' : ''}`}>
                     <span className="text-[10px] font-bold opacity-70">{selected.atomicNumber}</span>
                     <span className="text-4xl font-bold leading-none">{selected.symbol}</span>
                   </div>
@@ -205,6 +253,17 @@ export default function PeriodicTablePage() {
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
+
+              {speechReady && (
+                <div className="flex justify-center mt-5">
+                  <button
+                    onClick={toggleFullNarration}
+                    className="btn-brutal px-4 py-2 bg-white/80 dark:bg-black/30 rounded-xl text-xs font-bold flex items-center gap-2"
+                  >
+                    {speaking === 'full' ? <><VolumeX className="w-4 h-4" /> Stop</> : <><Volume2 className="w-4 h-4" /> Listen to the Full Story</>}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="p-8 space-y-6">

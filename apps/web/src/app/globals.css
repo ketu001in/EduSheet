@@ -20,7 +20,7 @@
 @custom-variant dark (&:is(.dark, .dark *));
 
 /*
-  Bosket's EduSheet brand palette -- "Recess" (chosen 2026-08, direction 03
+  Bosket's EDStudio brand palette -- "Recess" (chosen 2026-08, direction 03
   of 4 pitched design directions). Confident, chunky, kid-facing energy:
   flat saturated colors, thick black outlines, hard offset shadows (no
   blur) instead of soft drop-shadows. See globals.css's .glass-card and
@@ -228,6 +228,81 @@ html[data-font="merriweather"] body { --font-sans: var(--font-merriweather), Geo
 }
 @media (prefers-reduced-motion: reduce) {
   .chem-bubble, .chem-fizzing, .chem-flame, .chem-precipitate, .chem-gas-wisp { animation: none; }
+}
+
+/* Periodic table -- a playful little wiggle on hover and a snappy pop on
+   click/tap, so exploring the table feels alive rather than a flat grid of
+   buttons. Kept as its own small vocabulary, reused nowhere else. */
+@keyframes periodic-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1.12); }
+  25% { transform: rotate(-4deg) scale(1.12); }
+  75% { transform: rotate(4deg) scale(1.12); }
+}
+.periodic-tile:hover {
+  animation: periodic-wiggle 0.5s ease-in-out;
+}
+@keyframes periodic-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+.periodic-tile:active {
+  animation: periodic-pop 0.25s ease-out;
+}
+@keyframes periodic-speaking-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(47, 95, 224, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(47, 95, 224, 0); }
+}
+.periodic-speaking {
+  animation: periodic-speaking-pulse 1.2s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .periodic-tile:hover, .periodic-tile:active, .periodic-speaking { animation: none; }
+}
+
+/* Chem Lab lab bench -- a slow pulsing glow that marks "this is the one you
+   need right now" on both the correct reagent bottle and its target
+   apparatus at once, so the two visually pair up without needing a literal
+   arrow between them. And a quick tilt-and-splash on the target the instant
+   a correct drop lands, so pouring reads as an action, not a state flip. */
+@keyframes chem-needed-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(47, 95, 224, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(47, 95, 224, 0.15); }
+}
+.chem-needed {
+  animation: chem-needed-glow 1.6s ease-in-out infinite;
+}
+@keyframes chem-pour-tilt {
+  0% { transform: rotate(0deg); }
+  30% { transform: rotate(-6deg); }
+  55% { transform: rotate(3deg); }
+  100% { transform: rotate(0deg); }
+}
+.chem-pouring {
+  animation: chem-pour-tilt 0.5s ease-in-out;
+}
+@keyframes chem-bottle-hold {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50% { transform: rotate(-8deg) translateY(-3px); }
+}
+.chem-bottle-overlay {
+  animation: chem-bottle-hold 0.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chem-needed, .chem-pouring, .chem-bottle-overlay { animation: none; }
+}
+
+/* Physics Lab -- hover glow for clickable apparatus in the SVG stage.
+   filter/drop-shadow (not box-shadow) since these are SVG <g> elements. */
+@keyframes physics-hotspot-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(47, 95, 224, 0.5)); }
+  50% { filter: drop-shadow(0 0 7px rgba(47, 95, 224, 0.85)); }
+}
+.physics-hotspot-glow {
+  animation: physics-hotspot-glow 1.1s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .physics-hotspot-glow { animation: none; }
 }
 
 /* Custom Scrollbars */

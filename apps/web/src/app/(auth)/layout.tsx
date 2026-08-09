@@ -17,11 +17,11 @@ export default function AuthLayout({
           <div className="p-2 bg-white rounded-xl border-[3px] border-slate-900">
             <Logo size={32} />
           </div>
-          <span className="font-display text-2xl font-semibold tracking-tight">Bosket&apos;s EduSheet</span>
+          <span className="font-display text-2xl font-semibold tracking-tight">Bosket&apos;s EDStudio</span>
         </div>
         <div className="relative z-10 max-w-lg">
-          <h1 className="font-display text-4xl font-semibold mb-6 leading-tight text-balance">Every worksheet, checked and ready in seconds</h1>
-          <p className="text-lg text-primary-50">AI-generated, curriculum-aligned CBSE practice papers for Classes 1&ndash;10 &mdash; with full answer keys, built for students, parents, and teachers.</p>
+          <h1 className="font-display text-4xl font-semibold mb-6 leading-tight text-balance">Worksheets, projects, and hands-on labs, ready in seconds</h1>
+          <p className="text-lg text-primary-50">AI-generated, curriculum-aligned CBSE &amp; ICSE learning material for Classes 1&ndash;12 &mdash; with full answer keys, built for students, parents, and teachers.</p>
         </div>
         <div className="relative z-10 text-xs text-primary-100">
           &copy; {new Date().getFullYear()} Bosket&apos;s Tech Ventures &bull; v1.0
@@ -33,7 +33,7 @@ export default function AuthLayout({
         <div className="w-full max-w-md glass-card rounded-3xl p-8">
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <Logo size={32} />
-            <span className="font-display text-xl font-semibold">Bosket&apos;s EduSheet</span>
+            <span className="font-display text-xl font-semibold">Bosket&apos;s EDStudio</span>
           </div>
           {children}
         </div>

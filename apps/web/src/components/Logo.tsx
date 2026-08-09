@@ -3,7 +3,7 @@ interface LogoProps {
   className?: string;
 }
 
-// The Bosket's EduSheet mark: a graduation cap over a checked worksheet page,
+// The Bosket's EDStudio mark: a graduation cap over a checked worksheet page,
 // on a rounded tile. Kept to simple primitives (rect/line/circle/path/polygon)
 // so the exact same geometry can be re-drawn with react-pdf's <Svg> primitives
 // for the generated PDF header — see apps/api/src/services/pdfService.tsx.
@@ -17,7 +17,7 @@ export function Logo({ size = 32, className = '' }: LogoProps) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Bosket's EduSheet"
+      aria-label="Bosket's EDStudio"
     >
       <rect width="32" height="32" rx="8" fill="#2F5FE0" stroke="#1A1A1A" strokeWidth="1.4" />
       {/* Worksheet page */}

@@ -2,8 +2,8 @@ import React from 'react';
 import path from 'path';
 import { Document, Page, Text, View, StyleSheet, renderToStream, Svg, Rect, Line, Circle, Ellipse, Path, Polygon, Defs, LinearGradient, Stop, Font, Image } from '@react-pdf/renderer';
 import type { DiagramSpec, DiagramShape, DiagramLabelPoint } from '@edusheets/ai';
-import type { ChemistryExperiment } from '@edusheets/content';
-import { CHEM_REAGENTS, CHEM_EQUIPMENT } from '@edusheets/content';
+import type { ChemistryExperiment, PhysicsExperiment } from '@edusheets/content';
+import { CHEM_REAGENTS, CHEM_EQUIPMENT, PHYSICS_EQUIPMENT } from '@edusheets/content';
 
 // Helvetica (react-pdf's default) is a base-14 PDF font with Latin glyphs
 // only -- Hindi/Sanskrit worksheets are generated in Devanagari script, and
@@ -469,7 +469,7 @@ const WorksheetDocument = ({ worksheet, questions, isAnswerKey }: { worksheet: W
       {/* Letterhead mark -- fixed so it repeats on every page, top right */}
       <View style={styles.brandMark} fixed>
         <PdfLogo />
-        <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+        <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
       </View>
 
       {/* Header */}
@@ -540,7 +540,7 @@ const WorksheetDocument = ({ worksheet, questions, isAnswerKey }: { worksheet: W
 
       {/* Footer */}
       <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
-        `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
       )} fixed />
     </Page>
   </Document>
@@ -589,7 +589,7 @@ const ProjectDocument = ({ project, sections, bibliography }: { project: Project
       <View style={styles.pageBorder} fixed />
       <View style={styles.brandMark} fixed>
         <PdfLogo />
-        <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+        <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
       </View>
 
       <View style={styles.header}>
@@ -623,7 +623,7 @@ const ProjectDocument = ({ project, sections, bibliography }: { project: Project
       )}
 
       <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
-        `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
       )} fixed />
     </Page>
   </Document>
@@ -682,7 +682,7 @@ const StudyMaterialDocument = ({ material, sections }: { material: ProjectMeta; 
       <View style={styles.pageBorder} fixed />
       <View style={styles.brandMark} fixed>
         <PdfLogo />
-        <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+        <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
       </View>
 
       <View style={styles.header}>
@@ -709,7 +709,7 @@ const StudyMaterialDocument = ({ material, sections }: { material: ProjectMeta; 
       ))}
 
       <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
-        `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
       )} fixed />
     </Page>
   </Document>
@@ -745,7 +745,7 @@ const ActivitySheetDocument = ({ meta, activity }: { meta: ProjectMeta; activity
       <View style={styles.pageBorder} fixed />
       <View style={styles.brandMark} fixed>
         <PdfLogo />
-        <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+        <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
       </View>
 
       <View style={styles.header}>
@@ -802,7 +802,7 @@ const ActivitySheetDocument = ({ meta, activity }: { meta: ProjectMeta; activity
       )}
 
       <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
-        `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
       )} fixed />
     </Page>
   </Document>
@@ -927,7 +927,7 @@ const TechProjectDocument = ({ meta, content }: { meta: TechProjectMeta; content
       <View style={styles.pageBorder} fixed />
       <View style={styles.brandMark} fixed>
         <PdfLogo />
-        <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+        <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
       </View>
 
       <View style={styles.header}>
@@ -1042,7 +1042,7 @@ const TechProjectDocument = ({ meta, content }: { meta: TechProjectMeta; content
       )}
 
       <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
-        `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
       )} fixed />
     </Page>
   </Document>
@@ -1094,7 +1094,7 @@ const ChemLabReportDocument = ({
         <View style={styles.pageBorder} fixed />
         <View style={styles.brandMark} fixed>
           <PdfLogo />
-          <Text style={styles.brandName}>Bosket&apos;s EduSheet</Text>
+          <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
         </View>
 
         <View style={styles.header}>
@@ -1194,7 +1194,7 @@ const ChemLabReportDocument = ({
         )}
 
         <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
-          `Bosket's EduSheet • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+          `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
         )} fixed />
       </Page>
     </Document>
@@ -1210,5 +1210,157 @@ export const generateLabReportPDF = async (
 ): Promise<Buffer> => {
   return renderToBuffer(
     <ChemLabReportDocument meta={meta} experiment={experiment} observations={observations} predictAnswerIndex={predictAnswerIndex} predictCorrect={predictCorrect} />
+  );
+};
+
+// -----------------------------------------------------------------------
+// Physics Lab report -- same model as the Chem Lab report above: the
+// experiment script (steps, formula, safety notes) comes straight from
+// packages/content's curated, hand-authored data (see physicsTypes.ts's
+// header comment). Only the student's own predict-answer, typed
+// observations, and the simulation parameters they ended up testing are
+// per-user data.
+interface PhysicsLabReportMeta {
+  class?: string;
+  language?: string;
+}
+
+const physicsLabStyles = chemLabStyles;
+
+const PhysicsLabReportDocument = ({
+  meta, experiment, observations, predictAnswerIndex, predictCorrect, finalParams,
+}: {
+  meta: PhysicsLabReportMeta;
+  experiment: PhysicsExperiment;
+  observations: Record<string, string>;
+  predictAnswerIndex: number;
+  predictCorrect: boolean;
+  finalParams: Record<string, number>;
+}) => {
+  const apparatusNames = experiment.apparatusIds.map((id) => PHYSICS_EQUIPMENT.find((a) => a.id === id)?.name || id);
+
+  return (
+    <Document>
+      <Page size="A4" style={isDevanagariLanguage(meta.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+        <View style={styles.pageBorder} fixed />
+        <View style={styles.brandMark} fixed>
+          <PdfLogo />
+          <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
+        </View>
+
+        <View style={styles.header}>
+          <View style={styles.headerCol}>
+            <Text>Student Name: _________________</Text>
+            <Text>Class: {meta.class || '___'}</Text>
+          </View>
+          <View style={styles.headerCol}>
+            <Text>Date: _________________</Text>
+            <Text>Physics Lab Report</Text>
+          </View>
+        </View>
+
+        <Text style={styles.title}>{experiment.title}</Text>
+
+        <View style={styles.section}>
+          <Text style={physicsLabStyles.sectionHeading}>Purpose</Text>
+          <Text style={{ textAlign: 'justify' }}>{experiment.purpose}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={physicsLabStyles.sectionHeading}>Prediction</Text>
+          <View style={[physicsLabStyles.predictBox, predictCorrect ? physicsLabStyles.predictCorrect : physicsLabStyles.predictIncorrect]}>
+            <Text style={{ marginBottom: 4 }}>{experiment.predictPrompt}</Text>
+            <Text style={{ fontWeight: 'bold' }}>Student answered: {experiment.predictOptions[predictAnswerIndex] || '-'}</Text>
+            <Text>Correct answer: {experiment.predictOptions[experiment.correctPredictIndex]}</Text>
+            <Text style={{ marginTop: 2, fontWeight: 'bold' }}>{predictCorrect ? 'Correct prediction!' : 'Prediction did not match -- a normal part of learning through experiment.'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={physicsLabStyles.sectionHeading}>Apparatus Used</Text>
+          <View style={physicsLabStyles.chipRow}>
+            {apparatusNames.map((n, i) => <Text key={`a-${i}`} style={physicsLabStyles.chip}>{n}</Text>)}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={physicsLabStyles.sectionHeading}>Steps Followed</Text>
+          {experiment.steps.map((s) => (
+            <Text key={s.number} style={{ marginBottom: 4 }}>{s.number}. {s.instruction}</Text>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={physicsLabStyles.sectionHeading}>Formula</Text>
+          <Text style={{ fontFamily: 'Courier', marginBottom: 6 }}>{experiment.formula}</Text>
+          <View style={physicsLabStyles.chipRow}>
+            {experiment.paramConfig.map((pc) => (
+              <Text key={pc.key} style={physicsLabStyles.chip}>{pc.label}: {finalParams[pc.key] ?? experiment.defaultParams[pc.key]} {pc.unit}</Text>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={physicsLabStyles.sectionHeading}>Explanation</Text>
+          <Text style={{ textAlign: 'justify' }}>{experiment.explanation}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={physicsLabStyles.sectionHeading}>Student Observations</Text>
+          {experiment.observationPrompts.map((prompt, i) => (
+            <View key={i} style={physicsLabStyles.observationBox}>
+              <Text style={physicsLabStyles.observationPrompt}>{prompt}</Text>
+              <Text style={physicsLabStyles.observationAnswer}>{observations[String(i)] || observations[i as unknown as string] || '(not answered)'}</Text>
+            </View>
+          ))}
+        </View>
+
+        {experiment.realWorldApplications.length > 0 && (
+          <View style={styles.section}>
+            <Text style={physicsLabStyles.sectionHeading}>Real-World Applications</Text>
+            {experiment.realWorldApplications.map((a, i) => <Text key={i} style={{ marginBottom: 2 }}>• {a}</Text>)}
+          </View>
+        )}
+
+        {experiment.safetyNotes.length > 0 && (
+          <View style={styles.section}>
+            <View style={physicsLabStyles.safetyBox}>
+              <Text style={physicsLabStyles.safetyLabel}>SAFETY NOTES</Text>
+              {experiment.safetyNotes.map((n, i) => <Text key={i} style={{ marginBottom: 2 }}>• {n}</Text>)}
+            </View>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <View style={physicsLabStyles.noteBox}>
+            <Text>{experiment.realLifeNote}</Text>
+          </View>
+        </View>
+
+        {experiment.extensions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={physicsLabStyles.sectionHeading}>Go Further</Text>
+            {experiment.extensions.map((e, i) => <Text key={i} style={{ marginBottom: 2 }}>• {e}</Text>)}
+          </View>
+        )}
+
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+          `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        )} fixed />
+      </Page>
+    </Document>
+  );
+};
+
+export const generatePhysicsLabReportPDF = async (
+  meta: PhysicsLabReportMeta,
+  experiment: PhysicsExperiment,
+  observations: Record<string, string>,
+  predictAnswerIndex: number,
+  predictCorrect: boolean,
+  finalParams: Record<string, number>
+): Promise<Buffer> => {
+  return renderToBuffer(
+    <PhysicsLabReportDocument meta={meta} experiment={experiment} observations={observations} predictAnswerIndex={predictAnswerIndex} predictCorrect={predictCorrect} finalParams={finalParams} />
   );
 };

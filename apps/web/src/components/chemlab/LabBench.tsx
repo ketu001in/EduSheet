@@ -1,14 +1,13 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { DndContext, useDraggable, useDroppable, DragEndEvent } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
+import { DndContext, useDraggable, useDroppable, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import {
   ChemistryExperiment, CHEM_EQUIPMENT, CHEM_REAGENTS, ExperimentStep,
 } from '@edusheets/content';
 import {
   Check, ChevronRight, FlaskConical, Sparkles, AlertTriangle, ShieldAlert,
   Wrench, Lightbulb, HelpCircle, Send, Loader2, NotebookText, ClipboardCheck,
-  Beaker, ChevronsDown,
+  Beaker, ChevronsDown, FlaskRound,
 } from 'lucide-react';
 import { ReactionStage } from './ReactionStage';
 
@@ -29,41 +28,57 @@ function vesselDisplayName(id: string): string {
   return instance ? `${name} ${instance}` : name;
 }
 
-function ReagentBottle({ id, name, disabled }: { id: string; name: string; disabled?: boolean }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `reagent:${id}`, disabled });
-  const style = transform ? { transform: CSS.Translate.toString(transform), zIndex: 50 } : undefined;
+function ReagentBottle({ id, name, disabled, isNeeded }: { id: string; name: string; disabled?: boolean; isNeeded?: boolean }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `reagent:${id}`, disabled });
   return (
     <button
       ref={setNodeRef}
-      style={style}
       {...listeners}
       {...attributes}
       disabled={disabled}
       className={`shrink-0 px-3 py-2.5 rounded-xl border-2 text-left transition-all select-none touch-none ${
         disabled
           ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/40 text-slate-400 cursor-not-allowed'
+          : isNeeded
+          ? 'chem-needed border-primary-600 bg-primary-50 dark:bg-primary-900/20 cursor-grab active:cursor-grabbing scale-105'
           : 'border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing hover:shadow-[3px_3px_0_var(--color-ink)]'
-      } ${isDragging ? 'opacity-50' : ''}`}
+      } ${isDragging ? 'opacity-30' : ''}`}
     >
-      <span className="block text-xs font-bold whitespace-nowrap">{name}</span>
+      <span className="flex items-center gap-1.5 text-xs font-bold whitespace-nowrap">
+        {isNeeded && <FlaskRound className="w-3.5 h-3.5 shrink-0" />} {name}
+      </span>
     </button>
   );
 }
 
-function ApparatusZone({ id, name, isTarget, isDone }: { id: string; name: string; isTarget?: boolean; isDone?: boolean }) {
+// The floating visual that follows the pointer/finger while dragging --
+// tilted like it's actually being tipped to pour, so picking a bottle up
+// and carrying it to the beaker reads as a real action instead of an
+// abstract element sliding around.
+function DraggedBottlePreview({ name }: { name: string }) {
+  return (
+    <div className="chem-bottle-overlay px-3 py-2.5 rounded-xl border-2 border-primary-600 bg-white dark:bg-slate-800 shadow-2xl flex items-center gap-1.5 cursor-grabbing">
+      <FlaskRound className="w-4 h-4 text-primary-600 shrink-0" />
+      <span className="text-xs font-bold whitespace-nowrap">{name}</span>
+    </div>
+  );
+}
+
+function ApparatusZone({ id, name, isTarget, isDone, isPouring }: { id: string; name: string; isTarget?: boolean; isDone?: boolean; isPouring?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: `apparatus:${id}`, disabled: isDone });
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[160px] rounded-2xl border-2 p-3 text-center transition-all ${
+      className={`flex-1 min-w-[160px] rounded-2xl border-2 p-3 text-center transition-all ${isPouring ? 'chem-pouring' : ''} ${
         isOver
-          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20 shadow-[4px_4px_0_var(--color-ink)]'
+          ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20 shadow-[4px_4px_0_var(--color-ink)] scale-105'
           : isTarget
-          ? 'border-primary-400 dark:border-primary-600 border-dashed bg-primary-50/40 dark:bg-primary-900/10'
+          ? 'chem-needed border-primary-500 dark:border-primary-500 bg-primary-50/40 dark:bg-primary-900/10'
           : 'border-slate-200 dark:border-slate-800'
       }`}
     >
       <p className="text-xs font-bold text-slate-600 dark:text-slate-300">{name}</p>
+      {isTarget && !isDone && <p className="text-[10px] text-primary-600 dark:text-primary-400 font-bold mt-0.5">↓ pour here</p>}
       {isDone && <p className="text-[10px] text-accent-600 dark:text-accent-400 font-bold mt-0.5">✓ already used</p>}
     </div>
   );
@@ -122,6 +137,8 @@ export function LabBench({ experiment, onComplete, submitting }: LabBenchProps) 
   const [benchOrder, setBenchOrder] = useState<string[]>([]);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [stepDone, setStepDone] = useState(false);
+  const [draggingReagentId, setDraggingReagentId] = useState<string | null>(null);
+  const [pouringVesselId, setPouringVesselId] = useState<string | null>(null);
 
   const apparatus = useMemo(
     () => experiment.apparatusIds.map((id) => {
@@ -168,7 +185,12 @@ export function LabBench({ experiment, onComplete, submitting }: LabBenchProps) 
     setStepDone(true);
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setDraggingReagentId(String(event.active.id).replace('reagent:', ''));
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setDraggingReagentId(null);
     setHint(null);
     const { active, over } = event;
     if (!over || !currentStep) return;
@@ -176,6 +198,8 @@ export function LabBench({ experiment, onComplete, submitting }: LabBenchProps) 
     const droppedOn = String(over.id).replace('apparatus:', '');
     if (droppedReagent === currentStep.dragReagentId && droppedOn === currentStep.dragTargetApparatusId) {
       completeCurrentStep(droppedOn);
+      setPouringVesselId(droppedOn);
+      setTimeout(() => setPouringVesselId(null), 500);
     } else {
       setHint(currentStep.hint || 'Not quite -- check the instruction above for which reagent and apparatus this step needs.');
     }
@@ -307,14 +331,20 @@ export function LabBench({ experiment, onComplete, submitting }: LabBenchProps) 
             "down off the shelf and into the beaker" always feels like the
             same real place rather than a UI that reshuffles every step. */}
         <div className={`glass-card rounded-3xl p-6 md:p-8 space-y-6 transition-opacity ${stepDone ? 'opacity-50 pointer-events-none' : ''}`}>
-          <DndContext onDragEnd={handleDragEnd}>
+          <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div>
               <p className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wide flex items-center gap-1.5">
-                <Beaker className="w-3.5 h-3.5" /> Chemical Shelf -- drag one down onto your equipment below
+                <Beaker className="w-3.5 h-3.5" /> Chemical Shelf -- pick up the glowing bottle and carry it down to your equipment
               </p>
               <div className="flex flex-wrap gap-2 bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-3 border border-slate-200 dark:border-slate-800">
                 {reagents.map((r) => (
-                  <ReagentBottle key={r.id} id={r.id} name={r.name} disabled={!stepNeedsDrag} />
+                  <ReagentBottle
+                    key={r.id}
+                    id={r.id}
+                    name={r.name}
+                    disabled={!stepNeedsDrag}
+                    isNeeded={stepNeedsDrag && r.id === currentStep.dragReagentId}
+                  />
                 ))}
               </div>
             </div>
@@ -335,6 +365,7 @@ export function LabBench({ experiment, onComplete, submitting }: LabBenchProps) 
                     name={a.name}
                     isTarget={stepNeedsDrag && a.id === currentStep.dragTargetApparatusId}
                     isDone={benchOrder.includes(a.id) && a.id !== currentStep.dragTargetApparatusId}
+                    isPouring={pouringVesselId === a.id}
                   />
                 ))}
               </div>
@@ -346,6 +377,10 @@ export function LabBench({ experiment, onComplete, submitting }: LabBenchProps) 
                 </div>
               )}
             </div>
+
+            <DragOverlay dropAnimation={null}>
+              {draggingReagentId ? <DraggedBottlePreview name={reagents.find((r) => r.id === draggingReagentId)?.name || ''} /> : null}
+            </DragOverlay>
           </DndContext>
         </div>
 
