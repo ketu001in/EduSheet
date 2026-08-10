@@ -24,6 +24,7 @@ import searchRoutes from './routes/searchRoutes';
 import adminRoutes from './routes/adminRoutes';
 import navConfigRoutes from './routes/navConfigRoutes';
 import siteSettingsRoutes from './routes/siteSettingsRoutes';
+import contentRoutes from './routes/contentRoutes';
 
 import path from 'path';
 // Only meaningful for local dev (tsx runs this as CommonJS, where
@@ -74,6 +75,7 @@ app.use('/api/biology-lab', biologyLabRoutes);
 app.use('/api/math-lab', mathLabRoutes);
 app.use('/api/nav-config', navConfigRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);
+app.use('/api/content', contentRoutes);
 app.use('/api/behavior', behaviorRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/notifications', notificationRoutes);

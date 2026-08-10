@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ChevronDown, Info } from 'lucide-react';
 import { MATH_HISTORY_FIGURES } from '@edusheets/content';
 import SpeakButton from '@/components/labshared/SpeakButton';
+import { useContent } from '@/lib/useContent';
 
 // Mirrors Biology Lab's Anatomy Explorer format: real, license-verified
 // images with click-to-explore content and voice narration. Differs in one
@@ -13,8 +14,14 @@ import SpeakButton from '@/components/labshared/SpeakButton';
 // why an explicit honesty note about each image's real vs. tribute status
 // is shown for every figure.
 export default function AncientMathExplorer() {
+  // CMS Phase 2: merges in any admin edits from /admin/content live -- see
+  // lib/useContent.ts. An admin can edit any figure's text/achievements,
+  // or point imageSrc at a different hosted image URL; there's no upload
+  // UI here, so a genuinely new image still needs the same real,
+  // license-verified sourcing process as the ones already in this file.
+  const figures = useContent('math-history-figure', MATH_HISTORY_FIGURES);
   const [figureId, setFigureId] = useState(MATH_HISTORY_FIGURES[0].id);
-  const figure = MATH_HISTORY_FIGURES.find((f) => f.id === figureId) || MATH_HISTORY_FIGURES[0];
+  const figure = figures.find((f) => f.id === figureId) || figures[0];
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const changeFigure = (id: string) => {
@@ -25,7 +32,7 @@ export default function AncientMathExplorer() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
-        {MATH_HISTORY_FIGURES.map((f) => (
+        {figures.map((f) => (
           <button
             key={f.id}
             onClick={() => changeFigure(f.id)}

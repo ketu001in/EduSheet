@@ -387,6 +387,28 @@ CREATE TABLE public.site_settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8l. content_overrides -- CMS Phase 2. Every curated lab item (theorems,
+-- formulas, experiments, anatomy hotspots, Vedic sutras, historical
+-- figures, etc.) still lives in packages/content as hand-authored,
+-- verified TypeScript data -- that discipline doesn't change. This table
+-- adds an admin-editable LAYER on top: at runtime, the app fetches any
+-- rows matching a given content_type and merges them over the static base
+-- array (see apps/web/src/lib/useContent.ts) -- override an existing
+-- item's fields by matching item_key to its static `id`, add a brand-new
+-- item with an item_key that doesn't match anything static, or
+-- soft-delete (hide) a static item without touching the source file.
+CREATE TABLE public.content_overrides (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  content_type TEXT NOT NULL,
+  item_key TEXT NOT NULL,
+  data JSONB, -- NULL when deleted=true (a pure "hide this static item" row)
+  deleted BOOLEAN NOT NULL DEFAULT false,
+  updated_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (content_type, item_key)
+);
+
 -- 9. worksheet_questions
 CREATE TABLE public.worksheet_questions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -559,6 +581,7 @@ CREATE TRIGGER set_biology_experiment_attempts_updated_at BEFORE UPDATE ON publi
 CREATE TRIGGER set_math_experiment_attempts_updated_at BEFORE UPDATE ON public.math_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_nav_items_updated_at BEFORE UPDATE ON public.nav_items FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_site_settings_updated_at BEFORE UPDATE ON public.site_settings FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_content_overrides_updated_at BEFORE UPDATE ON public.content_overrides FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_user_behavior_updated_at BEFORE UPDATE ON public.user_behavior FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_parent_children_updated_at BEFORE UPDATE ON public.parent_children FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_teacher_classrooms_updated_at BEFORE UPDATE ON public.teacher_classrooms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
@@ -612,6 +635,7 @@ ALTER TABLE public.biology_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.math_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.nav_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.content_overrides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
@@ -787,6 +811,14 @@ CREATE POLICY "Site settings SELECT for everyone" ON public.site_settings FOR SE
 USING (true);
 
 CREATE POLICY "Site settings ALL for admin" ON public.site_settings FOR ALL TO authenticated
+USING (is_admin()) WITH CHECK (is_admin());
+
+-- Content Overrides (CMS Phase 2) -- every logged-in user reads the merged
+-- content (their app needs the overridden values); only admins can write.
+CREATE POLICY "Content overrides SELECT for authenticated" ON public.content_overrides FOR SELECT TO authenticated
+USING (true);
+
+CREATE POLICY "Content overrides ALL for admin" ON public.content_overrides FOR ALL TO authenticated
 USING (is_admin()) WITH CHECK (is_admin());
 
 -- Worksheet Questions

@@ -12,6 +12,7 @@ import VedicMathLab from '@/components/mathlab/VedicMathLab';
 import AncientMathExplorer from '@/components/mathlab/AncientMathExplorer';
 import GraphingCalculator from '@/components/mathlab/GraphingCalculator';
 import SpeakButton from '@/components/labshared/SpeakButton';
+import { useContent } from '@/lib/useContent';
 
 type Section = 'games' | 'experiments' | 'theorems' | 'formulas' | 'geometry' | 'vedic' | 'history' | 'grapher';
 
@@ -36,6 +37,10 @@ const SECTIONS: { id: Section; label: string; icon: typeof Calculator }[] = [
 // narration (SpeakButton) throughout.
 export default function MathLabPage() {
   const [section, setSection] = useState<Section>('games');
+  // CMS Phase 2: merges in any admin edits from /admin/content live, on
+  // top of the curated static base -- see lib/useContent.ts.
+  const theorems = useContent('math-theorem', MATH_THEOREMS);
+  const formulas = useContent('math-formula', MATH_FORMULAS);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-16">
@@ -72,8 +77,8 @@ export default function MathLabPage() {
       {section === 'games' && <MathGamesArcade />}
       {section === 'experiments' && <ExperimentPlayground />}
       {section === 'grapher' && <GraphingCalculator />}
-      {section === 'theorems' && <TheoremCorner theorems={MATH_THEOREMS} />}
-      {section === 'formulas' && <FormulaReference formulas={MATH_FORMULAS} />}
+      {section === 'theorems' && <TheoremCorner theorems={theorems} />}
+      {section === 'formulas' && <FormulaReference formulas={formulas} />}
       {section === 'geometry' && <GeometryExplorer />}
       {section === 'vedic' && <VedicMathLab />}
       {section === 'history' && <AncientMathExplorer />}

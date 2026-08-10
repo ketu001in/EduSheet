@@ -4,6 +4,7 @@ import { Info } from 'lucide-react';
 import { VEDIC_SUTRAS, VEDIC_MATH_HISTORICITY_NOTE, VedicSutra } from '@edusheets/content';
 import SpeakButton from '@/components/labshared/SpeakButton';
 import { ekadhikenaSquare, urdhvaTiryagbhyam, nikhilamMultiply } from '@/lib/vedicMathEngine';
+import { useContent } from '@/lib/useContent';
 
 function SutraHeader({ sutra }: { sutra: VedicSutra }) {
   return (
@@ -114,8 +115,16 @@ function NikhilamCalculator({ sutra }: { sutra: VedicSutra }) {
 }
 
 export default function VedicMathLab() {
+  // CMS Phase 2: merges in any admin edits from /admin/content live -- see
+  // lib/useContent.ts. Editing an existing sutra's text works fully; a
+  // brand-new admin-added sutra shows its text but falls back to a plain
+  // message below instead of a calculator, since each calculator here is
+  // real, hand-verified arithmetic specific to that one sutra (see
+  // vedicMathEngine.ts) -- not something that can be generated generically
+  // for an arbitrary new sutra without the same verification rigor.
+  const sutras = useContent('vedic-sutra', VEDIC_SUTRAS);
   const [activeId, setActiveId] = useState(VEDIC_SUTRAS[0].id);
-  const active = VEDIC_SUTRAS.find((s) => s.id === activeId) || VEDIC_SUTRAS[0];
+  const active = sutras.find((s) => s.id === activeId) || sutras[0];
 
   return (
     <div className="space-y-4">
@@ -125,7 +134,7 @@ export default function VedicMathLab() {
       </div>
 
       <div className="flex flex-wrap gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
-        {VEDIC_SUTRAS.map((s) => (
+        {sutras.map((s) => (
           <button
             key={s.id}
             onClick={() => setActiveId(s.id)}
@@ -139,6 +148,12 @@ export default function VedicMathLab() {
       {active.id === 'ekadhikena-purvena' && <EkadhikenaCalculator sutra={active} />}
       {active.id === 'urdhva-tiryagbhyam' && <UrdhvaCalculator sutra={active} />}
       {active.id === 'nikhilam' && <NikhilamCalculator sutra={active} />}
+      {!['ekadhikena-purvena', 'urdhva-tiryagbhyam', 'nikhilam'].includes(active.id) && (
+        <div className="glass-card rounded-3xl p-5 md:p-7 space-y-4">
+          <SutraHeader sutra={active} />
+          <p className="text-xs text-slate-400">This sutra doesn&apos;t have an interactive calculator built yet -- only the three above do, each hand-verified against thousands of test cases (see the code comments in lib/vedicMathEngine.ts).</p>
+        </div>
+      )}
     </div>
   );
 }
