@@ -20,3 +20,5 @@ export * from './mathTypes';
 export * from './mathTheorems';
 export * from './mathFormulas';
 export * from './mathExperiments';
+export * from './vedicMathSutras';
+export * from './mathHistoryFigures';

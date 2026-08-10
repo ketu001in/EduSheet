@@ -1,35 +1,39 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Calculator, Ruler, BookOpenCheck, Sparkles, Gamepad2, FlaskConical, ArrowRight } from 'lucide-react';
+import { Calculator, Ruler, BookOpenCheck, Sparkles, Gamepad2, FlaskConical, ArrowRight, Scroll, Landmark, LineChart } from 'lucide-react';
 import { MATH_THEOREMS, MATH_FORMULAS } from '@edusheets/content';
 import TheoremCorner from '@/components/mathlab/TheoremCorner';
 import FormulaReference from '@/components/mathlab/FormulaReference';
 import GeometryExplorer from '@/components/mathlab/GeometryExplorer';
 import MathGamesArcade from '@/components/mathlab/MathGamesArcade';
 import ExperimentPlayground from '@/components/mathlab/ExperimentPlayground';
+import VedicMathLab from '@/components/mathlab/VedicMathLab';
+import AncientMathExplorer from '@/components/mathlab/AncientMathExplorer';
+import GraphingCalculator from '@/components/mathlab/GraphingCalculator';
 import SpeakButton from '@/components/labshared/SpeakButton';
 
-type Section = 'games' | 'experiments' | 'theorems' | 'formulas' | 'geometry';
+type Section = 'games' | 'experiments' | 'theorems' | 'formulas' | 'geometry' | 'vedic' | 'history' | 'grapher';
 
 const SECTIONS: { id: Section; label: string; icon: typeof Calculator }[] = [
   { id: 'games', label: 'Math Games', icon: Gamepad2 },
   { id: 'experiments', label: 'Free Play Experiments', icon: FlaskConical },
+  { id: 'grapher', label: 'Graphing Calculator', icon: LineChart },
   { id: 'theorems', label: 'Theorem Corner', icon: BookOpenCheck },
   { id: 'formulas', label: 'Formula Reference', icon: Calculator },
   { id: 'geometry', label: 'Geometry Explorer', icon: Ruler },
+  { id: 'vedic', label: 'Vedic Mathematics', icon: Scroll },
+  { id: 'history', label: 'Ancient Mathematics', icon: Landmark },
 ];
 
 // Math Lab -- CBSE/ICSE-aligned, all classes. Phase 1 shipped the Theorem
-// Corner, Formula Reference, and Geometry Explorer; Phase 2 adds a Math
-// Games arcade for the younger grades and a guided Predict -> Explore ->
-// Explain New Experiment flow (six curated experiments spanning early
-// through senior bands), plus this free-play version of the same
-// experiments with no script and no persistence. Vedic Mathematics and an
-// Ancient Mathematics explorer (mirroring Anatomy Explorer's real-image
-// format) are clearly-flagged next passes -- see the note below rather
-// than silently missing, same discipline as every other lab's phased
-// rollout.
+// Corner, Formula Reference, and Geometry Explorer; Phase 2 added a Math
+// Games arcade, a guided Predict -> Explore -> Explain New Experiment flow,
+// and its free-play counterpart; Phase 3 adds Vedic Mathematics, an
+// Ancient Mathematics explorer (real, license-verified images, same
+// discipline as Anatomy Explorer), and a cubic Graphing Calculator for
+// deeper open-ended play. All eight sections share the same voice
+// narration (SpeakButton) throughout.
 export default function MathLabPage() {
   const [section, setSection] = useState<Section>('games');
 
@@ -38,9 +42,9 @@ export default function MathLabPage() {
       <div>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <h1 className="text-3xl font-bold flex items-center gap-2"><Calculator className="w-7 h-7 text-primary-600" /> Math Lab</h1>
-          <SpeakButton text="Welcome to Math Lab! Play quick drill games, run a guided experiment with a real prediction to test, step through real theorem proofs, look up formulas with worked examples, and drag points on live geometry constructions to see the rules prove themselves." />
+          <SpeakButton text="Welcome to Math Lab! Play quick drill games, run a guided experiment with a real prediction to test, graph any cubic curve, step through real theorem proofs, look up formulas with worked examples, drag points on live geometry constructions, try genuine Vedic mental-math tricks, and meet the real mathematicians behind it all." />
         </div>
-        <p className="text-slate-500 text-sm">Real CBSE and ICSE mathematics -- drill games for younger grades, guided experiments, step-by-step theorem proofs, a quick-lookup formula reference, and drag-to-prove geometry constructions.</p>
+        <p className="text-slate-500 text-sm">Real CBSE and ICSE mathematics -- drill games, guided experiments, a graphing calculator, theorem proofs, a formula reference, geometry constructions, Vedic mental-math, and the real history behind it all.</p>
       </div>
 
       <Link
@@ -67,16 +71,12 @@ export default function MathLabPage() {
 
       {section === 'games' && <MathGamesArcade />}
       {section === 'experiments' && <ExperimentPlayground />}
+      {section === 'grapher' && <GraphingCalculator />}
       {section === 'theorems' && <TheoremCorner theorems={MATH_THEOREMS} />}
       {section === 'formulas' && <FormulaReference formulas={MATH_FORMULAS} />}
       {section === 'geometry' && <GeometryExplorer />}
-
-      <div className="glass-card rounded-2xl p-5 flex items-start gap-3 bg-amber-50/50 dark:bg-amber-950/10">
-        <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          More is on the way: a Vedic Mathematics section with genuine mental-math sutras, an Ancient Mathematics explorer with real portraits of Aryabhata, Brahmagupta, Bhaskara II, and Ramanujan, and a deeper Free Play zone with a full graphing calculator.
-        </p>
-      </div>
+      {section === 'vedic' && <VedicMathLab />}
+      {section === 'history' && <AncientMathExplorer />}
     </div>
   );
 }
