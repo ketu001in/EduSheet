@@ -178,6 +178,34 @@ html[data-font="merriweather"] body { --font-sans: var(--font-merriweather), Geo
   }
 }
 
+/* Deliberately OUTSIDE any @layer -- per the CSS cascade layers spec,
+   un-layered rules always beat layered ones (like Tailwind's own utilities
+   and everything in `@layer utilities` above) regardless of source order,
+   which is what guarantees these two actually win wherever they're used
+   instead of quietly losing to `lg:p-8` or a future Tailwind version's
+   internal ordering.
+
+   MobileNav's bottom tab bar sits flush with the screen edge -- on an
+   iPhone with a home-indicator gesture bar, that pushes the tap targets
+   right into the gesture area. `pb-safe` was referenced there but never
+   actually defined, so it was a silent no-op; this makes it real. Added on
+   top of (not eaten out of) the bar's min-height, so the icons don't get
+   visually squeezed on notched devices. `pb-safe-nav` is the matching
+   bottom padding for the dashboard's scrollable content area, so the last
+   bit of every page isn't hidden behind the (now taller-on-notched-devices)
+   bottom nav bar. */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pb-safe-nav {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) {
+  .pb-safe-nav {
+    padding-bottom: 2rem;
+  }
+}
+
 /* Chem Lab reaction-stage animations -- small, closed vocabulary of visual
    effects driven by ReactionVisualState (packages/content), reused by every
    curated experiment rather than any per-experiment custom animation. */
@@ -357,5 +385,22 @@ html[data-font="merriweather"] body { --font-sans: var(--font-merriweather), Geo
 
   .print\:page-break-before {
     page-break-before: always;
+  }
+}
+
+/* Mobile nav drawer (MobileMenu) -- slide in from the left, backdrop fades
+   in alongside it. */
+@keyframes mobile-drawer-slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes mobile-drawer-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[mobile-drawer-slide-in_0\.22s_ease-out\],
+  .animate-\[mobile-drawer-fade_0\.2s_ease-out\] {
+    animation: none;
   }
 }

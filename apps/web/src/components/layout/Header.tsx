@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { api } from '@/lib/api';
 import { useLogout } from '@/hooks/useLogout';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import MobileMenu from './MobileMenu';
 
 interface NotificationRow {
   id: string;
@@ -107,9 +108,10 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 border-b-[3px] border-slate-900 dark:border-[#FDF3D9] bg-surface-light dark:bg-surface-dark flex items-center justify-between px-6 sticky top-0 z-40 transition-colors">
-      <div className="flex-1 max-w-md">
-        <div className="relative">
+    <header className="h-16 border-b-[3px] border-slate-900 dark:border-[#FDF3D9] bg-surface-light dark:bg-surface-dark flex items-center justify-between gap-2 px-3 sm:px-6 sticky top-0 z-40 transition-colors">
+      <div className="flex items-center gap-1 sm:gap-3 flex-1 min-w-0">
+        <MobileMenu />
+        <div className="relative flex-1 min-w-0 max-w-md">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
@@ -121,7 +123,7 @@ export default function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3 shrink-0">
         <button
           onClick={toggleDarkMode}
           title="Toggle Dark Mode"

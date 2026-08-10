@@ -1,42 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, LogOut, BookOpen, ClipboardList, Cpu, FlaskConical, Atom } from 'lucide-react';
-import { useWizardStore } from '@/store/useWizardStore';
-import { useWorksheetStore } from '@/store/useWorksheetStore';
+import { LogOut } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useLogout } from '@/hooks/useLogout';
 import { NavLinkContent } from './NavLinkContent';
+import { useNavItems } from './navItems';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
-  const resetWizard = useWizardStore((s) => s.reset);
-  const role = useWorksheetStore((s) => s.userProfile.role);
-  // Additive: students keep exactly today's flow. Teachers/parents get
-  // everything students get, plus Study Material. See middleware/auth.ts's
-  // requireRole for the server-side enforcement this UI gating mirrors.
-  const isTeacherOrParent = role === 'teacher' || role === 'parent';
-
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/generate', label: 'Generate', icon: Sparkles, onClick: resetWizard },
-    { href: '/worksheets', label: 'My Worksheets', icon: FileText },
-    { href: '/projects', label: 'My Projects', icon: FileStack },
-    // Tech Lab (Robotics/AI/Coding) is open to every role -- unlike Study
-    // Material/Activity Sheet, students build these for themselves too. See
-    // apps/api/src/routes/techProjectRoutes.ts (requireAuth only, no
-    // requireRole gate).
-    { href: '/tech-lab', label: 'Tech Lab', icon: Cpu },
-    { href: '/chem-lab', label: 'Chem Lab', icon: FlaskConical },
-    { href: '/physics-lab', label: 'Physics Lab', icon: Atom },
-    ...(isTeacherOrParent ? [
-      { href: '/study-material', label: 'Study Material', icon: BookOpen },
-      { href: '/activity-sheet', label: 'Activity Sheet', icon: ClipboardList },
-    ] : []),
-    { href: '/favorites', label: 'Favorites', icon: Heart },
-    { href: '/profile', label: 'Profile', icon: User },
-  ];
+  const navItems = useNavItems();
 
   return (
     <aside className="w-64 border-r-[3px] border-slate-900 dark:border-[#FDF3D9] bg-surface-light dark:bg-surface-dark flex-col h-full hidden lg:flex select-none transition-colors">
