@@ -119,17 +119,10 @@ export function projectileState(t: number, p: ProjectileParams) {
   return { x, y, landed };
 }
 
-// ---------------------------------------------------------------------------
-// Shared: exponential ease-toward-target, used by every "settles into
-// equilibrium" scene below (a lever tipping until it balances, an object
-// sinking/floating to its resting depth, two magnets sliding together or
-// apart) so the visual eases smoothly toward its target state each frame
-// instead of snapping there instantly.
-// ---------------------------------------------------------------------------
-export function easeToward(current: number, target: number, dtSeconds: number, rate = 4): number {
-  const factor = 1 - Math.exp(-rate * dtSeconds);
-  return current + (target - current) * factor;
-}
+// easeToward moved to simEngine.ts (shared across every lab's engine, not
+// physics-specific) -- re-exported here so existing imports of it from
+// '@/lib/physicsEngine' keep working unchanged.
+export { easeToward } from './simEngine';
 
 // ---------------------------------------------------------------------------
 // Lever & Principle of Moments

@@ -119,6 +119,23 @@ export const uploadPhysicsLabReportPDF = async (userId: string, attemptId: strin
   return path;
 };
 
+export const uploadBiologyLabReportPDF = async (userId: string, attemptId: string, buffer: Buffer): Promise<string> => {
+  const path = `biology-lab-reports/${userId}/${attemptId}.pdf`;
+
+  const { error } = await supabaseAdmin.storage
+    .from('worksheets')
+    .upload(path, buffer, {
+      contentType: 'application/pdf',
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Failed to upload Biology Lab report PDF: ${error.message}`);
+  }
+
+  return path;
+};
+
 export const getSignedURL = async (path: string, expiresIn = 3600): Promise<string> => {
   const { data, error } = await supabaseAdmin.storage
     .from('worksheets')

@@ -1,0 +1,106 @@
+import { BiologyEquipment } from './biologyTypes';
+
+// Curated apparatus for the first Biology Lab pass (Nutrition/Food Tests,
+// Cell Biology, Ecology, Genetics). Every deepDive paragraph is a real,
+// verifiable fact about the equipment or technique -- shown when a student
+// clicks a piece of apparatus and taps "Deep Dive".
+export const BIOLOGY_EQUIPMENT: BiologyEquipment[] = [
+  {
+    id: 'microscope',
+    name: 'Compound Microscope',
+    category: 'cell-biology',
+    description: 'Uses two lenses (an eyepiece and an objective) to magnify a thin specimen far beyond what the naked eye can see.',
+    deepDive: 'A "compound" microscope gets its name from combining two lenses -- the objective lens near the specimen does the first stage of magnification, and the eyepiece magnifies that image again. Multiplying the two gives the total magnification, e.g. a 10x eyepiece with a 40x objective gives 400x overall.',
+  },
+  {
+    id: 'glass-slide',
+    name: 'Glass Slide & Cover Slip',
+    category: 'cell-biology',
+    description: 'A thin specimen is placed on the slide, then covered with a cover slip to flatten it and keep it in place under the lens.',
+    deepDive: "A drop of water (or iodine solution, to stain the specimen) is added before the cover slip goes on -- this stops air bubbles from forming, which would otherwise show up as distracting circular shapes under the microscope.",
+  },
+  {
+    id: 'onion-peel',
+    name: 'Onion Peel Specimen',
+    category: 'cell-biology',
+    description: 'A single, transparent layer peeled from the inside of an onion scale -- thin enough for light to pass through, making it a classic first specimen for viewing real plant cells.',
+    deepDive: "Onion cells are a favorite first specimen precisely because the peel is naturally only ONE cell thick and comes away easily -- most other plant tissue has to be cut into thin sections with a blade first, which is much harder to do well.",
+  },
+  {
+    id: 'test-tube-food',
+    name: 'Test Tube',
+    category: 'human-biology',
+    description: 'Holds a small sample of mashed or crushed food for a reagent to be added to.',
+    deepDive: 'Food samples are usually mashed with a little water first -- this exposes more surface area to the reagent, so the color-change reaction (if any) happens faster and more visibly than testing a solid chunk directly.',
+  },
+  {
+    id: 'iodine-solution-bio',
+    name: 'Iodine Solution',
+    category: 'human-biology',
+    description: 'A reagent used to test for starch -- turns blue-black in its presence.',
+    deepDive: "Iodine molecules slot INSIDE the coiled, spiral shape of a starch molecule (amylose), and it's that specific fit that produces the blue-black color -- other carbohydrates like simple sugars aren't coiled the same way, so iodine doesn't change color with them.",
+  },
+  {
+    id: 'benedicts-solution',
+    name: "Benedict's Solution",
+    category: 'human-biology',
+    description: "A blue reagent used to test for reducing sugars (like glucose) -- turns brick-red when heated with a positive sample.",
+    deepDive: "Benedict's test needs HEAT to work -- the copper sulfate in the blue solution only reacts with a reducing sugar and forms the brick-red copper oxide precipitate when gently boiled together, which is why a water bath is part of this test.",
+  },
+  {
+    id: 'biuret-reagent',
+    name: 'Biuret Reagent',
+    category: 'human-biology',
+    description: 'A reagent used to test for proteins -- turns violet/purple in their presence.',
+    deepDive: 'The color change happens because copper ions in the reagent form a complex specifically with peptide bonds -- the links between amino acids in a protein chain. No peptide bonds, no color change, which is what makes this test specific to proteins rather than other biomolecules.',
+  },
+  {
+    id: 'sudan-iii-reagent',
+    name: 'Sudan III Solution',
+    category: 'human-biology',
+    description: 'A reagent used to test for fats -- stains fat droplets red, or a "grease spot" test can be done without it.',
+    deepDive: "The simplest fat test needs no chemical at all: rub the food on plain paper -- fats leave a translucent, permanent grease spot that doesn't dry up or disappear, unlike a plain water mark which evaporates.",
+  },
+  {
+    id: 'potato-strip',
+    name: 'Potato Strip',
+    category: 'cell-biology',
+    description: 'A firm, uniformly-cut strip of raw potato used to visibly demonstrate osmosis by weighing or measuring it before and after soaking.',
+    deepDive: 'Potato is a favorite osmosis specimen because its cells are large, easy to cut into uniform strips, and firm enough that a size or weight change is easy to measure precisely -- the change is dramatic enough to see without a microscope.',
+  },
+  {
+    id: 'salt-solution',
+    name: 'Salt/Sugar Solution',
+    category: 'cell-biology',
+    description: 'Water with a dissolved solute at a known concentration, used as the surrounding solution in an osmosis experiment.',
+    deepDive: "The exact concentration matters a lot -- a solution just slightly more concentrated than the cell's own contents (hypertonic) pulls water out slowly, while a strongly concentrated one pulls water out fast enough to visibly shrink and stiffen the tissue within minutes.",
+  },
+  {
+    id: 'punnett-chart',
+    name: 'Punnett Square Grid',
+    category: 'genetics',
+    description: 'A 2x2 grid used to work out every possible combination of alleles two parents could pass to their offspring.',
+    deepDive: "Punnett squares work because of how alleles separate during the formation of egg and sperm cells (a process called meiosis) -- each parent contributes exactly ONE allele per gene to each offspring, and the grid simply lays out every combination of \"which one from each parent\" systematically.",
+  },
+  {
+    id: 'plant-cell-diagram',
+    name: 'Plant Cell Diagram',
+    category: 'cell-biology',
+    description: 'A labeled diagram showing the internal structures of a typical plant cell.',
+    deepDive: 'Plant cells have three structures animal cells lack entirely: a rigid cell wall (for structural support), a large central vacuole (for storage and maintaining pressure), and chloroplasts (for photosynthesis) -- these three differences explain most of what makes plants behave so differently from animals at a cellular level.',
+  },
+  {
+    id: 'digestive-system-diagram',
+    name: 'Human Digestive System Diagram',
+    category: 'human-biology',
+    description: 'A labeled diagram of the organs food passes through, from mouth to exit.',
+    deepDive: "The full path is roughly 9 metres long when straightened out -- coiled compactly inside the abdomen, it takes food anywhere from 24 to 72 hours to travel the entire route from end to end.",
+  },
+  {
+    id: 'food-chain-diagram',
+    name: 'Food Chain Diagram',
+    category: 'ecology',
+    description: 'A labeled diagram showing how energy flows from one organism to the next in an ecosystem.',
+    deepDive: "Only about 10% of the energy at one level of a food chain actually makes it to the next level (the rest is lost as heat through normal life processes) -- this \"10% rule\" is exactly why food chains rarely have more than 4-5 links: there simply isn't enough energy left to support a 6th.",
+  },
+];

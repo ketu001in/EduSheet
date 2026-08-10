@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { Document, Page, Text, View, StyleSheet, renderToStream, Svg, Rect, Line, Circle, Ellipse, Path, Polygon, Defs, LinearGradient, Stop, Font, Image } from '@react-pdf/renderer';
 import type { DiagramSpec, DiagramShape, DiagramLabelPoint } from '@edusheets/ai';
-import type { ChemistryExperiment, PhysicsExperiment } from '@edusheets/content';
-import { CHEM_REAGENTS, CHEM_EQUIPMENT, PHYSICS_EQUIPMENT } from '@edusheets/content';
+import type { ChemistryExperiment, PhysicsExperiment, BiologyExperiment } from '@edusheets/content';
+import { CHEM_REAGENTS, CHEM_EQUIPMENT, PHYSICS_EQUIPMENT, BIOLOGY_EQUIPMENT } from '@edusheets/content';
 
 // Helvetica (react-pdf's default) is a base-14 PDF font with Latin glyphs
 // only -- Hindi/Sanskrit worksheets are generated in Devanagari script, and
@@ -1383,5 +1383,164 @@ export const generatePhysicsLabReportPDF = async (
 ): Promise<Buffer> => {
   return renderToBuffer(
     <PhysicsLabReportDocument meta={meta} experiment={experiment} observations={observations} predictAnswerIndex={predictAnswerIndex} predictCorrect={predictCorrect} finalParams={finalParams} />
+  );
+};
+
+// -----------------------------------------------------------------------
+// Biology Lab report -- same model as the Physics/Chem Lab reports above:
+// the experiment script (steps, food-test results, genetics ratios, safety
+// notes) comes straight from packages/content's curated, hand-authored
+// data (see biologyTypes.ts's header comment). Only the student's own
+// predict-answer, typed observations, and the simulation parameters they
+// ended up testing are per-user data.
+interface BiologyLabReportMeta {
+  class?: string;
+  language?: string;
+}
+
+const biologyLabStyles = chemLabStyles;
+
+const BiologyLabReportDocument = ({
+  meta, experiment, observations, predictAnswerIndex, predictCorrect, finalParams,
+}: {
+  meta: BiologyLabReportMeta;
+  experiment: BiologyExperiment;
+  observations: Record<string, string>;
+  predictAnswerIndex: number;
+  predictCorrect: boolean;
+  finalParams: Record<string, number>;
+}) => {
+  const apparatusNames = experiment.apparatusIds.map((id) => BIOLOGY_EQUIPMENT.find((a) => a.id === id)?.name || id);
+
+  return (
+    <Document>
+      <Page size="A4" style={isDevanagariLanguage(meta.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+        <View style={styles.pageBorder} fixed />
+        <View style={styles.brandMark} fixed>
+          <PdfLogo />
+          <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
+        </View>
+
+        <View style={styles.header}>
+          <View style={styles.headerCol}>
+            <Text>Student Name: _________________</Text>
+            <Text>Class: {meta.class || '___'}</Text>
+          </View>
+          <View style={styles.headerCol}>
+            <Text>Date: _________________</Text>
+            <Text>Biology Lab Report</Text>
+          </View>
+        </View>
+
+        <Text style={styles.title}>{experiment.title}</Text>
+
+        <View style={styles.section}>
+          <Text style={biologyLabStyles.sectionHeading}>Purpose</Text>
+          <Text style={{ textAlign: 'justify' }}>{experiment.purpose}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={biologyLabStyles.sectionHeading}>Prediction</Text>
+          <View style={[biologyLabStyles.predictBox, predictCorrect ? biologyLabStyles.predictCorrect : biologyLabStyles.predictIncorrect]}>
+            <Text style={{ marginBottom: 4 }}>{experiment.predictPrompt}</Text>
+            <Text style={{ fontWeight: 'bold' }}>Student answered: {experiment.predictOptions[predictAnswerIndex] || '-'}</Text>
+            <Text>Correct answer: {experiment.predictOptions[experiment.correctPredictIndex]}</Text>
+            <Text style={{ marginTop: 2, fontWeight: 'bold' }}>{predictCorrect ? 'Correct prediction!' : 'Prediction did not match -- a normal part of learning through experiment.'}</Text>
+          </View>
+        </View>
+
+        {apparatusNames.length > 0 && (
+          <View style={styles.section}>
+            <Text style={biologyLabStyles.sectionHeading}>Apparatus Used</Text>
+            <View style={biologyLabStyles.chipRow}>
+              {apparatusNames.map((n, i) => <Text key={`a-${i}`} style={biologyLabStyles.chip}>{n}</Text>)}
+            </View>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <Text style={biologyLabStyles.sectionHeading}>Steps Followed</Text>
+          {experiment.steps.map((s) => (
+            <Text key={s.number} style={{ marginBottom: 4 }}>{s.number}. {s.instruction}</Text>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={biologyLabStyles.sectionHeading}>Key Idea</Text>
+          <Text style={{ marginBottom: 6 }}>{experiment.keyIdea}</Text>
+          {experiment.keyIdeaVars.length > 0 && (
+            <View style={biologyLabStyles.chipRow}>
+              {experiment.keyIdeaVars.map((key) => {
+                const cfg = experiment.paramConfig.find((p) => p.key === key);
+                const val = finalParams[key] ?? experiment.defaultParams[key];
+                const choiceLabel = cfg?.choices?.find((c) => c.value === val)?.label;
+                return <Text key={key} style={biologyLabStyles.chip}>{cfg?.label || key}: {choiceLabel || `${val}${cfg?.unit || ''}`}</Text>;
+              })}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={biologyLabStyles.sectionHeading}>Explanation</Text>
+          <Text style={{ textAlign: 'justify' }}>{experiment.explanation}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={biologyLabStyles.sectionHeading}>Student Observations</Text>
+          {experiment.observationPrompts.map((prompt, i) => (
+            <View key={i} style={biologyLabStyles.observationBox}>
+              <Text style={biologyLabStyles.observationPrompt}>{prompt}</Text>
+              <Text style={biologyLabStyles.observationAnswer}>{observations[String(i)] || observations[i as unknown as string] || '(not answered)'}</Text>
+            </View>
+          ))}
+        </View>
+
+        {experiment.realWorldApplications.length > 0 && (
+          <View style={styles.section}>
+            <Text style={biologyLabStyles.sectionHeading}>Real-World Applications</Text>
+            {experiment.realWorldApplications.map((a, i) => <Text key={i} style={{ marginBottom: 2 }}>• {a}</Text>)}
+          </View>
+        )}
+
+        {experiment.safetyNotes.length > 0 && (
+          <View style={styles.section}>
+            <View style={biologyLabStyles.safetyBox}>
+              <Text style={biologyLabStyles.safetyLabel}>SAFETY NOTES</Text>
+              {experiment.safetyNotes.map((n, i) => <Text key={i} style={{ marginBottom: 2 }}>• {n}</Text>)}
+            </View>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <View style={biologyLabStyles.noteBox}>
+            <Text>{experiment.realLifeNote}</Text>
+          </View>
+        </View>
+
+        {experiment.extensions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={biologyLabStyles.sectionHeading}>Go Further</Text>
+            {experiment.extensions.map((e, i) => <Text key={i} style={{ marginBottom: 2 }}>• {e}</Text>)}
+          </View>
+        )}
+
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+          `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        )} fixed />
+      </Page>
+    </Document>
+  );
+};
+
+export const generateBiologyLabReportPDF = async (
+  meta: BiologyLabReportMeta,
+  experiment: BiologyExperiment,
+  observations: Record<string, string>,
+  predictAnswerIndex: number,
+  predictCorrect: boolean,
+  finalParams: Record<string, number>
+): Promise<Buffer> => {
+  return renderToBuffer(
+    <BiologyLabReportDocument meta={meta} experiment={experiment} observations={observations} predictAnswerIndex={predictAnswerIndex} predictCorrect={predictCorrect} finalParams={finalParams} />
   );
 };

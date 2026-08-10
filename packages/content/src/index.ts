@@ -11,3 +11,7 @@ export * from './atomicChemistry';
 export * from './physicsTypes';
 export * from './physicsEquipment';
 export * from './physicsExperiments';
+export * from './biologyTypes';
+export * from './biologyEquipment';
+export * from './biologyExperiments';
+export * from './biologyFoodTests';

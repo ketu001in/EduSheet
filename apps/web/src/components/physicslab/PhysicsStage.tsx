@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { X, Volume2, VolumeX, ChevronDown } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { PHYSICS_EQUIPMENT, PhysicsSimType } from '@edusheets/content';
 import {
   pendulumSmallAngle, pendulumNonlinearStep, pendulumPeriodSmallAngle,
@@ -11,72 +11,10 @@ import {
 } from '@/lib/physicsEngine';
 import { playTick, playTwang, playThud, isSoundMuted, setSoundMuted } from '@/lib/sound';
 import { speak, isSpeechSupported } from '@/lib/speech';
+import { Hotspot, HoverLabel, EquipmentModal } from '@/components/labshared/LabHotspot';
 
 const PENDULUM_PX_PER_M = 80;
 const SPRING_PX_PER_M = 100;
-
-// ---------------------------------------------------------------------------
-// Equipment hotspot -- every clickable/hoverable apparatus piece on stage.
-// Hover shows an inline SVG tooltip; click opens the full popup below.
-// ---------------------------------------------------------------------------
-function Hotspot({
-  x, y, hovered, onEnter, onLeave, onClick, children,
-}: {
-  x: number; y: number; hovered: boolean; onEnter: () => void; onLeave: () => void; onClick: () => void; children: React.ReactNode;
-}) {
-  return (
-    <g
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      onClick={onClick}
-      style={{ cursor: 'pointer' }}
-      className={hovered ? 'physics-hotspot-glow' : undefined}
-    >
-      {children}
-    </g>
-  );
-}
-
-function HoverLabel({ x, y, text }: { x: number; y: number; text: string }) {
-  const width = Math.max(60, text.length * 6.4 + 16);
-  return (
-    <g transform={`translate(${x - width / 2}, ${y})`} pointerEvents="none">
-      <rect width={width} height={22} rx={11} className="fill-slate-900 dark:fill-slate-100" opacity={0.92} />
-      <text x={width / 2} y={15} textAnchor="middle" fontSize={11} fontWeight={700} className="fill-white dark:fill-slate-900">{text}</text>
-    </g>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Equipment detail popup -- centered modal, matches the Periodic
-// Table / Atomic Chemistry convention, with a Deep Dive expand toggle.
-// ---------------------------------------------------------------------------
-function EquipmentModal({ equipmentId, onClose }: { equipmentId: string; onClose: () => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const eq = PHYSICS_EQUIPMENT.find((e) => e.id === equipmentId);
-  if (!eq) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-7 space-y-3">
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">
-          <X className="w-5 h-5" />
-        </button>
-        <h3 className="text-lg font-bold pr-8">{eq.name}</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{eq.description}</p>
-        <button
-          onClick={() => setExpanded((e) => !e)}
-          className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
-        >
-          {expanded ? 'Hide Deep Dive' : 'Deep Dive'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-        </button>
-        {expanded && (
-          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">{eq.deepDive}</p>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export interface PhysicsStageProps {
   simType: PhysicsSimType;
@@ -282,7 +220,7 @@ export default function PhysicsStage({ simType, params, running, resetKey, appar
         <MagnetScene params={params} magnetGap={magnetGap} hoveredId={hoveredId} onHover={hover} onUnhover={unhover} onClick={openEquipment} />
       )}
 
-      {openEquipmentId && <EquipmentModal equipmentId={openEquipmentId} onClose={() => setOpenEquipmentId(null)} />}
+      {openEquipmentId && <EquipmentModal equipmentId={openEquipmentId} equipment={PHYSICS_EQUIPMENT} onClose={() => setOpenEquipmentId(null)} />}
       <p className="text-center text-[11px] text-slate-400 pb-2">Click any equipment for details &middot; apparatus shown: {apparatusIds.length}</p>
     </div>
   );
