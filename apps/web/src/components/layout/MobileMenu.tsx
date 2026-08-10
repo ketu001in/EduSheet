@@ -6,6 +6,7 @@ import { Menu, X, LogOut } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useLogout } from '@/hooks/useLogout';
 import { NavLinkContent } from './NavLinkContent';
+import { NavGroupSection } from './NavGroupSection';
 import { useNavItems } from './navItems';
 
 // The full site nav as a slide-in drawer, for viewports below `lg` where
@@ -66,6 +67,9 @@ export default function MobileMenu() {
 
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
               {navItems.map((item) => {
+                if (item.type === 'group') {
+                  return <NavGroupSection key={item.label} label={item.label} icon={item.icon} items={item.items} />;
+                }
                 const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
                 return (
                   <Link
