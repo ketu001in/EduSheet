@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
+import SpeakButton from './SpeakButton';
 
 // Shared across every interactive lab's SVG stage (Physics, Biology, ...):
 // a clickable/hoverable apparatus piece, its inline hover tooltip, and the
@@ -66,12 +67,15 @@ export function EquipmentModal({ equipmentId, equipment, onClose }: { equipmentI
         </button>
         <h3 className="text-lg font-bold pr-8">{eq.name}</h3>
         <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{eq.description}</p>
-        <button
-          onClick={() => setExpanded((e) => !e)}
-          className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
-        >
-          {expanded ? 'Hide Deep Dive' : 'Deep Dive'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
+          >
+            {expanded ? 'Hide Deep Dive' : 'Deep Dive'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </button>
+          <SpeakButton text={`${eq.name}. ${eq.description}${expanded ? ' ' + eq.deepDive : ''}`} />
+        </div>
         {expanded && (
           <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">{eq.deepDive}</p>
         )}

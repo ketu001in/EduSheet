@@ -1,8 +1,20 @@
 'use client';
-import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ChevronDown, RotateCcw } from 'lucide-react';
 import { AnatomyModel, AnatomyHotspot } from '@edusheets/content';
 import { speak, isSpeechSupported } from '@/lib/speech';
+import SpeakButton from '@/components/labshared/SpeakButton';
+
+const ROTATE_Y_LIMIT = 35; // left/right tilt, degrees
+const ROTATE_X_LIMIT = 22; // up/down tilt, degrees
+const DRAG_SENSITIVITY = 0.4;
+
+// Note: the real images are flat 2D reference plates, not volumetric 3D
+// scans -- true 360° rotation (seeing the *back* of the heart, say) would
+// need real 3D models. What we CAN honestly offer on a flat image is a
+// tilt/spin interaction: drag (mouse) or press-and-hold-drag (touch) pivots
+// the plate in 3D space via CSS perspective, springing back to flat on
+// release. It's a real, physical-feeling interaction, just not volumetric.
 
 // Real anatomical reference images (see each model's `credit` in
 // anatomyModels.ts) with clickable, percentage-positioned hotspots on top --
@@ -16,6 +28,30 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
   const level = model.levels.find((l) => l.id === levelId) || model.levels[0];
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef<{ x: number; y: number; rotX: number; rotY: number } | null>(null);
+  const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
+  const onTiltStart = (e: React.PointerEvent) => {
+    dragStart.current = { x: e.clientX, y: e.clientY, rotX: rotation.x, rotY: rotation.y };
+    setDragging(true);
+  };
+  const onTiltMove = (e: React.PointerEvent) => {
+    if (!dragStart.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    setRotation({
+      y: clamp(dragStart.current.rotY + dx * DRAG_SENSITIVITY, -ROTATE_Y_LIMIT, ROTATE_Y_LIMIT),
+      x: clamp(dragStart.current.rotX - dy * DRAG_SENSITIVITY, -ROTATE_X_LIMIT, ROTATE_X_LIMIT),
+    });
+  };
+  const onTiltEnd = () => {
+    dragStart.current = null;
+    setDragging(false);
+    setRotation({ x: 0, y: 0 }); // spring back to flat on release
+  };
 
   const selectHotspot = (h: AnatomyHotspot) => {
     setActiveId(h.id);
@@ -45,30 +81,46 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
       )}
 
       <div className="glass-card rounded-3xl p-4 md:p-6">
-        <div className="relative w-full max-w-xl mx-auto">
-          {/* Real reference image -- plain <img> rather than next/image since
-              hotspots need to be positioned as a simple percentage of its
-              rendered box, which next/image's fixed-aspect wrapper fights. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={level.imageSrc} alt={level.imageAlt} className="w-full h-auto rounded-xl select-none" draggable={false} />
-          {level.hotspots.map((h) => (
-            <button
-              key={h.id}
-              onClick={() => selectHotspot(h)}
-              style={{ left: `${h.xPct}%`, top: `${h.yPct}%` }}
-              title={h.label}
-              aria-label={h.label}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 flex items-center justify-center transition-all hover:scale-125 ${
-                activeId === h.id
-                  ? 'bg-primary-600 border-white scale-125 physics-hotspot-glow'
-                  : 'bg-white/90 dark:bg-slate-900/85 border-slate-900 dark:border-slate-300 text-primary-600'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${activeId === h.id ? 'bg-white' : 'bg-current'}`} />
-            </button>
-          ))}
+        <div className="relative w-full max-w-xl mx-auto" style={{ perspective: '1200px' }}>
+          <div
+            onPointerDown={onTiltStart}
+            onPointerMove={onTiltMove}
+            onPointerUp={onTiltEnd}
+            onPointerCancel={onTiltEnd}
+            onPointerLeave={dragging ? onTiltEnd : undefined}
+            className={`relative touch-none ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            style={{
+              transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+              transformStyle: 'preserve-3d',
+              transition: dragging ? 'none' : 'transform 0.6s cubic-bezier(0.34,1.56,0.64,1)',
+            }}
+          >
+            {/* Real reference image -- plain <img> rather than next/image since
+                hotspots need to be positioned as a simple percentage of its
+                rendered box, which next/image's fixed-aspect wrapper fights. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={level.imageSrc} alt={level.imageAlt} className="w-full h-auto rounded-xl select-none" draggable={false} />
+            {level.hotspots.map((h) => (
+              <button
+                key={h.id}
+                onClick={() => selectHotspot(h)}
+                style={{ left: `${h.xPct}%`, top: `${h.yPct}%` }}
+                title={h.label}
+                aria-label={h.label}
+                className={`absolute -translate-x-1/2 -translate-y-1/2 w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 flex items-center justify-center transition-all hover:scale-125 ${
+                  activeId === h.id
+                    ? 'bg-primary-600 border-white scale-125 physics-hotspot-glow'
+                    : 'bg-white/90 dark:bg-slate-900/85 border-slate-900 dark:border-slate-300 text-primary-600'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${activeId === h.id ? 'bg-white' : 'bg-current'}`} />
+              </button>
+            ))}
+          </div>
         </div>
-        <p className="text-center text-[11px] text-slate-400 mt-3">Click any marker on the image for details</p>
+        <p className="text-center text-[11px] text-slate-400 mt-3 flex items-center justify-center gap-1.5">
+          <RotateCcw className="w-3 h-3" /> Drag (or press &amp; hold on touch) to tilt the model &middot; click a marker for details
+        </p>
       </div>
 
       <div className="space-y-3">
@@ -82,12 +134,15 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
             >
               <button onClick={() => selectHotspot(h)} className="font-bold text-sm mb-1 hover:text-primary-600 transition-colors text-left">{h.label}</button>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{h.info}</p>
-              <button
-                onClick={() => setExpandedId((e) => (e === h.id ? null : h.id))}
-                className="mt-2 text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
-              >
-                {expandedId === h.id ? 'Hide Deep Dive' : 'Deep Dive'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedId === h.id ? 'rotate-180' : ''}`} />
-              </button>
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => setExpandedId((e) => (e === h.id ? null : h.id))}
+                  className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                >
+                  {expandedId === h.id ? 'Hide Deep Dive' : 'Deep Dive'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedId === h.id ? 'rotate-180' : ''}`} />
+                </button>
+                <SpeakButton text={`${h.label}. ${h.info}${expandedId === h.id ? ' ' + h.deepDive : ''}`} />
+              </div>
               {expandedId === h.id && (
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-white/60 dark:bg-slate-800/40 rounded-xl p-3">{h.deepDive}</p>
               )}

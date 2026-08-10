@@ -15,6 +15,9 @@ credit line shown under each model in `AnatomyExplorer.tsx`.
 | `brain-surface.svg` | [Brain_diagram_without_text.svg](https://commons.wikimedia.org/wiki/File:Brain_diagram_without_text.svg) | *Gray's Anatomy* (1918) scan | Public Domain |
 | `brain-sagittal.svg` | [Human_brain_-_Sagittal_section.svg](https://commons.wikimedia.org/wiki/File:Human_brain_-_Sagittal_section.svg) | Wikimedia contributor | CC BY-SA 4.0 |
 | `brain-deep.svg` | [Basal_Ganglia_and_Related_Structures.svg](https://commons.wikimedia.org/wiki/File:Basal_Ganglia_and_Related_Structures.svg) | US National Institutes of Health (NIH) | Public Domain (US Gov work) |
+| `eye.svg` | [Schematic_diagram_of_the_human_eye_en.svg](https://commons.wikimedia.org/wiki/File:Schematic_diagram_of_the_human_eye_en.svg) | Erin Silversmith, based on a diagram by Delta G | CC BY-SA 3.0 / GFDL |
+| `skeleton-front.svg` | [Human_skeleton_front_-_no_labels.svg](https://commons.wikimedia.org/wiki/File:Human_skeleton_front_-_no_labels.svg) | Mikael Häggström, based on a diagram by Mariana Ruiz Villarreal | Public Domain |
+| `skin.jpg` | [Anatomy_The_Skin_-_NCI_Visuals_Online.jpg](https://commons.wikimedia.org/wiki/File:Anatomy_The_Skin_-_NCI_Visuals_Online.jpg) | Don Bliss, National Cancer Institute (NCI Visuals Online) | Public Domain (US Gov work) |
 
 Hotspot positions and all explanatory text are original, hand-verified work
 for Bosket's EDStudio -- see `packages/content/src/anatomyModels.ts`.

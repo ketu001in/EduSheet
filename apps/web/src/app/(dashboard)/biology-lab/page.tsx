@@ -9,6 +9,7 @@ import {
   regenerateBiologyAttemptPdf, BiologyAttemptSummary, BiologyAttemptDetail,
 } from '@/lib/biologyLab';
 import { BIOLOGY_EXPERIMENTS } from '@edusheets/content';
+import SpeakButton from '@/components/labshared/SpeakButton';
 
 const QUICK_LINKS = [
   { href: '/biology-lab/new', label: 'New Experiment', icon: Sparkles, accent: 'bg-primary-600 text-white' },
@@ -85,7 +86,10 @@ export default function BiologyLabPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="w-7 h-7 text-primary-600" /> Biology Lab</h1>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="w-7 h-7 text-primary-600" /> Biology Lab</h1>
+          <SpeakButton text={`Biology Lab. Real, hands-on biology -- microscope focusing, food tests, osmosis, genetics, and labeled diagrams -- ${BIOLOGY_EXPERIMENTS.length} curated experiments and counting.`} />
+        </div>
         <p className="text-slate-500 text-sm">Real, hands-on biology -- microscope focusing, food tests, osmosis, genetics, and labeled diagrams -- {BIOLOGY_EXPERIMENTS.length} curated experiments and counting.</p>
       </div>
 

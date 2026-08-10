@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronLeft, Microscope } from 'lucide-react';
 import { ANATOMY_MODELS } from '@edusheets/content';
 import AnatomyExplorer from '@/components/biologylab/AnatomyExplorer';
+import SpeakButton from '@/components/labshared/SpeakButton';
 
 export default function AnatomyExplorerPage() {
   const [modelId, setModelId] = useState(ANATOMY_MODELS[0].id);
@@ -36,7 +37,10 @@ export default function AnatomyExplorerPage() {
         ))}
       </div>
 
-      <p className="text-sm text-slate-500 leading-relaxed">{model.intro}</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <p className="text-sm text-slate-500 leading-relaxed flex-1 min-w-[200px]">{model.intro}</p>
+        <SpeakButton text={`${model.name}. ${model.intro}`} />
+      </div>
 
       <AnatomyExplorer key={model.id} model={model} />
     </div>

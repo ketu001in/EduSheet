@@ -5,6 +5,7 @@ import { ChevronLeft, Leaf, Play, Pause, RotateCcw, Lightbulb } from 'lucide-rea
 import { BIOLOGY_EXPERIMENTS, ANATOMY_MODELS } from '@edusheets/content';
 import BiologyStage from '@/components/biologylab/BiologyStage';
 import AnatomyExplorer from '@/components/biologylab/AnatomyExplorer';
+import SpeakButton from '@/components/labshared/SpeakButton';
 
 // Each tab targets one specific curated experiment as the free-play
 // scenario for that interaction type -- 'explorer' experiments have no
@@ -156,6 +157,7 @@ export default function BiologyPlaygroundPage() {
                 <button onClick={() => setResetKey((k) => k + 1)} className="p-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 hover:border-primary-400">
                   <RotateCcw className="w-4 h-4" />
                 </button>
+                <SpeakButton text={experiment.keyIdea} />
               </div>
               <p className="text-xs text-slate-400 max-w-xs text-right">{experiment.keyIdea}</p>
             </div>
@@ -197,7 +199,8 @@ export default function BiologyPlaygroundPage() {
           {callouts.length > 0 && (
             <div className="glass-card rounded-2xl p-5 flex items-start gap-3 bg-amber-50/50 dark:bg-amber-950/10">
               <Lightbulb className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-slate-600 dark:text-slate-300">{callouts[calloutIndex]}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 flex-1">{callouts[calloutIndex]}</p>
+              <SpeakButton text={callouts[calloutIndex]} />
             </div>
           )}
         </>
@@ -218,7 +221,10 @@ export default function BiologyPlaygroundPage() {
               </button>
             ))}
           </div>
-          <p className="text-sm text-slate-500 leading-relaxed">{anatomyModel.intro}</p>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <p className="text-sm text-slate-500 leading-relaxed flex-1 min-w-[200px]">{anatomyModel.intro}</p>
+            <SpeakButton text={`${anatomyModel.name}. ${anatomyModel.intro}`} />
+          </div>
           <AnatomyExplorer key={anatomyModel.id} model={anatomyModel} />
         </>
       )}

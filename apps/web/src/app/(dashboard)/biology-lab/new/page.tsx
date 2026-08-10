@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { BIOLOGY_EXPERIMENTS, BiologyExperiment, BiologyBranch, biologyGradeBandForClass } from '@edusheets/content';
 import BiologyStage from '@/components/biologylab/BiologyStage';
+import SpeakButton from '@/components/labshared/SpeakButton';
 import { submitBiologyAttempt, downloadBiologyAttemptPdf } from '@/lib/biologyLab';
 import { fetchBoards, fetchClasses, Board, ClassLevel } from '@/lib/curriculum';
 
@@ -276,7 +277,10 @@ export default function NewBiologyExperimentPage() {
 
       {experiment && phase === 'predict' && (
         <div className="glass-card rounded-3xl p-6 md:p-8 space-y-5">
-          <h2 className="font-display text-xl font-semibold">{experiment.title}</h2>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <h2 className="font-display text-xl font-semibold">{experiment.title}</h2>
+            <SpeakButton text={`${experiment.title}. ${experiment.purpose} ${experiment.predictPrompt}`} />
+          </div>
           <p className="text-sm text-slate-500">{experiment.purpose}</p>
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
             <p className="font-bold text-sm flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-primary-600" /> Predict First</p>
@@ -306,7 +310,10 @@ export default function NewBiologyExperimentPage() {
       {experiment && phase === 'simulate' && currentStep && (
         <div className="space-y-4">
           <div className="glass-card rounded-3xl p-5 space-y-3">
-            <p className="text-xs font-bold text-primary-600 uppercase tracking-wide">Step {currentStep.number} of {experiment.steps.length}</p>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <p className="text-xs font-bold text-primary-600 uppercase tracking-wide">Step {currentStep.number} of {experiment.steps.length}</p>
+              <SpeakButton text={`${currentStep.instruction}${currentStep.hint ? ' Hint: ' + currentStep.hint : ''}`} />
+            </div>
             <p className="font-medium">{currentStep.instruction}</p>
             {currentStep.hint && <p className="text-xs text-slate-400">Hint: {currentStep.hint}</p>}
           </div>
@@ -396,9 +403,18 @@ export default function NewBiologyExperimentPage() {
         <div className="glass-card rounded-3xl p-6 md:p-8 space-y-5">
           <div className={`rounded-2xl p-4 flex items-center gap-3 ${predictIndex === experiment.correctPredictIndex ? 'bg-accent-50 dark:bg-accent-950/20' : 'bg-amber-50 dark:bg-amber-950/20'}`}>
             {predictIndex === experiment.correctPredictIndex ? <CheckCircle2 className="w-6 h-6 text-accent-600 shrink-0" /> : <XCircle className="w-6 h-6 text-amber-600 shrink-0" />}
-            <p className="text-sm font-medium">
+            <p className="text-sm font-medium flex-1">
               {predictIndex === experiment.correctPredictIndex ? 'Your prediction was correct!' : `Not quite -- the correct answer was "${experiment.predictOptions[experiment.correctPredictIndex]}".`}
             </p>
+            <SpeakButton
+              label="Listen to All"
+              text={[
+                predictIndex === experiment.correctPredictIndex ? 'Your prediction was correct!' : `Not quite. The correct answer was "${experiment.predictOptions[experiment.correctPredictIndex]}".`,
+                experiment.explanation,
+                'Real world applications:', experiment.realWorldApplications.join('. '),
+                experiment.realLifeNote,
+              ].join(' ')}
+            />
           </div>
           <div>
             <h3 className="font-bold text-sm mb-1.5">Why?</h3>
