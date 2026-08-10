@@ -16,6 +16,7 @@ import SpeakButton from '@/components/labshared/SpeakButton';
 type Section = 'games' | 'experiments' | 'theorems' | 'formulas' | 'geometry' | 'vedic' | 'history' | 'grapher';
 
 const SECTIONS: { id: Section; label: string; icon: typeof Calculator }[] = [
+  { id: 'history', label: 'Ancient Mathematics', icon: Landmark },
   { id: 'games', label: 'Math Games', icon: Gamepad2 },
   { id: 'experiments', label: 'Free Play Experiments', icon: FlaskConical },
   { id: 'grapher', label: 'Graphing Calculator', icon: LineChart },
@@ -23,7 +24,6 @@ const SECTIONS: { id: Section; label: string; icon: typeof Calculator }[] = [
   { id: 'formulas', label: 'Formula Reference', icon: Calculator },
   { id: 'geometry', label: 'Geometry Explorer', icon: Ruler },
   { id: 'vedic', label: 'Vedic Mathematics', icon: Scroll },
-  { id: 'history', label: 'Ancient Mathematics', icon: Landmark },
 ];
 
 // Math Lab -- CBSE/ICSE-aligned, all classes. Phase 1 shipped the Theorem
