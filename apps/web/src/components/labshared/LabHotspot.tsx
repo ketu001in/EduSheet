@@ -74,7 +74,7 @@ export function EquipmentModal({ equipmentId, equipment, onClose }: { equipmentI
           >
             {expanded ? 'Hide Deep Dive' : 'Deep Dive'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </button>
-          <SpeakButton text={`${eq.name}. ${eq.description}${expanded ? ' ' + eq.deepDive : ''}`} />
+          <SpeakButton text={`Here's the ${eq.name}. ${eq.description}${expanded ? ' ' + eq.deepDive : ''}`} />
         </div>
         {expanded && (
           <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">{eq.deepDive}</p>

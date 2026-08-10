@@ -279,7 +279,7 @@ export default function NewBiologyExperimentPage() {
         <div className="glass-card rounded-3xl p-6 md:p-8 space-y-5">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <h2 className="font-display text-xl font-semibold">{experiment.title}</h2>
-            <SpeakButton text={`${experiment.title}. ${experiment.purpose} ${experiment.predictPrompt}`} />
+            <SpeakButton text={`Today we're exploring ${experiment.title}. ${experiment.purpose} Before we start -- ${experiment.predictPrompt}`} />
           </div>
           <p className="text-sm text-slate-500">{experiment.purpose}</p>
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
@@ -312,7 +312,7 @@ export default function NewBiologyExperimentPage() {
           <div className="glass-card rounded-3xl p-5 space-y-3">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <p className="text-xs font-bold text-primary-600 uppercase tracking-wide">Step {currentStep.number} of {experiment.steps.length}</p>
-              <SpeakButton text={`${currentStep.instruction}${currentStep.hint ? ' Hint: ' + currentStep.hint : ''}`} />
+              <SpeakButton text={`Step ${currentStep.number}. ${currentStep.instruction}${currentStep.hint ? ' Here\'s a hint: ' + currentStep.hint : ''}`} />
             </div>
             <p className="font-medium">{currentStep.instruction}</p>
             {currentStep.hint && <p className="text-xs text-slate-400">Hint: {currentStep.hint}</p>}
@@ -409,9 +409,9 @@ export default function NewBiologyExperimentPage() {
             <SpeakButton
               label="Listen to All"
               text={[
-                predictIndex === experiment.correctPredictIndex ? 'Your prediction was correct!' : `Not quite. The correct answer was "${experiment.predictOptions[experiment.correctPredictIndex]}".`,
-                experiment.explanation,
-                'Real world applications:', experiment.realWorldApplications.join('. '),
+                predictIndex === experiment.correctPredictIndex ? 'Your prediction was correct! Nicely done.' : `Not quite. The correct answer was "${experiment.predictOptions[experiment.correctPredictIndex]}".`,
+                `Here's why. ${experiment.explanation}`,
+                `You'll actually see this show up in real life: ${experiment.realWorldApplications.join('. ')}`,
                 experiment.realLifeNote,
               ].join(' ')}
             />

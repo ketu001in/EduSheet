@@ -58,7 +58,7 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
 
   const selectHotspot = (h: AnatomyHotspot) => {
     setActiveId(h.id);
-    if (isSpeechSupported()) speak(`${h.label}. ${h.info}`);
+    if (isSpeechSupported()) speak(`This is the ${h.label}. ${h.info}`);
     document.getElementById(`anatomy-detail-${model.id}-${h.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
@@ -146,7 +146,7 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
                 >
                   {expandedId === h.id ? 'Hide Deep Dive' : 'Deep Dive'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedId === h.id ? 'rotate-180' : ''}`} />
                 </button>
-                <SpeakButton text={`${h.label}. ${h.info}${expandedId === h.id ? ' ' + h.deepDive : ''}`} />
+                <SpeakButton text={`This is the ${h.label}. ${h.info}${expandedId === h.id ? ' ' + h.deepDive : ''}`} />
               </div>
               {expandedId === h.id && (
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-white/60 dark:bg-slate-800/40 rounded-xl p-3">{h.deepDive}</p>

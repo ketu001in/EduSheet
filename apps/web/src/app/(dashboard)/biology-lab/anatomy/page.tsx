@@ -39,7 +39,7 @@ export default function AnatomyExplorerPage() {
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <p className="text-sm text-slate-500 leading-relaxed flex-1 min-w-[200px]">{model.intro}</p>
-        <SpeakButton text={`${model.name}. ${model.intro}`} />
+        <SpeakButton text={`Let's take a look at ${model.name}. ${model.intro}`} />
       </div>
 
       <AnatomyExplorer key={model.id} model={model} />

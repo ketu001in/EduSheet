@@ -152,7 +152,7 @@ export default function PhysicsStage({ simType, params, running, resetKey, appar
     setOpenEquipmentId(id);
     if (isSpeechSupported()) {
       const eq = PHYSICS_EQUIPMENT.find((e) => e.id === id);
-      if (eq) speak(`${eq.name}. ${eq.description}`);
+      if (eq) speak(`Here's the ${eq.name}. ${eq.description}`);
     }
   };
 

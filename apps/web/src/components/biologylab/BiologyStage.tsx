@@ -79,7 +79,7 @@ export default function BiologyStage({ simType, params, running, resetKey, exper
     setOpenEquipmentId(id);
     if (isSpeechSupported()) {
       const eq = combinedEquipment.find((e) => e.id === id);
-      if (eq) speak(`${eq.name}. ${eq.description}`);
+      if (eq) speak(`Here's the ${eq.name}. ${eq.description}`);
     }
   };
 

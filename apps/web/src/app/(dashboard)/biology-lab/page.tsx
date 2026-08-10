@@ -88,7 +88,7 @@ export default function BiologyLabPage() {
       <div>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="w-7 h-7 text-primary-600" /> Biology Lab</h1>
-          <SpeakButton text={`Biology Lab. Real, hands-on biology -- microscope focusing, food tests, osmosis, genetics, and labeled diagrams -- ${BIOLOGY_EXPERIMENTS.length} curated experiments and counting.`} />
+          <SpeakButton text={`Welcome to Biology Lab! This is real, hands-on biology -- microscope focusing, food tests, osmosis, genetics, and labeled diagrams -- with ${BIOLOGY_EXPERIMENTS.length} curated experiments and counting.`} />
         </div>
         <p className="text-slate-500 text-sm">Real, hands-on biology -- microscope focusing, food tests, osmosis, genetics, and labeled diagrams -- {BIOLOGY_EXPERIMENTS.length} curated experiments and counting.</p>
       </div>
