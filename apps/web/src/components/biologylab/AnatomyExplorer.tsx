@@ -5,16 +5,17 @@ import { AnatomyModel, AnatomyHotspot } from '@edusheets/content';
 import { speak, isSpeechSupported } from '@/lib/speech';
 import SpeakButton from '@/components/labshared/SpeakButton';
 
-const ROTATE_Y_LIMIT = 35; // left/right tilt, degrees
-const ROTATE_X_LIMIT = 22; // up/down tilt, degrees
-const DRAG_SENSITIVITY = 0.4;
+const ROTATE_X_LIMIT = 65; // up/down tilt stays bounded -- a full vertical
+// flip is disorienting rather than useful. Left/right (Y) is intentionally
+// UNCLAMPED below -- that's the actual 360° spin axis.
+const DRAG_SENSITIVITY = 0.5;
 
 // Note: the real images are flat 2D reference plates, not volumetric 3D
-// scans -- true 360° rotation (seeing the *back* of the heart, say) would
-// need real 3D models. What we CAN honestly offer on a flat image is a
-// tilt/spin interaction: drag (mouse) or press-and-hold-drag (touch) pivots
-// the plate in 3D space via CSS perspective, springing back to flat on
-// release. It's a real, physical-feeling interaction, just not volumetric.
+// scans -- there's no separate "back" texture. Spinning past 90° on the Y
+// axis shows the plate edge-on and then mirrored, exactly like flipping a
+// real photograph over -- a true, physical 3D behavior, just not a
+// different rendered view of the organ's back side (that would need real
+// 3D model assets). The spin itself is genuinely continuous and full 360°.
 
 // Real anatomical reference images (see each model's `credit` in
 // anatomyModels.ts) with clickable, percentage-positioned hotspots on top --
@@ -43,15 +44,18 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
     const dx = e.clientX - dragStart.current.x;
     const dy = e.clientY - dragStart.current.y;
     setRotation({
-      y: clamp(dragStart.current.rotY + dx * DRAG_SENSITIVITY, -ROTATE_Y_LIMIT, ROTATE_Y_LIMIT),
+      y: dragStart.current.rotY + dx * DRAG_SENSITIVITY, // unclamped -- a full, continuous 360° spin
       x: clamp(dragStart.current.rotX - dy * DRAG_SENSITIVITY, -ROTATE_X_LIMIT, ROTATE_X_LIMIT),
     });
   };
   const onTiltEnd = () => {
     dragStart.current = null;
     setDragging(false);
-    setRotation({ x: 0, y: 0 }); // spring back to flat on release
+    // Deliberately no spring-back here -- snapping to flat on release would
+    // undo the very spin the user just did. Wherever they leave it is where
+    // it stays; "Reset View" below returns it to flat on demand.
   };
+  const resetView = () => setRotation({ x: 0, y: 0 });
 
   const selectHotspot = (h: AnatomyHotspot) => {
     setActiveId(h.id);
@@ -118,9 +122,19 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
             ))}
           </div>
         </div>
-        <p className="text-center text-[11px] text-slate-400 mt-3 flex items-center justify-center gap-1.5">
-          <RotateCcw className="w-3 h-3" /> Drag (or press &amp; hold on touch) to tilt the model &middot; click a marker for details
-        </p>
+        <div className="flex items-center justify-center gap-3 mt-3">
+          <p className="text-center text-[11px] text-slate-400">
+            Drag (or press &amp; hold on touch) to spin the model a full 360° &middot; click a marker for details
+          </p>
+          {(rotation.x !== 0 || rotation.y % 360 !== 0) && (
+            <button
+              onClick={resetView}
+              className="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 hover:text-primary-700"
+            >
+              <RotateCcw className="w-3 h-3" /> Reset View
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">
