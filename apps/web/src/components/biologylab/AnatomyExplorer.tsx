@@ -5,17 +5,19 @@ import { AnatomyModel, AnatomyHotspot } from '@edusheets/content';
 import { speak, isSpeechSupported } from '@/lib/speech';
 import SpeakButton from '@/components/labshared/SpeakButton';
 
-const ROTATE_X_LIMIT = 65; // up/down tilt stays bounded -- a full vertical
-// flip is disorienting rather than useful. Left/right (Y) is intentionally
-// UNCLAMPED below -- that's the actual 360° spin axis.
+const ROTATE_X_LIMIT = 35; // up/down tilt stays modest -- keeps the plate
+// readable and avoids the distorted, page-curl look extreme angles cause.
 const DRAG_SENSITIVITY = 0.5;
 
 // Note: the real images are flat 2D reference plates, not volumetric 3D
-// scans -- there's no separate "back" texture. Spinning past 90° on the Y
-// axis shows the plate edge-on and then mirrored, exactly like flipping a
-// real photograph over -- a true, physical 3D behavior, just not a
-// different rendered view of the organ's back side (that would need real
-// 3D model assets). The spin itself is genuinely continuous and full 360°.
+// scans -- there's no separate "back" texture. While held, the plate can
+// spin all the way around (unclamped Y axis) -- past 90° it turns edge-on
+// and `backfaceVisibility: hidden` below fades it out rather than showing
+// a mirrored, backwards-labeled version, which read as broken rather than
+// "cool". Releasing always eases it back to flat, like letting go of a
+// spinning card -- it doesn't stay stuck at some odd in-between angle.
+// A different rendered view of the organ's actual back would need real 3D
+// model assets, which is a separate, larger undertaking.
 
 // Real anatomical reference images (see each model's `credit` in
 // anatomyModels.ts) with clickable, percentage-positioned hotspots on top --
@@ -51,11 +53,8 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
   const onTiltEnd = () => {
     dragStart.current = null;
     setDragging(false);
-    // Deliberately no spring-back here -- snapping to flat on release would
-    // undo the very spin the user just did. Wherever they leave it is where
-    // it stays; "Reset View" below returns it to flat on demand.
+    setRotation({ x: 0, y: 0 }); // eases back to flat once you let go
   };
-  const resetView = () => setRotation({ x: 0, y: 0 });
 
   const selectHotspot = (h: AnatomyHotspot) => {
     setActiveId(h.id);
@@ -96,7 +95,9 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
             style={{
               transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
               transformStyle: 'preserve-3d',
-              transition: dragging ? 'none' : 'transform 0.6s cubic-bezier(0.34,1.56,0.64,1)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transition: dragging ? 'none' : 'transform 0.5s cubic-bezier(0.22,1,0.36,1)',
             }}
           >
             {/* Real reference image -- plain <img> rather than next/image since
@@ -122,19 +123,9 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
             ))}
           </div>
         </div>
-        <div className="flex items-center justify-center gap-3 mt-3">
-          <p className="text-center text-[11px] text-slate-400">
-            Drag (or press &amp; hold on touch) to spin the model a full 360° &middot; click a marker for details
-          </p>
-          {(rotation.x !== 0 || rotation.y % 360 !== 0) && (
-            <button
-              onClick={resetView}
-              className="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 hover:text-primary-700"
-            >
-              <RotateCcw className="w-3 h-3" /> Reset View
-            </button>
-          )}
-        </div>
+        <p className="text-center text-[11px] text-slate-400 mt-3 flex items-center justify-center gap-1.5">
+          <RotateCcw className="w-3 h-3" /> Hold and drag to spin the model &middot; let go and it settles back &middot; click a marker for details
+        </p>
       </div>
 
       <div className="space-y-3">
