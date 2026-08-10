@@ -16,3 +16,6 @@ export * from './biologyEquipment';
 export * from './biologyExperiments';
 export * from './biologyFoodTests';
 export * from './anatomyModels';
+export * from './mathTypes';
+export * from './mathTheorems';
+export * from './mathFormulas';

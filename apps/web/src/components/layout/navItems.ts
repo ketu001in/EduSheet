@@ -1,6 +1,6 @@
 'use client';
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, BookOpen, ClipboardList, Cpu, FlaskConical, Atom, Leaf, Library } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, BookOpen, ClipboardList, Cpu, FlaskConical, Atom, Leaf, Library, Calculator } from 'lucide-react';
 import { useWizardStore } from '@/store/useWizardStore';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
 
@@ -71,6 +71,7 @@ export function useNavItems(): NavEntry[] {
         { href: '/chem-lab', label: 'Chem Lab', icon: FlaskConical },
         { href: '/physics-lab', label: 'Physics Lab', icon: Atom },
         { href: '/biology-lab', label: 'Biology Lab', icon: Leaf },
+        { href: '/math-lab', label: 'Math Lab', icon: Calculator },
       ],
     },
     { href: '/favorites', label: 'Favorites', icon: Heart },
