@@ -19,3 +19,4 @@ export * from './anatomyModels';
 export * from './mathTypes';
 export * from './mathTheorems';
 export * from './mathFormulas';
+export * from './mathExperiments';

@@ -54,6 +54,64 @@ export function angleOf(center: Point, p: Point): number {
 // closer to -- used so a draggable point on a circle can never land exactly
 // on (or between) two fixed reference points, which would otherwise create
 // a degenerate, zero-area triangle.
+// -- Numeric helpers for Math Lab's Guided Experiments (divide/euclidean/
+// progression/quadratic/probability/graph simTypes) -- pure functions, same
+// "drives both the visual and the live readout" philosophy as the geometry
+// helpers above.
+
+export interface EuclideanStep {
+  dividend: number;
+  divisor: number;
+  quotient: number;
+  remainder: number;
+}
+
+// The real Euclidean Algorithm: repeatedly replace (dividend, divisor) with
+// (divisor, dividend mod divisor) until the remainder is 0. The last
+// non-zero divisor is the HCF.
+export function euclideanSteps(a: number, b: number): { steps: EuclideanStep[]; hcf: number } {
+  let x = Math.abs(Math.round(a));
+  let y = Math.abs(Math.round(b));
+  const steps: EuclideanStep[] = [];
+  let guard = 0;
+  while (y !== 0 && guard < 100) {
+    guard++;
+    const quotient = Math.floor(x / y);
+    const remainder = x % y;
+    steps.push({ dividend: x, divisor: y, quotient, remainder });
+    x = y;
+    y = remainder;
+  }
+  return { steps, hcf: x || 1 };
+}
+
+export function lcmFromHcf(a: number, b: number, hcf: number): number {
+  if (hcf === 0) return 0;
+  return Math.abs(Math.round(a) * Math.round(b)) / hcf;
+}
+
+export interface QuadraticResult {
+  discriminant: number;
+  roots: number[]; // 0, 1, or 2 real roots
+}
+
+export function solveQuadratic(a: number, b: number, c: number): QuadraticResult {
+  if (a === 0) return { discriminant: NaN, roots: [] };
+  const discriminant = b * b - 4 * a * c;
+  if (discriminant < 0) return { discriminant, roots: [] };
+  if (discriminant === 0) return { discriminant, roots: [-b / (2 * a)] };
+  const sqrtD = Math.sqrt(discriminant);
+  return { discriminant, roots: [(-b - sqrtD) / (2 * a), (-b + sqrtD) / (2 * a)] };
+}
+
+// Ways to roll each possible sum with two standard six-sided dice, out of
+// 36 equally likely (die1, die2) combinations -- hand-verified, not
+// computed at runtime, so it's trivially checkable against a real dice
+// table.
+export const DICE_SUM_WAYS: Record<number, number> = {
+  2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 5, 9: 4, 10: 3, 11: 2, 12: 1,
+};
+
 export function keepAngleOutsideRange(angleDeg: number, start: number, end: number, buffer = 4): number {
   // Strict < / > (not <=/>=) so landing EXACTLY on `start` or `end` still
   // counts as forbidden and gets pushed out too -- otherwise a point could

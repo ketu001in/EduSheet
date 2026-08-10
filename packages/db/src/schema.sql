@@ -328,6 +328,30 @@ CREATE TABLE public.biology_experiment_attempts (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8i. math_experiment_attempts ("Math Lab" -- same personal-lab-notebook
+-- model as physics/chemistry/biology_experiment_attempts: every theorem,
+-- formula, and experiment is curated, hand-verified static data in
+-- packages/content (see mathTypes.ts's header comment), never AI-generated.
+-- `experiment_id` is a plain TEXT key matching packages/content's
+-- MATH_EXPERIMENTS[].id, not a DB foreign key. Open to ALL roles,
+-- own-or-parent access, no is_public.
+CREATE TABLE public.math_experiment_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  experiment_id TEXT NOT NULL,
+  experiment_title TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE SET NULL,
+  predict_answer_index INT,
+  predict_correct BOOLEAN,
+  observations JSONB, -- { [promptIndex]: studentAnswerText }
+  final_params JSONB, -- { [paramKey]: numberTheyEndedUpTesting }
+  completed_at TIMESTAMPTZ,
+  pdf_storage_path TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 9. worksheet_questions
 CREATE TABLE public.worksheet_questions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -497,6 +521,7 @@ CREATE TRIGGER set_tech_projects_updated_at BEFORE UPDATE ON public.tech_project
 CREATE TRIGGER set_chemistry_experiment_attempts_updated_at BEFORE UPDATE ON public.chemistry_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_physics_experiment_attempts_updated_at BEFORE UPDATE ON public.physics_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_biology_experiment_attempts_updated_at BEFORE UPDATE ON public.biology_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_math_experiment_attempts_updated_at BEFORE UPDATE ON public.math_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_user_behavior_updated_at BEFORE UPDATE ON public.user_behavior FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_parent_children_updated_at BEFORE UPDATE ON public.parent_children FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_teacher_classrooms_updated_at BEFORE UPDATE ON public.teacher_classrooms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
@@ -547,6 +572,7 @@ ALTER TABLE public.tech_projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chemistry_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.physics_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.biology_experiment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.math_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
@@ -692,6 +718,19 @@ CREATE POLICY "Biology attempts UPDATE own or admin" ON public.biology_experimen
 USING (user_id = auth.uid() OR is_admin());
 
 CREATE POLICY "Biology attempts DELETE own or admin" ON public.biology_experiment_attempts FOR DELETE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+-- Math Experiment Attempts (same own-or-parent model as Physics/Chem/Biology)
+CREATE POLICY "Math attempts SELECT own or related" ON public.math_experiment_attempts FOR SELECT TO authenticated
+USING (user_id = auth.uid() OR is_parent_of(user_id) OR is_admin());
+
+CREATE POLICY "Math attempts INSERT own" ON public.math_experiment_attempts FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Math attempts UPDATE own or admin" ON public.math_experiment_attempts FOR UPDATE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Math attempts DELETE own or admin" ON public.math_experiment_attempts FOR DELETE TO authenticated
 USING (user_id = auth.uid() OR is_admin());
 
 -- Worksheet Questions

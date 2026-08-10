@@ -53,18 +53,24 @@ export interface MathEquipment {
   deepDive: string;
 }
 
-// The interaction each experiment/construction drives -- a small closed
-// vocabulary (like Chem Lab's ReactionVisualState, Biology's SimType) so
-// the Math Stage can render any entry generically:
-//  - construct: a draggable-point geometric construction (angle theorems,
-//    congruence, symmetry) -- live, re-computed geometry rather than a
-//    fixed labeled diagram
-//  - calculate: a parameterized numeric/algebraic model (quadratic roots,
-//    AP/GP terms, probability of an event) with a live formula readout
-//  - graph: plots a function or data set on a coordinate grid as params change
+// The interaction each experiment drives -- a small closed vocabulary (like
+// Chem Lab's ReactionVisualState, Biology's SimType) so the Math Stage can
+// dispatch each experiment to its own purpose-built scene, the same "one
+// bespoke Scene per simType" pattern BiologyStage uses for microscope/
+// foodtest/osmosis/punnett/explorer, rather than one generic renderer
+// straining to cover very different visuals:
+//  - divide: split a quantity into equal groups, with a remainder if any
+//  - euclidean: HCF & LCM via the real step-by-step Euclidean algorithm
+//  - progression: an Arithmetic Progression's terms and running sum
+//  - quadratic: solve ax^2+bx+c=0, both algebraically and as a parabola
+//  - probability: roll two dice repeatedly, watch the experimental
+//    frequency converge toward the theoretical probability
+//  - graph: a linear equation plotted live on a coordinate grid
+//  - construct: a draggable-point geometric construction (reuses the same
+//    live, re-computed geometry as Geometry Explorer)
 //  - explorer: a labeled diagram/gallery where every part is clickable for
 //    real facts, same pattern as Biology's 'explorer'
-export type MathSimType = 'construct' | 'calculate' | 'graph' | 'explorer';
+export type MathSimType = 'divide' | 'euclidean' | 'progression' | 'quadratic' | 'probability' | 'graph' | 'construct' | 'explorer';
 
 export interface MathParamConfig {
   key: string;

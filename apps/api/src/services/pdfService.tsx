@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { Document, Page, Text, View, StyleSheet, renderToStream, Svg, Rect, Line, Circle, Ellipse, Path, Polygon, Defs, LinearGradient, Stop, Font, Image } from '@react-pdf/renderer';
 import type { DiagramSpec, DiagramShape, DiagramLabelPoint } from '@edusheets/ai';
-import type { ChemistryExperiment, PhysicsExperiment, BiologyExperiment } from '@edusheets/content';
+import type { ChemistryExperiment, PhysicsExperiment, BiologyExperiment, MathExperiment } from '@edusheets/content';
 import { CHEM_REAGENTS, CHEM_EQUIPMENT, PHYSICS_EQUIPMENT, BIOLOGY_EQUIPMENT } from '@edusheets/content';
 
 // Helvetica (react-pdf's default) is a base-14 PDF font with Latin glyphs
@@ -1542,5 +1542,139 @@ export const generateBiologyLabReportPDF = async (
 ): Promise<Buffer> => {
   return renderToBuffer(
     <BiologyLabReportDocument meta={meta} experiment={experiment} observations={observations} predictAnswerIndex={predictAnswerIndex} predictCorrect={predictCorrect} finalParams={finalParams} />
+  );
+};
+
+interface MathLabReportMeta {
+  class?: string;
+  language?: string;
+}
+
+const mathLabStyles = chemLabStyles;
+
+// No apparatusIds/safetyNotes on MathExperiment (no physical equipment or
+// hazards in a math experiment) -- otherwise mirrors BiologyLabReportDocument
+// exactly, including the same brand footer template.
+const MathLabReportDocument = ({
+  meta, experiment, observations, predictAnswerIndex, predictCorrect, finalParams,
+}: {
+  meta: MathLabReportMeta;
+  experiment: MathExperiment;
+  observations: Record<string, string>;
+  predictAnswerIndex: number;
+  predictCorrect: boolean;
+  finalParams: Record<string, number>;
+}) => {
+  return (
+    <Document>
+      <Page size="A4" style={isDevanagariLanguage(meta.language) ? [styles.page, { fontFamily: DEVANAGARI_FONT }] : styles.page}>
+        <View style={styles.pageBorder} fixed />
+        <View style={styles.brandMark} fixed>
+          <PdfLogo />
+          <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
+        </View>
+
+        <View style={styles.header}>
+          <View style={styles.headerCol}>
+            <Text>Student Name: _________________</Text>
+            <Text>Class: {meta.class || '___'}</Text>
+          </View>
+          <View style={styles.headerCol}>
+            <Text>Date: _________________</Text>
+            <Text>Math Lab Report</Text>
+          </View>
+        </View>
+
+        <Text style={styles.title}>{experiment.title}</Text>
+
+        <View style={styles.section}>
+          <Text style={mathLabStyles.sectionHeading}>Purpose</Text>
+          <Text style={{ textAlign: 'justify' }}>{experiment.purpose}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={mathLabStyles.sectionHeading}>Prediction</Text>
+          <View style={[mathLabStyles.predictBox, predictCorrect ? mathLabStyles.predictCorrect : mathLabStyles.predictIncorrect]}>
+            <Text style={{ marginBottom: 4 }}>{experiment.predictPrompt}</Text>
+            <Text style={{ fontWeight: 'bold' }}>Student answered: {experiment.predictOptions[predictAnswerIndex] || '-'}</Text>
+            <Text>Correct answer: {experiment.predictOptions[experiment.correctPredictIndex]}</Text>
+            <Text style={{ marginTop: 2, fontWeight: 'bold' }}>{predictCorrect ? 'Correct prediction!' : 'Prediction did not match -- a normal part of learning through experiment.'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={mathLabStyles.sectionHeading}>Steps Followed</Text>
+          {experiment.steps.map((s) => (
+            <Text key={s.number} style={{ marginBottom: 4 }}>{s.number}. {s.instruction}</Text>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={mathLabStyles.sectionHeading}>Key Idea</Text>
+          <Text style={{ marginBottom: 6 }}>{experiment.keyIdea}</Text>
+          {experiment.paramConfig.length > 0 && (
+            <View style={mathLabStyles.chipRow}>
+              {experiment.paramConfig.map((cfg) => {
+                const val = finalParams[cfg.key] ?? experiment.defaultParams[cfg.key];
+                const choiceLabel = cfg.choices?.find((c) => c.value === val)?.label;
+                return <Text key={cfg.key} style={mathLabStyles.chip}>{cfg.label}: {choiceLabel || `${val}${cfg.unit || ''}`}</Text>;
+              })}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={mathLabStyles.sectionHeading}>Explanation</Text>
+          <Text style={{ textAlign: 'justify' }}>{experiment.explanation}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={mathLabStyles.sectionHeading}>Student Observations</Text>
+          {experiment.observationPrompts.map((prompt, i) => (
+            <View key={i} style={mathLabStyles.observationBox}>
+              <Text style={mathLabStyles.observationPrompt}>{prompt}</Text>
+              <Text style={mathLabStyles.observationAnswer}>{observations[String(i)] || observations[i as unknown as string] || '(not answered)'}</Text>
+            </View>
+          ))}
+        </View>
+
+        {experiment.realWorldApplications.length > 0 && (
+          <View style={styles.section}>
+            <Text style={mathLabStyles.sectionHeading}>Real-World Applications</Text>
+            {experiment.realWorldApplications.map((a, i) => <Text key={i} style={{ marginBottom: 2 }}>• {a}</Text>)}
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <View style={mathLabStyles.noteBox}>
+            <Text>{experiment.realLifeNote}</Text>
+          </View>
+        </View>
+
+        {experiment.extensions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={mathLabStyles.sectionHeading}>Go Further</Text>
+            {experiment.extensions.map((e, i) => <Text key={i} style={{ marginBottom: 2 }}>• {e}</Text>)}
+          </View>
+        )}
+
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+          `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        )} fixed />
+      </Page>
+    </Document>
+  );
+};
+
+export const generateMathLabReportPDF = async (
+  meta: MathLabReportMeta,
+  experiment: MathExperiment,
+  observations: Record<string, string>,
+  predictAnswerIndex: number,
+  predictCorrect: boolean,
+  finalParams: Record<string, number>
+): Promise<Buffer> => {
+  return renderToBuffer(
+    <MathLabReportDocument meta={meta} experiment={experiment} observations={observations} predictAnswerIndex={predictAnswerIndex} predictCorrect={predictCorrect} finalParams={finalParams} />
   );
 };
