@@ -15,3 +15,4 @@ export * from './biologyTypes';
 export * from './biologyEquipment';
 export * from './biologyExperiments';
 export * from './biologyFoodTests';
+export * from './anatomyModels';

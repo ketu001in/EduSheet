@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Sparkles, Leaf, Trash2, Printer, Eye, X, Loader2, RefreshCw, Check, Waves,
+  Sparkles, Leaf, Trash2, Printer, Eye, X, Loader2, RefreshCw, Check, Waves, Microscope,
 } from 'lucide-react';
 import {
   fetchBiologyAttempts, fetchBiologyAttempt, deleteBiologyAttempt, downloadBiologyAttemptPdf,
@@ -12,6 +12,7 @@ import { BIOLOGY_EXPERIMENTS } from '@edusheets/content';
 
 const QUICK_LINKS = [
   { href: '/biology-lab/new', label: 'New Experiment', icon: Sparkles, accent: 'bg-primary-600 text-white' },
+  { href: '/biology-lab/anatomy', label: 'Anatomy Explorer', icon: Microscope, accent: 'bg-white dark:bg-slate-800' },
   { href: '/biology-lab/playground', label: 'Free Play Sandbox', icon: Waves, accent: 'bg-white dark:bg-slate-800' },
 ];
 
@@ -88,7 +89,7 @@ export default function BiologyLabPage() {
         <p className="text-slate-500 text-sm">Real, hands-on biology -- microscope focusing, food tests, osmosis, genetics, and labeled diagrams -- {BIOLOGY_EXPERIMENTS.length} curated experiments and counting.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 max-w-md">
+      <div className="grid grid-cols-3 gap-3 max-w-lg">
         {QUICK_LINKS.map((l) => {
           const Icon = l.icon;
           return (

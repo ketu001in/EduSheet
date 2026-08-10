@@ -29,4 +29,10 @@ export const FOOD_TEST_RESULTS: Record<string, Record<number, FoodTestResult>> =
     2: { positive: false, colorChange: 'No change (stays pale blue)', colorHex: '#93c5fd' }, // Boiled Potato
     3: { positive: false, colorChange: 'No change (stays pale blue)', colorHex: '#93c5fd' }, // Cooking Oil
   },
+  'exp-sugar-test': {
+    0: { positive: true, colorChange: 'Brick-red precipitate (after heating)', colorHex: '#b91c1c' }, // Glucose solution
+    1: { positive: true, colorChange: 'Brick-red precipitate (after heating)', colorHex: '#b91c1c' }, // Grape juice
+    2: { positive: false, colorChange: 'No change (stays blue)', colorHex: '#1d4ed8' }, // Boiled Potato (starch, not a reducing sugar)
+    3: { positive: false, colorChange: 'No change (stays blue)', colorHex: '#1d4ed8' }, // Cooking Oil
+  },
 };

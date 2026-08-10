@@ -76,6 +76,13 @@ export const BIOLOGY_EQUIPMENT: BiologyEquipment[] = [
     deepDive: "The exact concentration matters a lot -- a solution just slightly more concentrated than the cell's own contents (hypertonic) pulls water out slowly, while a strongly concentrated one pulls water out fast enough to visibly shrink and stiffen the tissue within minutes.",
   },
   {
+    id: 'water-bath',
+    name: 'Water Bath',
+    category: 'human-biology',
+    description: 'A container of gently heated water used to warm test tubes evenly without a direct, uncontrolled flame.',
+    deepDive: "Benedict's test specifically needs gentle, even heat -- boiling a test tube directly over a flame risks scorching or cracking the glass, while a water bath never gets hotter than boiling water (100°C), giving safe, consistent heating.",
+  },
+  {
     id: 'punnett-chart',
     name: 'Punnett Square Grid',
     category: 'genetics',
