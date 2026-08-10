@@ -8,6 +8,7 @@ import { useLogout } from '@/hooks/useLogout';
 import { NavLinkContent } from './NavLinkContent';
 import { NavGroupSection } from './NavGroupSection';
 import { useNavItems } from './navItems';
+import { useBranding } from './BrandingProvider';
 
 // The full site nav as a slide-in drawer, for viewports below `lg` where
 // Sidebar is hidden. Before this existed, the ONLY mobile nav was
@@ -19,6 +20,7 @@ export default function MobileMenu() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const navItems = useNavItems();
+  const branding = useBranding();
   const { logout, isLoggingOut } = useLogout();
 
   // Closing on route change covers back/forward navigation and any nav
@@ -51,9 +53,9 @@ export default function MobileMenu() {
           <aside className="absolute left-0 top-0 bottom-0 w-[80vw] max-w-72 bg-surface-light dark:bg-surface-dark border-r-[3px] border-slate-900 dark:border-[#FDF3D9] flex flex-col animate-[mobile-drawer-slide-in_0.22s_ease-out]">
             <div className="p-5 flex items-center justify-between border-b-[3px] border-slate-900 dark:border-[#FDF3D9]">
               <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
-                <Logo size={32} />
+                <Logo size={32} overrideSrc={branding.logoUrl || undefined} />
                 <span className="font-display text-sm font-semibold tracking-tight text-slate-900 dark:text-white truncate">
-                  Bosket&apos;s EDStudio
+                  {branding.siteName}
                 </span>
               </Link>
               <button

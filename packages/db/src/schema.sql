@@ -352,6 +352,41 @@ CREATE TABLE public.math_experiment_attempts (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8j. nav_items -- admin-editable main navigation (CMS Phase 1), replacing
+-- the previously hardcoded apps/web/src/components/layout/navItems.ts
+-- list. Self-referential: a row with is_group=true and parent_group_id
+-- NULL is a collapsible group header (e.g. "Virtual Labs"); rows with
+-- parent_group_id set are that group's children; rows with is_group=false
+-- and parent_group_id NULL are plain top-level links (e.g. "Dashboard").
+-- Seeded once from the static list via a migration DO block (not
+-- reproduced here -- see the applied migration
+-- `add_cms_nav_items_and_site_settings`), so nothing changed visually
+-- until an admin actually edits something in /admin/menu.
+CREATE TABLE public.nav_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  label TEXT NOT NULL,
+  href TEXT,
+  icon_name TEXT NOT NULL, -- must match a lucide-react icon component name, validated app-side against an allowlist
+  is_group BOOLEAN NOT NULL DEFAULT false,
+  parent_group_id UUID REFERENCES public.nav_items(id) ON DELETE CASCADE,
+  order_index INT NOT NULL DEFAULT 0,
+  visible BOOLEAN NOT NULL DEFAULT true,
+  role_visibility TEXT[] NOT NULL DEFAULT ARRAY['student','parent','teacher','admin'],
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8k. site_settings -- a small admin-editable key/value store (CMS Phase 1)
+-- for site-wide branding (name, tagline, primary color, logo) and the
+-- default voice preference for narration. Readable by anon too since
+-- branding should apply on the public landing/login pages, not just the
+-- logged-in app. Seeded with today's real defaults via the same migration.
+CREATE TABLE public.site_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 9. worksheet_questions
 CREATE TABLE public.worksheet_questions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -522,6 +557,8 @@ CREATE TRIGGER set_chemistry_experiment_attempts_updated_at BEFORE UPDATE ON pub
 CREATE TRIGGER set_physics_experiment_attempts_updated_at BEFORE UPDATE ON public.physics_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_biology_experiment_attempts_updated_at BEFORE UPDATE ON public.biology_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_math_experiment_attempts_updated_at BEFORE UPDATE ON public.math_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_nav_items_updated_at BEFORE UPDATE ON public.nav_items FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_site_settings_updated_at BEFORE UPDATE ON public.site_settings FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_user_behavior_updated_at BEFORE UPDATE ON public.user_behavior FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_parent_children_updated_at BEFORE UPDATE ON public.parent_children FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_teacher_classrooms_updated_at BEFORE UPDATE ON public.teacher_classrooms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
@@ -573,6 +610,8 @@ ALTER TABLE public.chemistry_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.physics_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.biology_experiment_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.math_experiment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.nav_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
@@ -732,6 +771,23 @@ USING (user_id = auth.uid() OR is_admin());
 
 CREATE POLICY "Math attempts DELETE own or admin" ON public.math_experiment_attempts FOR DELETE TO authenticated
 USING (user_id = auth.uid() OR is_admin());
+
+-- Nav Items (CMS Phase 1) -- every logged-in user can read the live menu
+-- config; only admins can change it.
+CREATE POLICY "Nav items SELECT for authenticated" ON public.nav_items FOR SELECT TO authenticated
+USING (true);
+
+CREATE POLICY "Nav items ALL for admin" ON public.nav_items FOR ALL TO authenticated
+USING (is_admin()) WITH CHECK (is_admin());
+
+-- Site Settings (CMS Phase 1) -- readable by everyone (including signed-out
+-- visitors, so branding applies on the public/login pages too); only
+-- admins can change it.
+CREATE POLICY "Site settings SELECT for everyone" ON public.site_settings FOR SELECT TO anon, authenticated
+USING (true);
+
+CREATE POLICY "Site settings ALL for admin" ON public.site_settings FOR ALL TO authenticated
+USING (is_admin()) WITH CHECK (is_admin());
 
 -- Worksheet Questions
 CREATE POLICY "Questions SELECT if worksheet accessible" ON public.worksheet_questions FOR SELECT TO authenticated

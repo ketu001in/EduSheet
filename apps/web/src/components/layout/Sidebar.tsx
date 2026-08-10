@@ -7,21 +7,23 @@ import { useLogout } from '@/hooks/useLogout';
 import { NavLinkContent } from './NavLinkContent';
 import { NavGroupSection } from './NavGroupSection';
 import { useNavItems } from './navItems';
+import { useBranding } from './BrandingProvider';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
   const navItems = useNavItems();
+  const branding = useBranding();
 
   return (
     <aside className="w-64 border-r-[3px] border-slate-900 dark:border-[#FDF3D9] bg-surface-light dark:bg-surface-dark flex-col h-full hidden lg:flex select-none transition-colors">
       <Link href="/dashboard" className="p-6 flex items-center gap-3 border-b-[3px] border-slate-900 dark:border-[#FDF3D9] hover:bg-secondary-50 dark:hover:bg-slate-800/40 transition-colors">
-        <Logo size={36} />
+        <Logo size={36} overrideSrc={branding.logoUrl || undefined} />
         <div className="min-w-0">
           <span className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-white leading-tight block truncate">
-            Bosket&apos;s EDStudio
+            {branding.siteName}
           </span>
-          <span className="block text-[10px] text-primary-600 dark:text-primary-300 font-bold uppercase tracking-wider">AI Study Companion</span>
+          <span className="block text-[10px] text-primary-600 dark:text-primary-300 font-bold uppercase tracking-wider">{branding.tagline}</span>
         </div>
       </Link>
 

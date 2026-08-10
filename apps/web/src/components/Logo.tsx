@@ -1,13 +1,22 @@
 interface LogoProps {
   size?: number;
   className?: string;
+  // CMS Phase 1: an admin can set a custom logo URL in /admin/settings --
+  // when present, it fully replaces the built-in mark below. Left undefined
+  // (the default everywhere the built-in Logo import is used directly), the
+  // original hand-drawn mark renders exactly as before.
+  overrideSrc?: string;
 }
 
 // The Bosket's EDStudio mark: a graduation cap over a checked worksheet page,
 // on a rounded tile. Kept to simple primitives (rect/line/circle/path/polygon)
 // so the exact same geometry can be re-drawn with react-pdf's <Svg> primitives
 // for the generated PDF header — see apps/api/src/services/pdfService.tsx.
-export function Logo({ size = 32, className = '' }: LogoProps) {
+export function Logo({ size = 32, className = '', overrideSrc }: LogoProps) {
+  if (overrideSrc) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={overrideSrc} width={size} height={size} alt="Site logo" className={`rounded-lg object-cover ${className}`} style={{ width: size, height: size }} />;
+  }
   return (
     <svg
       width={size}

@@ -51,11 +51,32 @@ const PREFERRED_NAME_HINTS = [
   'google us english', 'google uk english female',
 ];
 
+// CMS Phase 1: an admin can set a site-wide preferred voice name (see
+// /admin/settings) -- set once at app startup via setPreferredVoiceHint()
+// after fetching site_settings, checked here before the automatic
+// heuristic below. It's an exact-or-partial name match, not a promise:
+// voice availability is entirely dependent on each visitor's own OS/
+// browser, so if the admin's chosen voice isn't installed for a given
+// visitor, this silently falls through to the normal auto-pick rather than
+// failing.
+let preferredVoiceHint = '';
+export function setPreferredVoiceHint(nameHint: string): void {
+  preferredVoiceHint = nameHint.trim();
+}
+
 async function pickVoice(): Promise<SpeechSynthesisVoice | null> {
   const voices = cachedVoices.length > 0 ? cachedVoices : await loadVoices();
   if (voices.length === 0) return null;
   const englishVoices = voices.filter((v) => v.lang?.toLowerCase().startsWith('en'));
   const pool = englishVoices.length > 0 ? englishVoices : voices;
+
+  if (preferredVoiceHint) {
+    const exact = voices.find((v) => v.name === preferredVoiceHint);
+    if (exact) return exact;
+    const partial = pool.find((v) => v.name.toLowerCase().includes(preferredVoiceHint.toLowerCase()));
+    if (partial) return partial;
+  }
+
   for (const hint of PREFERRED_NAME_HINTS) {
     const match = pool.find((v) => v.name.toLowerCase().includes(hint));
     if (match) return match;
