@@ -44,7 +44,7 @@ export function useNavItems(): NavEntry[] {
 
   return [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/generate', label: 'Generate', icon: Sparkles, onClick: resetWizard },
+    { href: '/generate', label: 'Generate Worksheet', icon: Sparkles, onClick: resetWizard },
     {
       type: 'group',
       label: 'My Library',
