@@ -31,3 +31,5 @@ export * from './mathFormulas';
 export * from './mathExperiments';
 export * from './vedicMathSutras';
 export * from './mathHistoryFigures';
+export * from './roboticsTypes';
+export * from './roboticsApplications';

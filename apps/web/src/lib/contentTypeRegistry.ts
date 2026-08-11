@@ -2,7 +2,7 @@ import {
   MATH_THEOREMS, MATH_FORMULAS, VEDIC_SUTRAS, MATH_HISTORY_FIGURES,
   CHEMISTRY_EXPERIMENTS, CHEM_EQUIPMENT, CHEM_REAGENTS, CHEM_PHYSICAL_EXPERIMENTS, CHEM_CONCEPTS,
   CHEM_REFERENCE_CHARTS, AROMATIC_MODULES, BENZENE_DERIVATIVES, ATOMIC_MODELS, IONIC_BOND_PAIRS, COVALENT_MOLECULES,
-  ALL_DEEP_DIVES,
+  ALL_DEEP_DIVES, ROBOTICS_APPLICATIONS,
 } from '@edusheets/content';
 
 // Every content type an admin can edit at /admin/content. Adding a new lab's
@@ -48,4 +48,6 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeDef[] = [
   // The universal Deep Dive layer -- one content type backs the "Explore"
   // trigger everywhere in the app, across every lab. See deepDive.ts.
   { id: 'topic-deep-dive', label: 'Deep Dives (all labs)', items: ALL_DEEP_DIVES },
+
+  { id: 'robotics-application', label: 'Tech Lab: Robotics Applications', items: ROBOTICS_APPLICATIONS },
 ];

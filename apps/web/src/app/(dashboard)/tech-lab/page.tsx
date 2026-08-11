@@ -90,13 +90,31 @@ export default function TechLabPage() {
           <h1 className="text-3xl font-bold">Tech Lab</h1>
           <p className="text-slate-500 text-sm">Your Robotics, AI, and Coding project builds.</p>
         </div>
-        <Link
-          href="/tech-lab/new"
-          className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
-        >
-          <Sparkles className="w-4 h-4" /> New Build
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/tech-lab/robotics"
+            className="btn-brutal px-5 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
+          >
+            <Bot className="w-4 h-4" /> Robotics Lab
+          </Link>
+          <Link
+            href="/tech-lab/new"
+            className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
+          >
+            <Sparkles className="w-4 h-4" /> New Build
+          </Link>
+        </div>
       </div>
+
+      <Link href="/tech-lab/robotics" className="block glass-card rounded-2xl p-5 flex items-center gap-4 hover:border-primary-400 transition-all">
+        <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center shrink-0">
+          <Bot className="w-6 h-6" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-bold text-sm">New: Robotics Lab</h3>
+          <p className="text-xs text-slate-500">24 real robots doing real jobs today -- industrial arms, Mars rovers, surgical robots, and more. Every one is genuinely playable.</p>
+        </div>
+      </Link>
 
       {isLoading ? (
         <div className="glass-card p-12 rounded-3xl text-center flex items-center justify-center gap-2 text-slate-400 my-8">
