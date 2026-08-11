@@ -6,6 +6,22 @@ import { ChemGradeBandId } from './types';
 // explanation of WHY it's true (not just what it says), and a real
 // historical/real-world note. Hand-verified, never AI-generated, same
 // discipline as every other content file in this package.
+// Every concept pairs with a genuine interactive "Try It Yourself" playground
+// -- not just text -- shown immediately after the explanation, per direct
+// user feedback that a text-only Concepts Corner felt "gimmicky". Two of
+// these (mole-calculator, equilibrium) reuse the existing Physical Chemistry
+// Calculators' ChemPhysicalStage scenes; the rest are new, purpose-built
+// mini-playgrounds. See ChemConceptPlayground.tsx for the dispatch.
+export type ChemConceptPlaygroundType =
+  | 'mass-balance'
+  | 'ratio-mixer'
+  | 'mole-calculator'
+  | 'equilibrium'
+  | 'octet-builder'
+  | 'periodicity-explorer'
+  | 'electrolysis-calculator'
+  | 'diffusion-race';
+
 export interface ChemConcept {
   id: string;
   name: string;
@@ -16,6 +32,7 @@ export interface ChemConcept {
   whyItMatters: string;
   explanationSteps: string[];
   realLifeNote: string;
+  playgroundType: ChemConceptPlaygroundType;
 }
 
 export const CHEM_CONCEPTS: ChemConcept[] = [
@@ -34,6 +51,7 @@ export const CHEM_CONCEPTS: ChemConcept[] = [
       'Balancing a chemical equation is really just bookkeeping this law -- making sure the same number of each type of atom appears on both sides.',
     ],
     realLifeNote: 'French chemist Antoine Lavoisier established this law in 1789 through careful weighing experiments in sealed containers -- a genuinely revolutionary idea at the time, since burning had long seemed to make things simply vanish.',
+    playgroundType: 'mass-balance',
   },
   {
     id: 'constant-proportions',
@@ -50,6 +68,7 @@ export const CHEM_CONCEPTS: ChemConcept[] = [
       'This is a special case of an even broader law (Dalton\'s Law of Multiple Proportions) covering elements that can combine in more than one ratio, like carbon and oxygen forming both CO and CO2.',
     ],
     realLifeNote: 'French chemist Joseph Proust established this law around 1799 after years of painstaking analysis, directly contradicting a rival chemist (Claude Berthollet) who believed compound composition could vary continuously -- Proust turned out to be right, and this became one of the founding pillars of atomic theory.',
+    playgroundType: 'ratio-mixer',
   },
   {
     id: 'avogadros-law',
@@ -66,6 +85,7 @@ export const CHEM_CONCEPTS: ChemConcept[] = [
       'This directly connects gas volume to the mole concept: since one mole is a fixed molecule count (6.022x10^23), one mole of ANY gas takes up the same volume (22.4L at STP).',
     ],
     realLifeNote: "Amedeo Avogadro proposed this in 1811, but it was largely ignored for nearly 50 years until Stanislao Cannizzaro championed it at a famous 1860 chemistry conference -- it then quickly became one of the most important ideas in all of chemistry, and Avogadro's Number was later named in his honour even though he never actually calculated its value himself.",
+    playgroundType: 'mole-calculator',
   },
   {
     id: 'le-chateliers-principle',
@@ -82,6 +102,7 @@ export const CHEM_CONCEPTS: ChemConcept[] = [
       'The same reasoning applies to pressure (favours the side with fewer gas molecules) and temperature (favours whichever direction absorbs the extra heat).',
     ],
     realLifeNote: 'French chemist Henry Louis Le Chatelier proposed this in 1884 -- it remains one of the most widely applied principles in industrial chemistry today, directly guiding how reactions like ammonia synthesis (the Haber Process) are run at scale for maximum product yield.',
+    playgroundType: 'equilibrium',
   },
   {
     id: 'octet-rule',
@@ -98,6 +119,7 @@ export const CHEM_CONCEPTS: ChemConcept[] = [
       'Chlorine has 7 outer electrons -- gaining just 1 more completes its octet, so chlorine readily gains an electron, becoming Cl-. The two opposite charges then attract, forming NaCl.',
     ],
     realLifeNote: 'The octet rule has real, well-known exceptions (Hydrogen and Helium are stable with just 2 electrons, and some larger atoms like Phosphorus and Sulfur can hold MORE than 8) -- it\'s an extremely useful predictive pattern, not an absolute law of physics, and good chemistry teaching says so explicitly rather than treating it as universal.',
+    playgroundType: 'octet-builder',
   },
   {
     id: 'modern-periodic-law',
@@ -114,6 +136,7 @@ export const CHEM_CONCEPTS: ChemConcept[] = [
       'Atomic number order also explains WHY properties repeat periodically: it directly tracks how many electrons are added shell by shell, and elements with the same outer-shell pattern land in the same column.',
     ],
     realLifeNote: 'Henry Moseley\'s X-ray work, done when he was just 26, is considered one of the most important confirmations of atomic theory -- tragically, he was killed in action at Gallipoli in World War I just two years later, at only 27 years old.',
+    playgroundType: 'periodicity-explorer',
   },
   {
     id: 'faradays-laws-electrolysis',
@@ -130,6 +153,7 @@ export const CHEM_CONCEPTS: ChemConcept[] = [
       'Together, the two laws mean electroplating and industrial electrolysis can be precisely controlled and timed to deposit an exact, predetermined mass of metal.',
     ],
     realLifeNote: 'Michael Faraday discovered these laws in 1833, decades before anyone knew what an electron actually was -- his careful, purely experimental measurements of mass and charge later became some of the strongest indirect evidence that electric charge itself comes in fixed, discrete units.',
+    playgroundType: 'electrolysis-calculator',
   },
   {
     id: 'grahams-law-diffusion',
@@ -146,5 +170,6 @@ export const CHEM_CONCEPTS: ChemConcept[] = [
       'Working through the energy equation gives the precise relationship: rate is proportional to 1/sqrt(molar mass) -- not just "lighter is faster" but a real, calculable ratio.',
     ],
     realLifeNote: 'The classic classroom demonstration of this law uses ammonia (NH3, molar mass 17) and hydrogen chloride (HCl, molar mass 36.5) released from opposite ends of a glass tube -- they react where they meet to form a visible white ring of ammonium chloride smoke, and that ring always forms noticeably closer to the HCl end, since the lighter ammonia travels faster and covers more distance in the same time.',
+    playgroundType: 'diffusion-race',
   },
 ];

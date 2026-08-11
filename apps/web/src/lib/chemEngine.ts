@@ -175,3 +175,22 @@ export function cellEMF(halfCellAKey: string, halfCellBKey: string): { cathode: 
   const anode = STANDARD_REDUCTION_POTENTIALS[anodeKey];
   return { cathode: cathodeKey, anode: anodeKey, emf: cathode.volts - anode.volts };
 }
+
+// Faraday's constant -- the charge on one mole of electrons, in coulombs.
+export const FARADAY_CONSTANT = 96500;
+
+// Faraday's First & Second Laws combined into one formula:
+// mass deposited = (current x time x molar mass) / (ion charge x F).
+// Verified against the classic textbook check: 1 Faraday of charge (I x t
+// = 96500 C) deposits exactly 1 mole of a singly-charged ion (e.g. 108g of
+// silver from Ag+), confirmed to match exactly before shipping.
+export function electrolysisMassDeposited(currentAmps: number, timeSeconds: number, molarMass: number, ionCharge: number): number {
+  return (currentAmps * timeSeconds * molarMass) / (ionCharge * FARADAY_CONSTANT);
+}
+
+// Graham's Law of Diffusion: rate1/rate2 = sqrt(molarMass2/molarMass1) --
+// verified against the classic H2 (M=2) vs O2 (M=32) textbook example,
+// which gives exactly 4.0.
+export function grahamsLawRatio(molarMass1: number, molarMass2: number): number {
+  return Math.sqrt(molarMass2 / molarMass1);
+}

@@ -3,10 +3,14 @@ import { useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { ChemConcept } from '@edusheets/content';
 import SpeakButton from '@/components/labshared/SpeakButton';
+import ChemConceptPlayground from './ChemConceptPlayground';
 
-// Chemistry Concepts Corner -- mirrors Math Lab's Theorem Corner exactly:
-// statement first, then a step-through explanation of WHY it's true (one
-// step revealed at a time), not dumped all at once.
+// Chemistry Concepts Corner -- statement first, then a step-through
+// explanation of WHY it's true (one step revealed at a time), THEN a real,
+// always-visible "Try It Yourself" interactive playground (see
+// ChemConceptPlayground.tsx). Deliberately NOT gated behind another click or
+// tab -- direct user feedback was that a text-only concepts section "looks
+// so gimmicky" without an experiment to play with right after reading.
 export default function ChemConceptsCorner({ concepts }: { concepts: ChemConcept[] }) {
   const [activeId, setActiveId] = useState(concepts[0]?.id);
   const [stepIndex, setStepIndex] = useState(0);
@@ -81,6 +85,8 @@ export default function ChemConceptsCorner({ concepts }: { concepts: ChemConcept
             {active.explanationSteps[stepIndex]}
           </p>
         </div>
+
+        <ChemConceptPlayground key={active.id} type={active.playgroundType} />
 
         <details className="group">
           <summary className="cursor-pointer text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 list-none">

@@ -1,0 +1,327 @@
+'use client';
+import { useMemo, useState } from 'react';
+import { Zap, Wind, Scale, FlaskConical } from 'lucide-react';
+import {
+  ChemConceptPlaygroundType, CHEM_PHYSICAL_EXPERIMENTS, bohrBuryShells,
+} from '@edusheets/content';
+import {
+  electrolysisMassDeposited, grahamsLawRatio, FARADAY_CONSTANT,
+} from '@/lib/chemEngine';
+import ChemPhysicalStage from './ChemPhysicalStage';
+
+// The "Try It Yourself" playground every Concepts Corner entry now carries --
+// direct response to user feedback that pure statement + step-through
+// explanation "looks so gimmicky" with no experiment attached. Every one of
+// these is a genuine, always-visible interactive (not a link out, not
+// gated behind another click) that lets the learner manipulate a real
+// variable and see a real, formula-driven result change live.
+export default function ChemConceptPlayground({ type }: { type: ChemConceptPlaygroundType }) {
+  return (
+    <div className="rounded-2xl border-2 border-dashed border-primary-300 dark:border-primary-800 bg-primary-50/40 dark:bg-primary-950/10 p-4 md:p-5 space-y-3">
+      <div className="flex items-center gap-2 text-sm font-bold text-primary-700 dark:text-primary-300">
+        <FlaskConical className="w-4 h-4" /> Try It Yourself
+      </div>
+      <PlaygroundBody type={type} />
+    </div>
+  );
+}
+
+function PlaygroundBody({ type }: { type: ChemConceptPlaygroundType }) {
+  switch (type) {
+    case 'mass-balance': return <MassBalancePlayground />;
+    case 'ratio-mixer': return <RatioMixerPlayground />;
+    case 'mole-calculator': return <ReusedCalculatorPlayground experimentId="phys-mole-calculator" />;
+    case 'equilibrium': return <ReusedCalculatorPlayground experimentId="phys-equilibrium" />;
+    case 'octet-builder': return <OctetBuilderPlayground />;
+    case 'periodicity-explorer': return <PeriodicityExplorerPlayground />;
+    case 'electrolysis-calculator': return <ElectrolysisPlayground />;
+    case 'diffusion-race': return <DiffusionRacePlayground />;
+    default: return null;
+  }
+}
+
+function Slider({ label, unit, value, min, max, step, onChange }: { label: string; unit: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void }) {
+  return (
+    <label className="block text-xs font-bold text-slate-500 space-y-1.5">
+      <span>{label} ({value}{unit})</span>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="w-full accent-primary-600" />
+    </label>
+  );
+}
+
+// -- Reused Physical Chemistry Calculators (Avogadro's Law, Le Chatelier) ---
+function ReusedCalculatorPlayground({ experimentId }: { experimentId: string }) {
+  const experiment = CHEM_PHYSICAL_EXPERIMENTS.find((e) => e.id === experimentId)!;
+  const [params, setParams] = useState<Record<string, number>>(experiment.defaultParams);
+
+  return (
+    <div className="space-y-3">
+      <ChemPhysicalStage simType={experiment.simType} params={params} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {experiment.paramConfig.map((pc) => (
+          <div key={pc.key} className="text-xs font-bold text-slate-500 space-y-1.5">
+            <span className="block">{pc.label}{!pc.choices && ` (${params[pc.key] ?? experiment.defaultParams[pc.key]}${pc.unit})`}</span>
+            {pc.choices ? (
+              <div className="flex flex-wrap gap-1.5">
+                {pc.choices.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setParams((prev) => ({ ...prev, [pc.key]: c.value }))}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] border-2 transition-all ${(params[pc.key] ?? experiment.defaultParams[pc.key]) === c.value ? 'border-primary-600 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <input type="range" min={pc.min} max={pc.max} step={pc.step} value={params[pc.key] ?? experiment.defaultParams[pc.key]} onChange={(e) => setParams((prev) => ({ ...prev, [pc.key]: parseFloat(e.target.value) }))} className="w-full accent-primary-600" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// -- Conservation of Mass: 2Mg + O2 -> 2MgO, both sides always balance -----
+function MassBalancePlayground() {
+  const [massMg, setMassMg] = useState(24);
+  const result = useMemo(() => {
+    const molesMg = massMg / 24;
+    const molesO2 = molesMg / 2;
+    const massO2 = molesO2 * 32;
+    const massMgO = molesMg * 40; // 2Mg + O2 -> 2MgO, 1:1 Mg:MgO
+    return { massO2, massMgO, reactantTotal: massMg + massO2 };
+  }, [massMg]);
+  const maxScale = Math.max(result.reactantTotal, 1);
+
+  return (
+    <div className="space-y-3">
+      <p className="text-center font-mono text-sm">2Mg + O2 &rarr; 2MgO</p>
+      <Slider label="Mass of Magnesium burned" unit="g" value={massMg} min={2} max={96} step={1} onChange={setMassMg} />
+      <div className="flex items-end justify-center gap-2 h-28">
+        <div className="flex flex-col items-center gap-1 flex-1 max-w-[120px]">
+          <div className="w-full flex items-end gap-1" style={{ height: '90px' }}>
+            <div className="flex-1 bg-slate-300 dark:bg-slate-700 rounded-t-lg" style={{ height: `${(massMg / maxScale) * 100}%` }} title="Mg" />
+            <div className="flex-1 bg-sky-300 dark:bg-sky-800 rounded-t-lg" style={{ height: `${(result.massO2 / maxScale) * 100}%` }} title="O2" />
+          </div>
+          <p className="text-[10px] font-bold text-slate-500">Reactants: {massMg}g Mg + {result.massO2.toFixed(1)}g O2</p>
+        </div>
+        <Scale className="w-5 h-5 text-primary-600 shrink-0 mb-6" />
+        <div className="flex flex-col items-center gap-1 flex-1 max-w-[120px]">
+          <div className="w-full flex items-end" style={{ height: '90px' }}>
+            <div className="w-full bg-accent-300 dark:bg-accent-800 rounded-t-lg" style={{ height: `${(result.massMgO / maxScale) * 100}%` }} />
+          </div>
+          <p className="text-[10px] font-bold text-slate-500">Product: {result.massMgO.toFixed(1)}g MgO</p>
+        </div>
+      </div>
+      <p className="text-center text-sm font-bold text-accent-700 dark:text-accent-300">
+        {result.reactantTotal.toFixed(1)}g reactants = {result.massMgO.toFixed(1)}g product -- mass is always conserved, no matter how much Mg you burn.
+      </p>
+    </div>
+  );
+}
+
+// -- Constant Proportions: water is always H:O = 1:8 by mass ---------------
+function RatioMixerPlayground() {
+  const [massH, setMassH] = useState(2);
+  const [massO, setMassO] = useState(16);
+  const requiredO = massH * 8;
+  const actualRatio = massO / massH;
+  const isMatch = Math.abs(actualRatio - 8) < 0.15;
+
+  return (
+    <div className="space-y-3">
+      <p className="text-center text-xs text-slate-500">Water is always Hydrogen : Oxygen = 1 : 8 by mass. Try to match Oxygen to the required ratio.</p>
+      <Slider label="Hydrogen used" unit="g" value={massH} min={1} max={10} step={0.5} onChange={setMassH} />
+      <Slider label="Oxygen you add" unit="g" value={massO} min={1} max={80} step={0.5} onChange={setMassO} />
+      <div className="flex items-end justify-center gap-6 h-24">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-10 bg-sky-300 dark:bg-sky-800 rounded-t-lg" style={{ height: `${Math.min(100, (massH / 10) * 100)}%` }} />
+          <p className="text-[10px] font-bold text-slate-500">H: {massH}g</p>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-10 bg-rose-300 dark:bg-rose-800 rounded-t-lg" style={{ height: `${Math.min(100, (massO / 80) * 100)}%` }} />
+          <p className="text-[10px] font-bold text-slate-500">O: {massO}g</p>
+        </div>
+      </div>
+      <div className={`rounded-xl p-3 text-center text-sm font-bold ${isMatch ? 'bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
+        Your ratio is {actualRatio.toFixed(1)} : 1 (need exactly 8 : 1) -- {isMatch ? 'Match! You\'ve made pure water (H2O) with nothing left over.' : `required Oxygen for ${massH}g Hydrogen is ${requiredO}g`}
+      </div>
+    </div>
+  );
+}
+
+// -- Octet Rule: build an atom's outer shell, see if it reaches a stable 8 -
+const OCTET_ELEMENTS = [
+  { symbol: 'Na', name: 'Sodium', atomicNumber: 11 },
+  { symbol: 'Mg', name: 'Magnesium', atomicNumber: 12 },
+  { symbol: 'O', name: 'Oxygen', atomicNumber: 8 },
+  { symbol: 'N', name: 'Nitrogen', atomicNumber: 7 },
+  { symbol: 'F', name: 'Fluorine', atomicNumber: 9 },
+  { symbol: 'Cl', name: 'Chlorine', atomicNumber: 17 },
+];
+
+function OctetBuilderPlayground() {
+  const [elIndex, setElIndex] = useState(0);
+  const el = OCTET_ELEMENTS[elIndex];
+  const neutralShells = useMemo(() => bohrBuryShells(el.atomicNumber), [el.atomicNumber]);
+  const [delta, setDelta] = useState(0); // electrons gained (+) or lost (-) from the outer shell
+
+  const shells = useMemo(() => bohrBuryShells(el.atomicNumber + delta), [el.atomicNumber, delta]);
+  const outerShellCount = shells[shells.length - 1] ?? 0;
+  const outerShellIsFirst = shells.length === 1;
+  const targetCount = outerShellIsFirst ? 2 : 8;
+  const isStable = outerShellCount === targetCount;
+
+  const selectEl = (i: number) => { setElIndex(i); setDelta(0); };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-1.5 justify-center">
+        {OCTET_ELEMENTS.map((e, i) => (
+          <button key={e.symbol} onClick={() => selectEl(i)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 ${i === elIndex ? 'border-primary-600 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
+            {e.symbol}
+          </button>
+        ))}
+      </div>
+      <p className="text-center text-sm text-slate-500">{el.name} normally has {neutralShells[neutralShells.length - 1]} electrons in its outer shell. Gain or lose electrons and see what happens.</p>
+      <div className="flex items-center justify-center gap-4">
+        <button onClick={() => setDelta((d) => Math.max(d - 1, -(el.atomicNumber - 1)))} className="w-9 h-9 rounded-full border-2 border-slate-300 dark:border-slate-700 font-bold text-lg">-</button>
+        <div className="text-center">
+          <p className="font-display text-2xl font-bold">{outerShellCount} e-</p>
+          <p className="text-[10px] text-slate-400">outer shell (target: {targetCount})</p>
+        </div>
+        <button onClick={() => setDelta((d) => d + 1)} className="w-9 h-9 rounded-full border-2 border-slate-300 dark:border-slate-700 font-bold text-lg">+</button>
+      </div>
+      <div className="flex gap-1 justify-center flex-wrap max-w-xs mx-auto">
+        {Array.from({ length: targetCount }, (_, i) => (
+          <div key={i} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] ${i < outerShellCount ? 'bg-primary-500 border-primary-600 text-white' : 'border-dashed border-slate-300 dark:border-slate-700'}`}>e-</div>
+        ))}
+      </div>
+      <div className={`rounded-xl p-3 text-center text-sm font-bold ${isStable ? 'bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
+        {isStable ? `Stable! A full outer shell (${targetCount}) -- this is the noble-gas-like ion ${el.symbol}${delta > 0 ? `${Math.abs(delta)}-` : delta < 0 ? `${Math.abs(delta)}+` : ''} chemistry actually forms.` : `${outerShellCount < targetCount ? `${targetCount - outerShellCount} more electron(s) needed` : `${outerShellCount - targetCount} too many`} to complete the octet.`}
+      </div>
+    </div>
+  );
+}
+
+// -- Modern Periodic Law: periodicity of valence electrons repeats with Z --
+function PeriodicityExplorerPlayground() {
+  const [maxZ, setMaxZ] = useState(1);
+  const points = useMemo(() => Array.from({ length: 20 }, (_, i) => {
+    const z = i + 1;
+    const shells = bohrBuryShells(z);
+    return { z, valence: shells[shells.length - 1] };
+  }), []);
+  const maxV = 8;
+
+  return (
+    <div className="space-y-3">
+      <Slider label="Reveal up to atomic number" unit="" value={maxZ} min={1} max={20} step={1} onChange={setMaxZ} />
+      <div className="flex items-end justify-center gap-[3px] h-32 bg-slate-50 dark:bg-slate-900/40 rounded-xl border-2 border-slate-200 dark:border-slate-800 p-2">
+        {points.map((p) => (
+          <div key={p.z} className="flex flex-col items-center gap-0.5 w-5">
+            {p.z <= maxZ ? (
+              <>
+                <div className={`w-full rounded-t ${[2, 10, 18].includes(p.z) ? 'bg-accent-500' : 'bg-primary-400 dark:bg-primary-700'}`} style={{ height: `${(p.valence / maxV) * 90}px` }} />
+                <p className="text-[8px] text-slate-400">{p.z}</p>
+              </>
+            ) : <div className="w-full h-full" />}
+          </div>
+        ))}
+      </div>
+      <p className="text-center text-xs text-slate-500">
+        Notice the pattern climbs 1&rarr;{maxZ >= 2 ? '2' : '...'} then resets and climbs 1&rarr;8 twice more (the highlighted bars are the noble gases He, Ne, Ar) -- this repeating rise-and-reset IS periodicity, and it's why elements below one another share properties.
+      </p>
+    </div>
+  );
+}
+
+// -- Faraday's Laws: electroplating mass calculator -------------------------
+const ELECTROLYSIS_IONS = [
+  { label: 'Copper (Cu2+)', molarMass: 63.5, charge: 2 },
+  { label: 'Silver (Ag+)', molarMass: 108, charge: 1 },
+  { label: 'Aluminium (Al3+)', molarMass: 27, charge: 3 },
+  { label: 'Zinc (Zn2+)', molarMass: 65.4, charge: 2 },
+];
+
+function ElectrolysisPlayground() {
+  const [ionIndex, setIonIndex] = useState(0);
+  const [current, setCurrent] = useState(2);
+  const [timeMinutes, setTimeMinutes] = useState(30);
+  const ion = ELECTROLYSIS_IONS[ionIndex];
+  const mass = useMemo(() => electrolysisMassDeposited(current, timeMinutes * 60, ion.molarMass, ion.charge), [current, timeMinutes, ion]);
+  const maxMass = 20;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-1.5 justify-center">
+        {ELECTROLYSIS_IONS.map((i, idx) => (
+          <button key={i.label} onClick={() => setIonIndex(idx)} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border-2 ${idx === ionIndex ? 'border-primary-600 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>{i.label}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Slider label="Current" unit="A" value={current} min={0.5} max={10} step={0.5} onChange={setCurrent} />
+        <Slider label="Time" unit=" min" value={timeMinutes} min={1} max={120} step={1} onChange={setTimeMinutes} />
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <div className="w-16 h-24 rounded-b-lg border-2 border-slate-300 dark:border-slate-700 flex items-end overflow-hidden bg-white dark:bg-slate-900">
+          <div className="w-full bg-amber-400 dark:bg-amber-600 transition-all" style={{ height: `${Math.min(100, (mass / maxMass) * 100)}%` }} />
+        </div>
+        <Zap className="w-4 h-4 text-amber-500" />
+      </div>
+      <p className="text-center font-display text-lg font-bold">{mass.toFixed(3)} g of {ion.label.split(' ')[0]} deposited</p>
+      <p className="text-center text-[11px] text-slate-400">mass = (current &times; time &times; molar mass) / (charge &times; {FARADAY_CONSTANT})</p>
+    </div>
+  );
+}
+
+// -- Graham's Law: race two gases diffusing down a tube ---------------------
+const DIFFUSION_GASES = [
+  { label: 'Hydrogen (H2)', molarMass: 2 },
+  { label: 'Ammonia (NH3)', molarMass: 17 },
+  { label: 'Oxygen (O2)', molarMass: 32 },
+  { label: 'Hydrogen Chloride (HCl)', molarMass: 36.5 },
+  { label: 'Carbon Dioxide (CO2)', molarMass: 44 },
+];
+
+function DiffusionRacePlayground() {
+  const [gas1Index, setGas1Index] = useState(0);
+  const [gas2Index, setGas2Index] = useState(2);
+  const [racing, setRacing] = useState(false);
+  const gas1 = DIFFUSION_GASES[gas1Index];
+  const gas2 = DIFFUSION_GASES[gas2Index];
+  // rate is proportional to 1/sqrt(M) -- normalize so the faster (lighter) gas travels 100%.
+  const rate1 = 1 / Math.sqrt(gas1.molarMass);
+  const rate2 = 1 / Math.sqrt(gas2.molarMass);
+  const maxRate = Math.max(rate1, rate2);
+  const ratio = grahamsLawRatio(gas1.molarMass, gas2.molarMass);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <select value={gas1Index} onChange={(e) => { setGas1Index(parseInt(e.target.value)); setRacing(false); }} className="text-xs font-bold rounded-lg border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2">
+          {DIFFUSION_GASES.map((g, i) => <option key={g.label} value={i}>{g.label}</option>)}
+        </select>
+        <select value={gas2Index} onChange={(e) => { setGas2Index(parseInt(e.target.value)); setRacing(false); }} className="text-xs font-bold rounded-lg border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2">
+          {DIFFUSION_GASES.map((g, i) => <option key={g.label} value={i}>{g.label}</option>)}
+        </select>
+      </div>
+      <button onClick={() => { setRacing(false); requestAnimationFrame(() => setRacing(true)); }} className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary-600 text-white font-bold py-2 text-sm">
+        <Wind className="w-4 h-4" /> Race!
+      </button>
+      <div className="space-y-3">
+        {[{ gas: gas1, rate: rate1 }, { gas: gas2, rate: rate2 }].map(({ gas, rate }) => (
+          <div key={gas.label} className="space-y-1">
+            <p className="text-[11px] font-bold text-slate-500">{gas.label} (M={gas.molarMass})</p>
+            <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+              <div className="h-full bg-primary-500 rounded-full transition-all duration-[1500ms] ease-out" style={{ width: racing ? `${(rate / maxRate) * 100}%` : '0%' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">Diffusion rate ratio = {ratio.toFixed(2)} : 1 -- the lighter gas travels {ratio.toFixed(2)}x farther in the same time.</p>
+    </div>
+  );
+}
