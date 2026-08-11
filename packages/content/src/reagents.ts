@@ -57,4 +57,13 @@ export const CHEM_REAGENTS: ChemReagent[] = [
   { id: 'yeast-culture', name: 'Yeast (mixed with warm water)', formulaOrDescription: 'A living microorganism that ferments sugar into ethanol and carbon dioxide' },
   { id: 'white-glue', name: 'White (PVA) Glue', formulaOrDescription: 'A water-based suspension of long polyvinyl acetate polymer chains' },
   { id: 'borax-solution', name: 'Borax Solution', formulaOrDescription: 'A mild household mineral solution that cross-links polymer chains', hazardNote: 'Should be measured and handled by an adult -- not for eating or rubbing in eyes.' },
+
+  // Reaction-types / gas-preparation / corrosion reagents
+  { id: 'hydrated-copper-sulphate', name: 'Hydrated Copper Sulphate Crystals', formulaOrDescription: 'CuSO4.5H2O -- bright blue crystals containing water of crystallization' },
+  { id: 'magnesium-ribbon', name: 'Magnesium Ribbon', formulaOrDescription: 'Mg metal strip, cleaned of its dull oxide coating before use', hazardNote: 'Burns with an intensely bright white flame -- never look directly at it; the real version needs UV-blocking safety goggles.' },
+  { id: 'ammonium-chloride-solid', name: 'Ammonium Chloride', formulaOrDescription: 'NH4Cl (solid) -- provides the ammonium ion for ammonia gas preparation' },
+  { id: 'calcium-hydroxide-solid', name: 'Slaked Lime', formulaOrDescription: 'Ca(OH)2 (solid) -- a mild alkali, mixed with ammonium chloride and heated to release ammonia gas', hazardNote: 'Mildly caustic -- avoid skin/eye contact.' },
+  { id: 'sodium-sulphate-solution', name: 'Sodium Sulphate Solution', formulaOrDescription: 'Na2SO4 dissolved in water' },
+  { id: 'galvanized-nail', name: 'Galvanized (Zinc-Coated) Nail', formulaOrDescription: 'An iron nail coated in a thin protective layer of zinc' },
+  { id: 'sodium-chloride-solution', name: 'Sodium Chloride Solution', formulaOrDescription: 'NaCl dissolved in water' },
 ];

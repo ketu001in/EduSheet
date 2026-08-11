@@ -1,12 +1,22 @@
-import { MATH_THEOREMS, MATH_FORMULAS, VEDIC_SUTRAS, MATH_HISTORY_FIGURES } from '@edusheets/content';
+import {
+  MATH_THEOREMS, MATH_FORMULAS, VEDIC_SUTRAS, MATH_HISTORY_FIGURES,
+  CHEMISTRY_EXPERIMENTS, CHEM_EQUIPMENT, CHEM_REAGENTS, CHEM_PHYSICAL_EXPERIMENTS, CHEM_CONCEPTS,
+  CHEM_REFERENCE_CHARTS, AROMATIC_MODULES, BENZENE_DERIVATIVES, ATOMIC_MODELS, IONIC_BOND_PAIRS, COVALENT_MOLECULES,
+} from '@edusheets/content';
 
 // Every content type an admin can edit at /admin/content. Adding a new lab's
 // content here (plus swapping its consuming component's direct import for
-// useContent(), see mathlab/TheoremCorner.tsx etc. for the pattern) is the
-// entire cost of extending CMS Phase 2 to that content -- deliberately
-// designed so the FIRST few types (Math Lab, wired up now) prove the whole
-// system, and every type after that is small, repeatable follow-on work
-// rather than a new one-off feature each time.
+// useContent(), see mathlab/TheoremCorner.tsx / chemlab/ChemConceptsCorner.tsx
+// for the pattern) is the entire cost of extending CMS Phase 2 to that
+// content -- deliberately designed so the FIRST few types (Math Lab, then
+// Chem Lab) prove the whole system, and every type after that is small,
+// repeatable follow-on work rather than a new one-off feature each time.
+//
+// Not every content type is registered yet: PeriodicElement, SubatomicParticle,
+// and ElementShellConfig are keyed by atomicNumber/symbol rather than a plain
+// `id` field, which the merge logic in useContent.ts relies on -- registering
+// those needs a small adapter (or a schema tweak) as a follow-on, not
+// attempted in this pass.
 export interface ContentTypeDef {
   id: string;
   label: string;
@@ -21,4 +31,16 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeDef[] = [
   { id: 'math-formula', label: 'Math Lab: Formulas', items: MATH_FORMULAS },
   { id: 'vedic-sutra', label: 'Math Lab: Vedic Sutras', items: VEDIC_SUTRAS },
   { id: 'math-history-figure', label: 'Math Lab: Ancient Mathematicians', items: MATH_HISTORY_FIGURES },
+
+  { id: 'chem-experiment', label: 'Chem Lab: Experiments', items: CHEMISTRY_EXPERIMENTS },
+  { id: 'chem-equipment', label: 'Chem Lab: Equipment', items: CHEM_EQUIPMENT },
+  { id: 'chem-reagent', label: 'Chem Lab: Reagents', items: CHEM_REAGENTS },
+  { id: 'chem-physical-experiment', label: 'Chem Lab: Physical Chemistry Calculators', items: CHEM_PHYSICAL_EXPERIMENTS },
+  { id: 'chem-concept', label: 'Chem Lab: Concepts Corner', items: CHEM_CONCEPTS },
+  { id: 'chem-reference-chart', label: 'Chem Lab: Reference Charts', items: CHEM_REFERENCE_CHARTS },
+  { id: 'aromatic-module', label: 'Chem Lab: Aromatic Chemistry', items: AROMATIC_MODULES },
+  { id: 'benzene-derivative', label: 'Chem Lab: Benzene Derivatives', items: BENZENE_DERIVATIVES },
+  { id: 'atomic-model', label: 'Chem Lab: Atomic Models', items: ATOMIC_MODELS },
+  { id: 'ionic-bond-pair', label: 'Chem Lab: Ionic Bonding Pairs', items: IONIC_BOND_PAIRS },
+  { id: 'covalent-molecule', label: 'Chem Lab: Covalent Molecules', items: COVALENT_MOLECULES },
 ];

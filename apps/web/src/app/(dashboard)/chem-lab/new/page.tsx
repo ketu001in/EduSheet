@@ -7,6 +7,7 @@ import {
   CHEMISTRY_EXPERIMENTS, chemGradeBandForClass, ChemistryExperiment, ChemExperimentCategory, ChemBranch,
 } from '@edusheets/content';
 import { LabBench } from '@/components/chemlab/LabBench';
+import { useContent } from '@/lib/useContent';
 import {
   Loader2, AlertTriangle, FlaskConical, Beaker, TestTube, Zap, Search, Printer,
   Check, ChevronLeft, Atom,
@@ -51,6 +52,8 @@ function BackToChemLabBar() {
 }
 
 export default function NewChemExperimentPage() {
+  // CMS Phase 2: merges in any admin edits from /admin/content live.
+  const chemistryExperiments = useContent('chem-experiment', CHEMISTRY_EXPERIMENTS);
   const [boards, setBoards] = useState<Board[]>([]);
   const [classes, setClasses] = useState<ClassLevel[]>([]);
   const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -105,7 +108,7 @@ export default function NewChemExperimentPage() {
   // Organic/Inorganic toggle for younger classes would mostly just show an
   // empty "Organic" side, which reads as broken rather than helpful.
   const showBranchFilter = gradeBand?.id === 'plusTwo';
-  const experimentsForBand = gradeBand ? CHEMISTRY_EXPERIMENTS.filter((e) => e.gradeBand === gradeBand.id) : [];
+  const experimentsForBand = gradeBand ? chemistryExperiments.filter((e) => e.gradeBand === gradeBand.id) : [];
   const experiments = showBranchFilter && selectedBranch
     ? experimentsForBand.filter((e) => e.branch === selectedBranch)
     : experimentsForBand;

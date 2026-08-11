@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Sparkles, FlaskConical, Grid3x3, BarChart3, Wrench, Beaker, Trash2, Printer,
-  Eye, X, Loader2, RefreshCw, Check, Atom, Orbit,
+  Eye, X, Loader2, RefreshCw, Check, Atom, Orbit, Calculator, BookOpenCheck,
 } from 'lucide-react';
 import {
   fetchChemAttempts, fetchChemAttempt, deleteChemAttempt, downloadChemAttemptPdf,
@@ -13,6 +13,8 @@ import { CHEMISTRY_EXPERIMENTS } from '@edusheets/content';
 
 const QUICK_LINKS = [
   { href: '/chem-lab/new', label: 'New Experiment', icon: Sparkles, accent: 'bg-primary-600 text-white' },
+  { href: '/chem-lab/physical', label: 'Physical Chemistry Lab', icon: Calculator, accent: 'bg-white dark:bg-slate-800' },
+  { href: '/chem-lab/concepts', label: 'Concepts Corner', icon: BookOpenCheck, accent: 'bg-white dark:bg-slate-800' },
   { href: '/chem-lab/periodic-table', label: 'Periodic Table', icon: Grid3x3, accent: 'bg-white dark:bg-slate-800' },
   { href: '/chem-lab/charts', label: 'Reference Charts', icon: BarChart3, accent: 'bg-white dark:bg-slate-800' },
   { href: '/chem-lab/equipment', label: 'Equipment Studio', icon: Wrench, accent: 'bg-white dark:bg-slate-800' },

@@ -28,4 +28,7 @@ export const CHEM_EQUIPMENT: ChemApparatus[] = [
   { id: 'gloves', name: 'Lab Gloves', description: 'Protects hands from chemicals that could irritate or stain the skin.' },
   { id: 'spatula', name: 'Spatula', description: 'A small scoop used to transfer solid chemicals without touching them by hand.' },
   { id: 'glass-rod', name: 'Glass Stirring Rod', description: 'Stirs or mixes a solution without reacting with the chemicals inside it.' },
+  { id: 'gas-jar', name: 'Gas Jar', description: 'A wide glass jar used to collect and hold a gas once it has been prepared, often sealed with a glass plate.' },
+  { id: 'water-trough', name: 'Water Trough (Pneumatic Trough)', description: 'A water-filled basin used to collect a gas by downward displacement of water -- the gas bubbles up into an upturned, water-filled jar and pushes the water out.' },
+  { id: 'boiling-tube', name: 'Boiling Tube', description: 'A test tube-like vessel, slightly larger, designed to be heated directly over a flame without cracking.' },
 ];
