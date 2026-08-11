@@ -111,4 +111,70 @@ router.delete('/curriculum/:type/:id', async (req, res, next) => {
   }
 });
 
+// Curriculum Manager's "currency" mechanism -- deliberately NOT an automated
+// sync against the real CBSE/ICSE syllabus (that would reintroduce
+// unverified, possibly-wrong content into the app). Instead: an admin
+// checks the actual official syllabus document themselves, then clicks
+// "Mark as Verified" here, which timestamps the check and records WHO
+// checked it -- syllabus_source_url (set via the generic PUT above) is the
+// link to what they checked against. /admin's dashboard surfaces subjects
+// that have never been verified, or haven't been checked in over a year,
+// as a nudge to go look -- see AdminCurriculumHealth on the dashboard.
+router.patch('/curriculum/subjects/:id/verify', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('subjects')
+      .update({ syllabus_last_verified_at: new Date().toISOString(), syllabus_verified_by: req.user!.id })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Feeds the admin dashboard's Curriculum Health nudge -- every subject
+// across every board/class, flagged never-verified or verified more than a
+// year ago (CBSE/ICSE typically republish syllabi annually around
+// March-April). Capped and sorted oldest-first so the widget can just show
+// "here's what to check first" without the client fetching all subjects
+// across every board/class individually.
+const STALE_DAYS = 365;
+router.get('/curriculum/health', async (req, res, next) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('subjects')
+      .select('id, name, syllabus_last_verified_at, classes(name), boards(name)');
+    if (error) throw error;
+
+    const staleCutoff = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
+    const withStatus = (data || []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      className: s.classes?.name ?? null,
+      boardName: s.boards?.name ?? null,
+      syllabus_last_verified_at: s.syllabus_last_verified_at,
+      stale: !s.syllabus_last_verified_at || new Date(s.syllabus_last_verified_at).getTime() < staleCutoff,
+    }));
+    const stale = withStatus
+      .filter((s) => s.stale)
+      .sort((a, b) => (a.syllabus_last_verified_at ? new Date(a.syllabus_last_verified_at).getTime() : 0) - (b.syllabus_last_verified_at ? new Date(b.syllabus_last_verified_at).getTime() : 0))
+      .slice(0, 10);
+
+    res.json({
+      success: true,
+      data: {
+        totalSubjects: withStatus.length,
+        staleCount: withStatus.filter((s) => s.stale).length,
+        neverVerifiedCount: withStatus.filter((s) => !s.syllabus_last_verified_at).length,
+        stale,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

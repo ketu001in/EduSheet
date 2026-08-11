@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Users, FileText, FileStack, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { Users, FileText, FileStack, Loader2, GraduationCap, AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
 import { fetchAdminUsers, fetchAdminAnalytics, updateUserRole, AdminUser, AdminAnalytics } from '@/lib/admin';
+import { fetchCurriculumHealth, CurriculumHealth } from '@/lib/curriculumAdmin';
 
 const ROLES: AdminUser['role'][] = ['student', 'parent', 'teacher', 'admin'];
 
@@ -11,12 +13,16 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [curriculumHealth, setCurriculumHealth] = useState<CurriculumHealth | null>(null);
 
   useEffect(() => {
     Promise.all([fetchAdminUsers(), fetchAdminAnalytics()])
       .then(([u, a]) => { setUsers(u.data); setAnalytics(a.data); })
       .catch((err) => { console.error(err); setError('Could not load admin data.'); })
       .finally(() => setLoading(false));
+    // Fetched independently -- a failure here shouldn't block the rest of
+    // the dashboard from loading, it just means the nudge doesn't show.
+    fetchCurriculumHealth().then((res) => setCurriculumHealth(res.data)).catch((err) => console.error(err));
   }, []);
 
   const handleRoleChange = async (id: string, role: AdminUser['role']) => {
@@ -60,6 +66,42 @@ export default function AdminDashboardPage() {
           );
         })}
       </div>
+
+      {curriculumHealth && curriculumHealth.staleCount > 0 && (
+        <div className="glass-card rounded-2xl p-5 border-2 border-amber-300 dark:border-amber-800 space-y-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center shrink-0">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-amber-500" /> Curriculum Currency Check</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {curriculumHealth.staleCount} of {curriculumHealth.totalSubjects} subjects haven&apos;t been checked against the real CBSE/ICSE syllabus in over a year
+                  {curriculumHealth.neverVerifiedCount > 0 ? ` (${curriculumHealth.neverVerifiedCount} never verified at all)` : ''}.
+                </p>
+              </div>
+            </div>
+            <Link href="/admin/curriculum" className="btn-brutal px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shrink-0">
+              Review <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {curriculumHealth.stale.slice(0, 6).map((s) => (
+              <span key={s.id} className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300">
+                {s.boardName} {s.className} {s.name}
+              </span>
+            ))}
+            {curriculumHealth.stale.length > 6 && <span className="text-[11px] text-slate-400 self-center">+{curriculumHealth.stale.length - 6} more</span>}
+          </div>
+        </div>
+      )}
+      {curriculumHealth && curriculumHealth.staleCount === 0 && curriculumHealth.totalSubjects > 0 && (
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3 border-2 border-accent-200 dark:border-accent-900">
+          <ShieldCheck className="w-5 h-5 text-accent-600 shrink-0" />
+          <p className="text-sm text-slate-600 dark:text-slate-300">All {curriculumHealth.totalSubjects} subjects have been verified against the real syllabus within the last year.</p>
+        </div>
+      )}
 
       <div>
         <h2 className="text-lg font-bold mb-3">All Users ({users.length})</h2>

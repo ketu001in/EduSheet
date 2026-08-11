@@ -2,13 +2,14 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { ShieldCheck, Users, Menu as MenuIcon, Settings, Loader2, Database } from 'lucide-react';
+import { ShieldCheck, Users, Menu as MenuIcon, Settings, Loader2, Database, GraduationCap } from 'lucide-react';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
 
 const ADMIN_TABS = [
   { href: '/admin', label: 'Users & Analytics', icon: Users },
   { href: '/admin/menu', label: 'Menu Manager', icon: MenuIcon },
   { href: '/admin/content', label: 'Content Manager', icon: Database },
+  { href: '/admin/curriculum', label: 'Curriculum Manager', icon: GraduationCap },
   { href: '/admin/settings', label: 'Site Settings', icon: Settings },
 ];
 

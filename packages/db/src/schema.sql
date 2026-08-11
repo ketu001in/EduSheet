@@ -93,6 +93,14 @@ CREATE TABLE public.subjects (
   name TEXT NOT NULL,
   code TEXT,
   icon_url TEXT,
+  -- Curriculum Manager: where this subject's chapter/topic list was sourced
+  -- from (a link to the real CBSE/CISCE syllabus document) and when an
+  -- admin last checked it against the current official syllabus. A human-
+  -- verification record, not an automated sync -- see adminRoutes.ts's
+  -- /curriculum/subjects/:id/verify route.
+  syllabus_source_url TEXT,
+  syllabus_last_verified_at TIMESTAMPTZ,
+  syllabus_verified_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(class_id, board_id, name)
 );
