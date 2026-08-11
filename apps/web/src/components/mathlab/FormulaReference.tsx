@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { MathFormula, MathBranch } from '@edusheets/content';
 import SpeakButton from '@/components/labshared/SpeakButton';
+import { useDeepDives } from '@/lib/useDeepDives';
+import DeepDiveTrigger from '@/components/labshared/DeepDiveTrigger';
 
 const BRANCH_LABEL: Partial<Record<MathBranch, string>> = {
   'number-systems': 'Number Systems',
@@ -21,6 +23,7 @@ export default function FormulaReference({ formulas }: { formulas: MathFormula[]
   const branches = Array.from(new Set(formulas.map((f) => f.branch)));
   const [activeBranch, setActiveBranch] = useState<MathBranch | 'all'>('all');
   const shown = activeBranch === 'all' ? formulas : formulas.filter((f) => f.branch === activeBranch);
+  const deepDives = useDeepDives();
 
   return (
     <div className="space-y-4">
@@ -63,6 +66,9 @@ export default function FormulaReference({ formulas }: { formulas: MathFormula[]
               <p className="text-sm text-slate-700 dark:text-slate-200">{f.example.result}</p>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">{f.note}</p>
+            {deepDives.some((d) => d.id === `math-formula-${f.id}`) && (
+              <DeepDiveTrigger id={`math-formula-${f.id}`} label="Explore Further" />
+            )}
           </div>
         ))}
       </div>
