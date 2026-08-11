@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { MathTheorem } from '@edusheets/content';
 import SpeakButton from '@/components/labshared/SpeakButton';
+import { useDeepDives } from '@/lib/useDeepDives';
+import DeepDiveTrigger from '@/components/labshared/DeepDiveTrigger';
 
 // A gallery of curated CBSE/ICSE theorems -- statement first, then a
 // step-by-step visual-proof walk-through (one step revealed at a time via
@@ -13,7 +15,10 @@ export default function TheoremCorner({ theorems }: { theorems: MathTheorem[] })
   const [activeId, setActiveId] = useState(theorems[0]?.id);
   const [stepIndex, setStepIndex] = useState(0);
   const active = theorems.find((t) => t.id === activeId) || theorems[0];
+  const deepDives = useDeepDives();
   if (!active) return null;
+  const deepDiveId = `math-theorem-${active.id}`;
+  const hasDeepDive = deepDives.some((d) => d.id === deepDiveId);
 
   const selectTheorem = (id: string) => {
     setActiveId(id);
@@ -83,6 +88,8 @@ export default function TheoremCorner({ theorems }: { theorems: MathTheorem[] })
             {active.proofSteps[stepIndex]}
           </p>
         </div>
+
+        {hasDeepDive && <DeepDiveTrigger id={deepDiveId} label="Explore This Theorem Further" />}
 
         <details className="group">
           <summary className="cursor-pointer text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 list-none">

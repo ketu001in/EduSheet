@@ -18,6 +18,7 @@ const QUICK_LINKS = [
   { href: '/chem-lab/periodic-table', label: 'Periodic Table', icon: Grid3x3, accent: 'bg-white dark:bg-slate-800' },
   { href: '/chem-lab/charts', label: 'Reference Charts', icon: BarChart3, accent: 'bg-white dark:bg-slate-800' },
   { href: '/chem-lab/equipment', label: 'Equipment Studio', icon: Wrench, accent: 'bg-white dark:bg-slate-800' },
+  { href: '/chem-lab/reagents', label: 'Reagents Studio', icon: FlaskConical, accent: 'bg-white dark:bg-slate-800' },
   { href: '/chem-lab/free-mix', label: 'Free Mix Sandbox', icon: Beaker, accent: 'bg-white dark:bg-slate-800' },
   { href: '/chem-lab/aromatic', label: 'Aromatic Chemistry', icon: Atom, accent: 'bg-white dark:bg-slate-800' },
   { href: '/chem-lab/atomic', label: 'Atomic Chemistry', icon: Orbit, accent: 'bg-white dark:bg-slate-800' },

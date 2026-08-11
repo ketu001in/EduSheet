@@ -36,6 +36,7 @@ function PlaygroundBody({ type }: { type: ChemConceptPlaygroundType }) {
     case 'periodicity-explorer': return <PeriodicityExplorerPlayground />;
     case 'electrolysis-calculator': return <ElectrolysisPlayground />;
     case 'diffusion-race': return <DiffusionRacePlayground />;
+    case 'burette-reading': return <BuretteReadingPlayground />;
     default: return null;
   }
 }
@@ -273,6 +274,65 @@ function ElectrolysisPlayground() {
       </div>
       <p className="text-center font-display text-lg font-bold">{mass.toFixed(3)} g of {ion.label.split(' ')[0]} deposited</p>
       <p className="text-center text-[11px] text-slate-400">mass = (current &times; time &times; molar mass) / (charge &times; {FARADAY_CONSTANT})</p>
+    </div>
+  );
+}
+
+// -- Burette meniscus reading practice --------------------------------------
+// A real skill every titration depends on: burettes are graduated 0 at the
+// TOP down to 50 at the bottom (readings increase downward), and read from
+// the BOTTOM of the meniscus (the curved liquid surface). This gives a
+// randomly-placed liquid level and checks the student's reading against
+// the real value to the standard 0.1 mL tolerance a burette is graduated to.
+function randomBuretteLevel() {
+  return Math.round((Math.random() * 46 + 2) * 10) / 10; // 2.0-48.0 mL, one decimal
+}
+
+function BuretteReadingPlayground() {
+  const [target, setTarget] = useState(randomBuretteLevel);
+  const [guess, setGuess] = useState('');
+  const [checked, setChecked] = useState(false);
+  const tubeHeight = 260;
+  const meniscusY = 10 + (target / 50) * tubeHeight; // 0 mL at top, 50 mL at bottom
+
+  const newReading = () => { setTarget(randomBuretteLevel()); setGuess(''); setChecked(false); };
+  const check = () => setChecked(true);
+  const guessNum = parseFloat(guess);
+  const isCorrect = checked && !isNaN(guessNum) && Math.abs(guessNum - target) <= 0.1;
+
+  return (
+    <div className="space-y-3">
+      <p className="text-center text-xs text-slate-500">Read the burette to the nearest 0.1 mL, the way a real titration is read -- from the bottom of the curved liquid surface (the meniscus).</p>
+      <div className="flex justify-center">
+        <svg viewBox="0 0 100 300" className="h-64">
+          <rect x={40} y={10} width={20} height={tubeHeight} rx={3} className="fill-sky-50 dark:fill-sky-950/30 stroke-slate-400" strokeWidth={1.5} />
+          <rect x={40} y={meniscusY} width={20} height={10 + tubeHeight - meniscusY} className="fill-sky-300 dark:fill-sky-700" />
+          {Array.from({ length: 11 }, (_, i) => {
+            const y = 10 + (i / 10) * tubeHeight;
+            return (
+              <g key={i}>
+                <line x1={40} y1={y} x2={i % 5 === 0 ? 32 : 36} y2={y} className="stroke-slate-500" strokeWidth={1} />
+                {i % 5 === 0 && <text x={28} y={y + 3} textAnchor="end" className="fill-slate-500 text-[7px]">{i * 5}</text>}
+              </g>
+            );
+          })}
+          <polygon points={`38,${meniscusY} 62,${meniscusY} 50,${meniscusY + 6}`} className="fill-sky-600 dark:fill-sky-400" />
+        </svg>
+      </div>
+      <div className="flex items-center justify-center gap-2">
+        <input
+          type="number" step="0.1" value={guess} onChange={(e) => { setGuess(e.target.value); setChecked(false); }}
+          placeholder="Your reading (mL)"
+          className="w-40 text-center rounded-lg border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 text-sm font-bold"
+        />
+        <button onClick={check} className="px-4 py-2 rounded-lg bg-primary-600 text-white font-bold text-sm">Check</button>
+        <button onClick={newReading} className="px-4 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-800 font-bold text-sm">New Reading</button>
+      </div>
+      {checked && (
+        <div className={`rounded-xl p-3 text-center text-sm font-bold ${isCorrect ? 'bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
+          {isCorrect ? `Correct! The reading is ${target.toFixed(1)} mL.` : `Not quite -- the actual reading is ${target.toFixed(1)} mL. Remember: burettes read top-to-bottom, and you read the BOTTOM of the meniscus curve.`}
+        </div>
+      )}
     </div>
   );
 }

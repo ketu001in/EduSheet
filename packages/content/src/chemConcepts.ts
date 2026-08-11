@@ -20,7 +20,8 @@ export type ChemConceptPlaygroundType =
   | 'octet-builder'
   | 'periodicity-explorer'
   | 'electrolysis-calculator'
-  | 'diffusion-race';
+  | 'diffusion-race'
+  | 'burette-reading';
 
 export interface ChemConcept {
   id: string;

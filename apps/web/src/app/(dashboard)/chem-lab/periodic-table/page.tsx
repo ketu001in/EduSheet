@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { PERIODIC_TABLE, PeriodicElement } from '@edusheets/content';
 import { isSpeechSupported, speak, stopSpeaking } from '@/lib/speech';
+import { useDeepDives } from '@/lib/useDeepDives';
+import DeepDiveTrigger from '@/components/labshared/DeepDiveTrigger';
 
 const CATEGORY_COLOR: Record<string, string> = {
   'alkali metal': 'bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-800 text-red-800 dark:text-red-300',
@@ -51,6 +53,7 @@ export default function PeriodicTablePage() {
   const [selected, setSelected] = useState<PeriodicElement | null>(null);
   const [speechReady, setSpeechReady] = useState(false);
   const [speaking, setSpeaking] = useState<'name' | 'full' | null>(null);
+  const deepDives = useDeepDives();
 
   useEffect(() => setSpeechReady(isSpeechSupported()), []);
 
@@ -303,6 +306,10 @@ export default function PeriodicTablePage() {
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Did You Know?</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{selected.summary}</p>
               </div>
+
+              {deepDives.some((d) => d.id === `chem-element-${selected.symbol.toLowerCase()}`) && (
+                <DeepDiveTrigger id={`chem-element-${selected.symbol.toLowerCase()}`} label="Explore This Element Further" />
+              )}
             </div>
           </div>
         </div>

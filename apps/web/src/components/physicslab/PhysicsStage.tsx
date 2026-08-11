@@ -220,7 +220,7 @@ export default function PhysicsStage({ simType, params, running, resetKey, appar
         <MagnetScene params={params} magnetGap={magnetGap} hoveredId={hoveredId} onHover={hover} onUnhover={unhover} onClick={openEquipment} />
       )}
 
-      {openEquipmentId && <EquipmentModal equipmentId={openEquipmentId} equipment={PHYSICS_EQUIPMENT} onClose={() => setOpenEquipmentId(null)} />}
+      {openEquipmentId && <EquipmentModal equipmentId={openEquipmentId} equipment={PHYSICS_EQUIPMENT} onClose={() => setOpenEquipmentId(null)} deepDivePrefix="physics-equip" />}
       <p className="text-center text-[11px] text-slate-400 pb-2">Click any equipment for details &middot; apparatus shown: {apparatusIds.length}</p>
     </div>
   );

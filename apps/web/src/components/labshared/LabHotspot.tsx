@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import SpeakButton from './SpeakButton';
+import DeepDiveTrigger from './DeepDiveTrigger';
+import { useDeepDives } from '@/lib/useDeepDives';
 
 // Shared across every interactive lab's SVG stage (Physics, Biology, ...):
 // a clickable/hoverable apparatus piece, its inline hover tooltip, and the
@@ -54,10 +56,20 @@ export interface LabEquipmentLike {
   deepDive: string;
 }
 
-export function EquipmentModal({ equipmentId, equipment, onClose }: { equipmentId: string; equipment: LabEquipmentLike[]; onClose: () => void }) {
+// `deepDivePrefix` opts a lab's equipment popup into the universal Deep Dive
+// layer -- if `${deepDivePrefix}-${eq.id}` matches an entry in
+// deepDiveRegistry.ts, an "Explore Further" button appears alongside the
+// existing inline Deep Dive text, opening the full hold-and-rotate /
+// applications / misconceptions view. Renders nothing extra when omitted or
+// when no matching entry exists yet, so this is safe to add to every lab's
+// equipment popup incrementally.
+export function EquipmentModal({ equipmentId, equipment, onClose, deepDivePrefix }: { equipmentId: string; equipment: LabEquipmentLike[]; onClose: () => void; deepDivePrefix?: string }) {
   const [expanded, setExpanded] = useState(false);
+  const deepDives = useDeepDives();
   const eq = equipment.find((e) => e.id === equipmentId);
   if (!eq) return null;
+  const deepDiveId = deepDivePrefix ? `${deepDivePrefix}-${eq.id}` : null;
+  const hasDeepDive = deepDiveId && deepDives.some((d) => d.id === deepDiveId);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
@@ -79,6 +91,7 @@ export function EquipmentModal({ equipmentId, equipment, onClose }: { equipmentI
         {expanded && (
           <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">{eq.deepDive}</p>
         )}
+        {hasDeepDive && deepDiveId && <DeepDiveTrigger id={deepDiveId} label="Explore Further" />}
       </div>
     </div>
   );

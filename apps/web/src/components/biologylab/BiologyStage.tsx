@@ -109,7 +109,7 @@ export default function BiologyStage({ simType, params, running, resetKey, exper
         <ExplorerScene diagramId={experiment.diagramId} parts={experiment.explorerParts} hoveredId={hoveredId} onHover={hover} onUnhover={unhover} onClick={openEquipment} />
       )}
 
-      {openEquipmentId && <EquipmentModal equipmentId={openEquipmentId} equipment={combinedEquipment} onClose={() => setOpenEquipmentId(null)} />}
+      {openEquipmentId && <EquipmentModal equipmentId={openEquipmentId} equipment={combinedEquipment} onClose={() => setOpenEquipmentId(null)} deepDivePrefix="bio-equip" />}
       <p className="text-center text-[11px] text-slate-400 pb-2">Click any equipment or labeled part for details</p>
     </div>
   );
