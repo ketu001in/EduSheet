@@ -3,6 +3,9 @@ import {
   CHEMISTRY_EXPERIMENTS, CHEM_EQUIPMENT, CHEM_REAGENTS, CHEM_PHYSICAL_EXPERIMENTS, CHEM_CONCEPTS,
   CHEM_REFERENCE_CHARTS, AROMATIC_MODULES, BENZENE_DERIVATIVES, ATOMIC_MODELS, IONIC_BOND_PAIRS, COVALENT_MOLECULES,
   ALL_DEEP_DIVES, ROBOTICS_APPLICATIONS,
+  ROBOTICS_SENSORS, ROBOTICS_ACTUATORS, ROBOTICS_CONTROL_SYSTEMS, ROBOTICS_MECHANISMS,
+  ROBOTICS_ELECTRONICS, ROBOTICS_CLASSIFICATION, ROBOTICS_HISTORY,
+  AI_CONCEPTS, CODING_CONCEPTS,
 } from '@edusheets/content';
 
 // Every content type an admin can edit at /admin/content. Adding a new lab's
@@ -50,4 +53,13 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeDef[] = [
   { id: 'topic-deep-dive', label: 'Deep Dives (all labs)', items: ALL_DEEP_DIVES },
 
   { id: 'robotics-application', label: 'Tech Lab: Robotics Applications', items: ROBOTICS_APPLICATIONS },
+  { id: 'robotics-sensor', label: 'Tech Lab: Robotics Sensors', items: ROBOTICS_SENSORS },
+  { id: 'robotics-actuator', label: 'Tech Lab: Robotics Actuators', items: ROBOTICS_ACTUATORS },
+  { id: 'robotics-control-system', label: 'Tech Lab: Robotics Control Systems', items: ROBOTICS_CONTROL_SYSTEMS },
+  { id: 'robotics-mechanism', label: 'Tech Lab: Robotics Mechanisms', items: ROBOTICS_MECHANISMS },
+  { id: 'robotics-electronics', label: 'Tech Lab: Robotics Electronics', items: ROBOTICS_ELECTRONICS },
+  { id: 'robotics-classification', label: 'Tech Lab: Robot Classification', items: ROBOTICS_CLASSIFICATION },
+  { id: 'robotics-history', label: 'Tech Lab: Robotics History', items: ROBOTICS_HISTORY },
+  { id: 'ai-concept', label: 'Tech Lab: AI Concepts', items: AI_CONCEPTS },
+  { id: 'coding-concept', label: 'Tech Lab: Coding Concepts', items: CODING_CONCEPTS },
 ];

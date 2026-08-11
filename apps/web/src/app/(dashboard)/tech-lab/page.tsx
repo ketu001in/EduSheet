@@ -88,33 +88,39 @@ export default function TechLabPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Tech Lab</h1>
-          <p className="text-slate-500 text-sm">Your Robotics, AI, and Coding project builds.</p>
+          <p className="text-slate-500 text-sm">Robotics, AI, and Coding -- three labs, each with real study content plus hands-on projects you can build.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/tech-lab/robotics"
-            className="btn-brutal px-5 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
-          >
-            <Bot className="w-4 h-4" /> Robotics Lab
-          </Link>
-          <Link
-            href="/tech-lab/new"
-            className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
-          >
-            <Sparkles className="w-4 h-4" /> New Build
-          </Link>
-        </div>
+        <Link
+          href="/tech-lab/new"
+          className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
+        >
+          <Sparkles className="w-4 h-4" /> New Build
+        </Link>
       </div>
 
-      <Link href="/tech-lab/robotics" className="block glass-card rounded-2xl p-5 flex items-center gap-4 hover:border-primary-400 transition-all">
-        <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center shrink-0">
-          <Bot className="w-6 h-6" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-bold text-sm">New: Robotics Lab</h3>
-          <p className="text-xs text-slate-500">24 real robots doing real jobs today -- industrial arms, Mars rovers, surgical robots, and more. Every one is genuinely playable.</p>
-        </div>
-      </Link>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link href="/tech-lab/robotics" className="block glass-card rounded-2xl p-5 space-y-2.5 hover:border-primary-400 hover:-translate-y-0.5 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
+            <Bot className="w-5 h-5" />
+          </div>
+          <h3 className="font-bold text-sm">Robotics Lab</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">Real sensor specs, actuator math, control theory, and 24 real robots doing real jobs -- every one genuinely playable.</p>
+        </Link>
+        <Link href="/tech-lab/ai" className="block glass-card rounded-2xl p-5 space-y-2.5 hover:border-primary-400 hover:-translate-y-0.5 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
+            <Brain className="w-5 h-5" />
+          </div>
+          <h3 className="font-bold text-sm">AI Lab</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">What machine learning actually is, the real types of learning, and a working perceptron you can train by hand.</p>
+        </Link>
+        <Link href="/tech-lab/coding" className="block glass-card rounded-2xl p-5 space-y-2.5 hover:border-primary-400 hover:-translate-y-0.5 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
+            <Code2 className="w-5 h-5" />
+          </div>
+          <h3 className="font-bold text-sm">Coding Lab</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">Algorithms, loops, conditionals, functions -- and a real race between linear and binary search.</p>
+        </Link>
+      </div>
 
       {isLoading ? (
         <div className="glass-card p-12 rounded-3xl text-center flex items-center justify-center gap-2 text-slate-400 my-8">

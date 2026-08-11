@@ -33,3 +33,6 @@ export * from './vedicMathSutras';
 export * from './mathHistoryFigures';
 export * from './roboticsTypes';
 export * from './roboticsApplications';
+export * from './roboticsFundamentals';
+export * from './techFoundationsTypes';
+export * from './techFoundations';

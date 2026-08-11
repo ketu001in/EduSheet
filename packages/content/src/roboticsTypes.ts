@@ -63,6 +63,78 @@ export type RoboticsPlaygroundType =
   | 'gesture-match'
   | 'balance-control';
 
+// -- Robotics Fundamentals -- the actual academic subject matter of
+// robotics (sensors, actuators, control theory, mechanisms, electronics,
+// classification, history), as opposed to RoboticsApplication above (real
+// robots doing real jobs). Direct response to feedback that the lab needed
+// real study-level depth -- "facts and figures... not only available
+// widely knowledge, that is anyhow anyone can search" -- so every entry
+// here carries genuine datasheet/textbook specs, not just trivia.
+export type RoboticsFundamentalSection = 'sensors' | 'actuators' | 'control-systems' | 'mechanisms' | 'electronics';
+
+export type RoboticsFundamentalPlaygroundType =
+  | 'formula-lab' | 'differential-drive' | 'board-compare' | 'none';
+
+export interface RoboticsSpec {
+  label: string;
+  value: string;
+}
+
+export interface RoboticsFundamental {
+  id: string;
+  section: RoboticsFundamentalSection;
+  name: string;
+  tagline: string;
+  overview: string;
+  realSpecs: RoboticsSpec[];
+  howItWorks: string[];
+  keyFacts: string[];
+  commonUse: string[];
+  playgroundType: RoboticsFundamentalPlaygroundType;
+  playgroundConfig: Record<string, unknown>;
+}
+
+// A formula-lab's config identifies which verified engine formula drives
+// it (see roboticsEngineeringEngine.ts) plus the input slider and output
+// display it's wrapped in.
+export interface FormulaLabConfig {
+  formulaKey: 'ultrasonic' | 'servo' | 'stepper' | 'gear' | 'encoder' | 'p-controller';
+  inputLabel: string;
+  inputUnit: string;
+  inputMin: number;
+  inputMax: number;
+  inputDefault: number;
+  outputLabel: string;
+  outputUnit: string;
+  formulaDisplay: string; // the real formula, shown as text
+  // gear/encoder need a couple of fixed secondary values to display alongside
+  extraNote?: string;
+}
+
+// Real classification systems taught in robotics/mechanical engineering
+// curricula (the Japan Industrial Robot Association's generation-based
+// scheme is the most widely cited) -- genuinely different from a list of
+// "cool robots", this is how robotics as a FIELD organizes and studies
+// itself.
+export interface RoboticsClassificationType {
+  id: string;
+  name: string;
+  definition: string;
+  characteristics: string[];
+  realExample: string;
+}
+
+// A real, dated history of robotics -- verifiable milestones, named
+// people, and actual years, not vague "robots have existed for a while"
+// framing.
+export interface RoboticsHistoryMilestone {
+  id: string;
+  year: string;
+  title: string;
+  description: string;
+  whyItMatters: string;
+}
+
 export interface RoboticsApplication {
   id: string;
   name: string;
