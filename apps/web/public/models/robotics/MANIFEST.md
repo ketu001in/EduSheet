@@ -10,13 +10,24 @@ the moment it lands in this folder with the right name.
 
 ## How to download each one
 
-1. Open the **Sketchfab URL** below (you'll need to be logged in -- you've
-   already created an account).
-2. Click **Download 3D Model**.
-3. In the format picker, choose **glTF** (the option that produces a
-   `.glb` file) -- not "Original", USDZ, or OBJ.
-4. Rename the downloaded file to exactly the **Save as** name below.
-5. Drop it into this folder: `apps/web/public/models/robotics/`.
+Every model sourced so far has come as a **split glTF** (a `.zip`
+containing `scene.gltf` + `scene.bin` + an optional `textures/` folder,
+not a single `.glb`) -- so this is the process to expect:
+
+1. Open the **Sketchfab URL** below (you'll need to be logged in).
+2. Click **Download 3D Model** -- you'll get a `.zip`.
+3. Unzip it.
+4. Create a folder named exactly the **Save as** name below (no `.glb`
+   extension -- these are now folder names) inside
+   `apps/web/public/models/robotics/`.
+5. Copy everything from the unzipped folder into it, keeping `scene.gltf`,
+   `scene.bin`, and any `textures/` folder together as siblings.
+
+If a *different* model's zip turns out to contain a single `.glb` file
+instead (some do offer a packaged "glTF Binary" option), just drop that
+file in directly using the **Save as** name with `.glb` on the end, and
+tell me which one it was -- the code path differs slightly per file
+(`.../name/scene.gltf` vs `.../name.glb`), so I'll update that one entry.
 
 Once a batch of files is here, tell me and I'll verify, adjust anything
 that needs it (some Sketchfab exports come in at an unusual scale --
@@ -25,28 +36,33 @@ usually invisible, but I'll sanity-check), then commit, push, and deploy.
 
 ## Fundamentals (Sensors, Actuators, Mechanisms, Electronics)
 
-| Component | Save as | Sketchfab URL | Author | License |
-|---|---|---|---|---|
-| Ultrasonic Distance Sensor (HC-SR04) | `ultrasonic-hcsr04.glb` | https://sketchfab.com/3d-models/hc-sr04-e8a6adcef8fd4f45bf27b8d7718ed489 | peddintiudaykiran176 | CC Attribution |
-| IR Proximity/Line Sensor | `ir-sensor.glb` | https://sketchfab.com/3d-models/ir-sensor-module-for-arduino-projects-3d-model-6ad4f3afb83940fea95cd3846aa68a18 | Veer AI | CC Attribution |
-| PIR Motion Sensor | `pir-sensor.glb` | https://sketchfab.com/3d-models/pir-sensor-2f64edc09d4c4be5aaa26acecacb36ea | Zeyad Ibrahim Hamed | CC Attribution |
-| Rotary Encoder (KY-040) | `rotary-encoder.glb` | https://sketchfab.com/3d-models/rotary-encoder-module-ky-040-dummy-26063555c841414fbd1bab9e204d34c1 | YouniqueĪdeaStudio | CC Attribution |
-| Servo Motor (SG90, 1:1 scale) | `servo-sg90.glb` | https://sketchfab.com/3d-models/sg90-servo-11-scale-c865adb97e32477f8016658e340375b6 | IQuanix | CC Attribution |
-| DC Motor (animated, working principle) | `dc-motor.glb` | https://sketchfab.com/3d-models/model-of-dc-motor-working-principle-e9ac2cf2f2d04180b02965c01f7a9a19 | Mansoor | CC Attribution |
-| Stepper Motor (NEMA 17, 42x48mm) | `stepper-nema17.glb` | https://sketchfab.com/3d-models/nema-17-stepper-motor-42mm-x-48mm-b970d52c4b554768a1b576cb381abf07 | moogh | CC Attribution |
-| Gear Train (animated meshing) | `gear-train.glb` | https://sketchfab.com/3d-models/nautilus-gears-train-mechanism-2c0b4a262a6c4323997d95920612dfeb | trinityscsp | CC Attribution |
-| Line Follower Robot (differential drive) | `line-follower-robot.glb` | https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506 | zoe.goodward | CC Attribution |
-| 6-Axis Industrial Robot Arm (DOF) | `robotic-arm-6dof.glb` | https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f | Jayson Stauffer | CC Attribution |
-| Arduino Uno Board | `arduino-uno.glb` | https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669 | crimsonfalcon | CC Attribution |
+| Status | Component | Save as (folder) | Sketchfab URL | Author | License |
+|---|---|---|---|---|---|
+| ✅ done | Ultrasonic Distance Sensor (HC-SR04) | `ultrasonic-hcsr04/` | https://sketchfab.com/3d-models/hc-sr04-e8a6adcef8fd4f45bf27b8d7718ed489 | peddintiudaykiran176 | CC Attribution |
+| ✅ done | IR Proximity/Line Sensor | `ir-sensor/` | https://sketchfab.com/3d-models/ir-sensor-module-for-arduino-projects-3d-model-6ad4f3afb83940fea95cd3846aa68a18 | Veer AI | CC Attribution |
+| ✅ done | PIR Motion Sensor | `pir-sensor/` | https://sketchfab.com/3d-models/pir-sensor-2f64edc09d4c4be5aaa26acecacb36ea | Zeyad Ibrahim Hamed | CC Attribution |
+| ✅ done | Rotary Encoder (KY-040) | `rotary-encoder/` | https://sketchfab.com/3d-models/rotary-encoder-module-ky-040-dummy-26063555c841414fbd1bab9e204d34c1 | YouniqueĪdeaStudio | CC Attribution |
+| ✅ done | Servo Motor (SG90, 1:1 scale) | `servo-sg90/` | https://sketchfab.com/3d-models/sg90-servo-11-scale-c865adb97e32477f8016658e340375b6 | IQuanix | CC Attribution |
+| ✅ done | DC Motor (animated, working principle) | `dc-motor/` | https://sketchfab.com/3d-models/model-of-dc-motor-working-principle-e9ac2cf2f2d04180b02965c01f7a9a19 | Mansoor | CC Attribution |
+| ⬜ remaining | Stepper Motor (NEMA 17, 42x48mm) | `stepper-nema17/` | https://sketchfab.com/3d-models/nema-17-stepper-motor-42mm-x-48mm-b970d52c4b554768a1b576cb381abf07 | moogh | CC Attribution |
+| ⬜ remaining | Gear Train (animated meshing) | `gear-train/` | https://sketchfab.com/3d-models/nautilus-gears-train-mechanism-2c0b4a262a6c4323997d95920612dfeb | trinityscsp | CC Attribution |
+| ⬜ remaining | Line Follower Robot (differential drive) | `line-follower-robot/` | https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506 | zoe.goodward | CC Attribution |
+| ⬜ remaining | 6-Axis Industrial Robot Arm (DOF) | `robotic-arm-6dof/` | https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f | Jayson Stauffer | CC Attribution |
+| ⬜ remaining | Arduino Uno Board | `arduino-uno/` | https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669 | crimsonfalcon | CC Attribution |
+
+The 6 done ones are already unzipped, moved into place, and wired into
+code to load `.../<folder>/scene.gltf`. The 5 remaining follow the exact
+same "Save as" folder pattern -- create the folder, unzip the download
+into it.
 
 ## Applications Gallery (bonus, reuses two of the above)
 
-| Component | Save as | Sketchfab URL | Author | License |
-|---|---|---|---|---|
-| Robotic Prosthetic Hand (Youbionic) | `prosthetic-hand.glb` | https://sketchfab.com/3d-models/youbionic-hand-2019-db4efd60aec3417192a5592062abe2dc | ciccarese / Youbionic | CC Attribution |
+| Status | Component | Save as (folder) | Sketchfab URL | Author | License |
+|---|---|---|---|---|---|
+| ⬜ remaining | Robotic Prosthetic Hand (Youbionic) | `prosthetic-hand/` | https://sketchfab.com/3d-models/youbionic-hand-2019-db4efd60aec3417192a5592062abe2dc | ciccarese / Youbionic | CC Attribution |
 
-`robotic-arm-6dof.glb` and `arduino-uno.glb` above are reused automatically
-for the Applications Gallery's "Robotic Arm Assembly Line" entry once
+`robotic-arm-6dof/` and `arduino-uno/` above are reused automatically for
+the Applications Gallery's "Robotic Arm Assembly Line" entry once
 present -- no separate download needed for those two.
 
 ## Not sourced yet (left as text-only, honestly, rather than a wrong model)

@@ -40,7 +40,7 @@ export const ROBOTICS_SENSORS: RoboticsFundamental[] = [
     commonUse: ['Obstacle-avoiding and parking-assist robots', 'Car reverse-parking sensors', 'Water tank level measurement'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'ultrasonic', inputLabel: 'Distance to Object', inputUnit: 'cm', inputMin: 2, inputMax: 400, inputDefault: 50, outputLabel: 'Echo Pulse Duration', outputUnit: 'µs', formulaDisplay: 'echo time = (2 × distance) ÷ 0.034' },
-    model3d: { src: '/models/robotics/ultrasonic-hcsr04.glb', credit: { author: 'peddintiudaykiran176 (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/hc-sr04-e8a6adcef8fd4f45bf27b8d7718ed489' } },
+    model3d: { src: '/models/robotics/ultrasonic-hcsr04/scene.gltf', credit: { author: 'peddintiudaykiran176 (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/hc-sr04-e8a6adcef8fd4f45bf27b8d7718ed489' } },
   },
   {
     id: 'sensor-ir',
@@ -67,7 +67,7 @@ export const ROBOTICS_SENSORS: RoboticsFundamental[] = [
     commonUse: ['Line-following robots', 'Object counting on conveyor belts', 'TV/AC remote controls'],
     playgroundType: 'none',
     playgroundConfig: {},
-    model3d: { src: '/models/robotics/ir-sensor.glb', credit: { author: 'Veer AI (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/ir-sensor-module-for-arduino-projects-3d-model-6ad4f3afb83940fea95cd3846aa68a18' } },
+    model3d: { src: '/models/robotics/ir-sensor/scene.gltf', credit: { author: 'Veer AI (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/ir-sensor-module-for-arduino-projects-3d-model-6ad4f3afb83940fea95cd3846aa68a18' } },
   },
   {
     id: 'sensor-ldr',
@@ -120,7 +120,7 @@ export const ROBOTICS_SENSORS: RoboticsFundamental[] = [
     commonUse: ['Security and surveillance robots', 'Automatic lighting systems', 'Burglar alarm systems'],
     playgroundType: 'none',
     playgroundConfig: {},
-    model3d: { src: '/models/robotics/pir-sensor.glb', credit: { author: 'Zeyad Ibrahim Hamed (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/pir-sensor-2f64edc09d4c4be5aaa26acecacb36ea' } },
+    model3d: { src: '/models/robotics/pir-sensor/scene.gltf', credit: { author: 'Zeyad Ibrahim Hamed (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/pir-sensor-2f64edc09d4c4be5aaa26acecacb36ea' } },
   },
   {
     id: 'sensor-imu',
@@ -172,7 +172,7 @@ export const ROBOTICS_SENSORS: RoboticsFundamental[] = [
     commonUse: ['Calculating distance travelled in wheeled robots', 'Precise position control in 3D printers and CNC machines', 'Rotary volume knobs'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'encoder', inputLabel: 'Encoder Pulses Counted', inputUnit: 'pulses', inputMin: 0, inputMax: 720, inputDefault: 360, outputLabel: 'Distance Travelled', outputUnit: 'cm', formulaDisplay: 'distance = (pulses ÷ pulses-per-rev) × π × wheel diameter', extraNote: 'Using a 360-pulse/revolution encoder on a 6.5cm-diameter wheel.' },
-    model3d: { src: '/models/robotics/rotary-encoder.glb', credit: { author: 'YouniqueĪdeaStudio (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/rotary-encoder-module-ky-040-dummy-26063555c841414fbd1bab9e204d34c1' } },
+    model3d: { src: '/models/robotics/rotary-encoder/scene.gltf', credit: { author: 'YouniqueĪdeaStudio (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/rotary-encoder-module-ky-040-dummy-26063555c841414fbd1bab9e204d34c1' } },
   },
 ];
 
@@ -202,7 +202,7 @@ export const ROBOTICS_ACTUATORS: RoboticsFundamental[] = [
     commonUse: ['Robotic arm joints', 'RC car steering', 'Camera pan-tilt mounts'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'servo', inputLabel: 'PWM Pulse Width', inputUnit: 'ms', inputMin: 1, inputMax: 2, inputDefault: 1.5, outputLabel: 'Servo Angle', outputUnit: '°', formulaDisplay: 'angle = ((pulse width − 1) ÷ 1) × 180' },
-    model3d: { src: '/models/robotics/servo-sg90.glb', credit: { author: 'IQuanix (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/sg90-servo-11-scale-c865adb97e32477f8016658e340375b6' } },
+    model3d: { src: '/models/robotics/servo-sg90/scene.gltf', credit: { author: 'IQuanix (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/sg90-servo-11-scale-c865adb97e32477f8016658e340375b6' } },
   },
   {
     id: 'actuator-dc-motor',
@@ -229,7 +229,7 @@ export const ROBOTICS_ACTUATORS: RoboticsFundamental[] = [
     commonUse: ['Wheeled robot drive motors', 'Cooling fans', 'Conveyor belt drives'],
     playgroundType: 'none',
     playgroundConfig: {},
-    model3d: { src: '/models/robotics/dc-motor.glb', credit: { author: 'Mansoor (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/model-of-dc-motor-working-principle-e9ac2cf2f2d04180b02965c01f7a9a19' } },
+    model3d: { src: '/models/robotics/dc-motor/scene.gltf', credit: { author: 'Mansoor (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/model-of-dc-motor-working-principle-e9ac2cf2f2d04180b02965c01f7a9a19' } },
   },
   {
     id: 'actuator-stepper',
