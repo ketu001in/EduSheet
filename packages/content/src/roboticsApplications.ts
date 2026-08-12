@@ -40,6 +40,7 @@ export const ROBOTICS_APPLICATIONS: RoboticsApplication[] = [
     careersAndFutures: "Robotics technicians, automation engineers, and industrial designers are in high and growing demand as more factories adopt robotic arms -- India's PLI manufacturing push is accelerating this.",
     playgroundType: 'pick-and-place',
     playgroundConfig: { itemLabel: 'Car Door Panel', itemColor: '#3b82f6', pickZoneLabel: 'Stamping Station', placeZoneLabel: 'Assembly Conveyor', scenario: 'Move the stamped panel from the press to the conveyor without dropping it.' },
+    model3d: { src: '/models/robotics/robotic-arm-6dof.glb', credit: { author: 'Jayson Stauffer (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f' } },
   },
   {
     id: 'industrial-warehouse-robot',
@@ -227,7 +228,7 @@ export const ROBOTICS_APPLICATIONS: RoboticsApplication[] = [
       "Software trained on the wearer's own signal patterns interprets which grip or finger movement they're intending.",
       'Small motors in each finger then execute that specific movement -- a pinch grip, a full-hand grip, or individual finger control on advanced models.',
     ],
-    realExamples: ['Ottobock and Össur myoelectric prosthetic hands used worldwide', "India's Society for Biomedical Technology and BionicYantra building affordable prosthetic hands for Indian patients", "Open Bionics' 'Hero Arm', a lower-cost 3D-printed myoelectric prosthetic"],
+    realExamples: ['Ottobock and Össur myoelectric prosthetic hands used worldwide', "India's Society for Biomedical Technology and BionicYantra building affordable prosthetic hands for Indian patients", "Open Bionics' 'Hero Arm', a lower-cost 3D-printed myoelectric prosthetic", "Youbionic, an open-source 3D-printable bionic hand project sharing its designs freely online"],
     curriculumTie: "Connects to the robotics curriculum's sensors unit (bioelectric signals) and Biology's coverage of muscles and the nervous system.",
     deepFacts: [
       'EMG signals are the same kind of electrical activity doctors measure to diagnose muscle and nerve conditions -- prosthetic hands repurpose that same signal as a genuine control interface.',
@@ -238,6 +239,7 @@ export const ROBOTICS_APPLICATIONS: RoboticsApplication[] = [
     careersAndFutures: 'Prosthetics and orthotics, biomedical signal processing, and assistive-device design are specialized fields combining engineering with direct human impact.',
     playgroundType: 'gesture-match',
     playgroundConfig: { commands: [{ label: 'Flex signal: strong', icon: '💪', actionLabel: 'Power Grip' }, { label: 'Flex signal: light', icon: '🤏', actionLabel: 'Pinch Grip' }, { label: 'Flex signal: quick double', icon: '✌️', actionLabel: 'Point Gesture' }] },
+    model3d: { src: '/models/robotics/prosthetic-hand.glb', credit: { author: 'ciccarese / Youbionic (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/youbionic-hand-2019-db4efd60aec3417192a5592062abe2dc' } },
   },
 
   // -- Space & Exploration -----------------------------------------------------

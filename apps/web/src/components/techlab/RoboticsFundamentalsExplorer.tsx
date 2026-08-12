@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   X, Sparkles, ListChecks, Briefcase, Radio, Cog, Cpu as CpuIcon,
   Settings2, Zap as ZapIcon, ScrollText, History as HistoryIcon,
@@ -12,6 +13,15 @@ import {
 import { useContent } from '@/lib/useContent';
 import SpeakButton from '@/components/labshared/SpeakButton';
 import RoboticsFundamentalStage from '@/components/techlab/RoboticsFundamentalStage';
+
+// Dynamically imported (ssr:false) so Three.js -- a genuinely large
+// library -- only loads for a visitor who actually opens a detail modal,
+// not on every Robotics Lab page view. WebGL also has no meaningful
+// server-side representation, so ssr:false is correct here regardless.
+const Robot3DViewer = dynamic(() => import('@/components/labshared/Robot3DViewer'), {
+  ssr: false,
+  loading: () => <div className="h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
 
 type TabId = RoboticsFundamentalSection | 'classification' | 'history';
 
@@ -140,6 +150,16 @@ function FundamentalDetailModal({ item, onClose }: { item: RoboticsFundamental; 
           </div>
           <SpeakButton label="Listen" text={fullNarration} />
         </div>
+
+        {item.model3d && (
+          <div className="space-y-1">
+            <Robot3DViewer src={item.model3d.src} alt={item.name} />
+            <p className="text-center text-[10px] text-slate-400">
+              3D model: {item.model3d.credit.author} &middot; {item.model3d.credit.license} &middot;{' '}
+              <a href={item.model3d.credit.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary-600">Source</a>
+            </p>
+          </div>
+        )}
 
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4">{item.overview}</p>
 

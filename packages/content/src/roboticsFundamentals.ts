@@ -40,6 +40,7 @@ export const ROBOTICS_SENSORS: RoboticsFundamental[] = [
     commonUse: ['Obstacle-avoiding and parking-assist robots', 'Car reverse-parking sensors', 'Water tank level measurement'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'ultrasonic', inputLabel: 'Distance to Object', inputUnit: 'cm', inputMin: 2, inputMax: 400, inputDefault: 50, outputLabel: 'Echo Pulse Duration', outputUnit: 'µs', formulaDisplay: 'echo time = (2 × distance) ÷ 0.034' },
+    model3d: { src: '/models/robotics/ultrasonic-hcsr04.glb', credit: { author: 'peddintiudaykiran176 (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/hc-sr04-e8a6adcef8fd4f45bf27b8d7718ed489' } },
   },
   {
     id: 'sensor-ir',
@@ -66,6 +67,7 @@ export const ROBOTICS_SENSORS: RoboticsFundamental[] = [
     commonUse: ['Line-following robots', 'Object counting on conveyor belts', 'TV/AC remote controls'],
     playgroundType: 'none',
     playgroundConfig: {},
+    model3d: { src: '/models/robotics/ir-sensor.glb', credit: { author: 'Veer AI (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/ir-sensor-module-for-arduino-projects-3d-model-6ad4f3afb83940fea95cd3846aa68a18' } },
   },
   {
     id: 'sensor-ldr',
@@ -118,6 +120,7 @@ export const ROBOTICS_SENSORS: RoboticsFundamental[] = [
     commonUse: ['Security and surveillance robots', 'Automatic lighting systems', 'Burglar alarm systems'],
     playgroundType: 'none',
     playgroundConfig: {},
+    model3d: { src: '/models/robotics/pir-sensor.glb', credit: { author: 'Zeyad Ibrahim Hamed (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/pir-sensor-2f64edc09d4c4be5aaa26acecacb36ea' } },
   },
   {
     id: 'sensor-imu',
@@ -169,6 +172,7 @@ export const ROBOTICS_SENSORS: RoboticsFundamental[] = [
     commonUse: ['Calculating distance travelled in wheeled robots', 'Precise position control in 3D printers and CNC machines', 'Rotary volume knobs'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'encoder', inputLabel: 'Encoder Pulses Counted', inputUnit: 'pulses', inputMin: 0, inputMax: 720, inputDefault: 360, outputLabel: 'Distance Travelled', outputUnit: 'cm', formulaDisplay: 'distance = (pulses ÷ pulses-per-rev) × π × wheel diameter', extraNote: 'Using a 360-pulse/revolution encoder on a 6.5cm-diameter wheel.' },
+    model3d: { src: '/models/robotics/rotary-encoder.glb', credit: { author: 'YouniqueĪdeaStudio (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/rotary-encoder-module-ky-040-dummy-26063555c841414fbd1bab9e204d34c1' } },
   },
 ];
 
@@ -198,6 +202,7 @@ export const ROBOTICS_ACTUATORS: RoboticsFundamental[] = [
     commonUse: ['Robotic arm joints', 'RC car steering', 'Camera pan-tilt mounts'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'servo', inputLabel: 'PWM Pulse Width', inputUnit: 'ms', inputMin: 1, inputMax: 2, inputDefault: 1.5, outputLabel: 'Servo Angle', outputUnit: '°', formulaDisplay: 'angle = ((pulse width − 1) ÷ 1) × 180' },
+    model3d: { src: '/models/robotics/servo-sg90.glb', credit: { author: 'IQuanix (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/sg90-servo-11-scale-c865adb97e32477f8016658e340375b6' } },
   },
   {
     id: 'actuator-dc-motor',
@@ -224,6 +229,7 @@ export const ROBOTICS_ACTUATORS: RoboticsFundamental[] = [
     commonUse: ['Wheeled robot drive motors', 'Cooling fans', 'Conveyor belt drives'],
     playgroundType: 'none',
     playgroundConfig: {},
+    model3d: { src: '/models/robotics/dc-motor.glb', credit: { author: 'Mansoor (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/model-of-dc-motor-working-principle-e9ac2cf2f2d04180b02965c01f7a9a19' } },
   },
   {
     id: 'actuator-stepper',
@@ -250,6 +256,7 @@ export const ROBOTICS_ACTUATORS: RoboticsFundamental[] = [
     commonUse: ['3D printer axis movement', 'CNC machine positioning', 'Camera focus/zoom mechanisms'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'stepper', inputLabel: 'Step Rate', inputUnit: 'steps/sec', inputMin: 10, inputMax: 2000, inputDefault: 400, outputLabel: 'Motor Speed', outputUnit: 'RPM', formulaDisplay: 'RPM = (steps per second × 60) ÷ steps per revolution', extraNote: 'Using a standard 200-step/revolution (1.8°/step) motor.' },
+    model3d: { src: '/models/robotics/stepper-nema17.glb', credit: { author: 'moogh (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/nema-17-stepper-motor-42mm-x-48mm-b970d52c4b554768a1b576cb381abf07' } },
   },
   {
     id: 'actuator-solenoid',
@@ -373,6 +380,7 @@ export const ROBOTICS_MECHANISMS: RoboticsFundamental[] = [
     commonUse: ['Wheel drive systems in robots and vehicles', 'Clock mechanisms', 'Bicycle gearing'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'gear', inputLabel: 'Output Gear Teeth Count', inputUnit: 'teeth', inputMin: 10, inputMax: 100, inputDefault: 40, outputLabel: 'Output Speed', outputUnit: 'RPM', formulaDisplay: 'output RPM = input RPM × (input teeth ÷ output teeth)', extraNote: 'Fixed input gear: 20 teeth, spinning at 100 RPM.' },
+    model3d: { src: '/models/robotics/gear-train.glb', credit: { author: 'trinityscsp (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/nautilus-gears-train-mechanism-2c0b4a262a6c4323997d95920612dfeb' } },
   },
   {
     id: 'mechanism-differential-drive',
@@ -398,6 +406,7 @@ export const ROBOTICS_MECHANISMS: RoboticsFundamental[] = [
     commonUse: ['Robot vacuums', 'Wheelchairs', 'Warehouse AGVs', 'Tank/tracked vehicles'],
     playgroundType: 'differential-drive',
     playgroundConfig: {},
+    model3d: { src: '/models/robotics/line-follower-robot.glb', credit: { author: 'zoe.goodward (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506' } },
   },
   {
     id: 'mechanism-dof',
@@ -423,6 +432,7 @@ export const ROBOTICS_MECHANISMS: RoboticsFundamental[] = [
     commonUse: ['Industrial robotic arms', 'Surgical robots', 'Robotics competition arms in Indian ATL/robotics club kits'],
     playgroundType: 'none',
     playgroundConfig: {},
+    model3d: { src: '/models/robotics/robotic-arm-6dof.glb', credit: { author: 'Jayson Stauffer (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f' } },
   },
 ];
 
@@ -449,6 +459,7 @@ export const ROBOTICS_ELECTRONICS: RoboticsFundamental[] = [
     commonUse: ['Arduino: beginner robotics kits, sensor/actuator control', 'Raspberry Pi: computer-vision robots, AI-based robots, home automation hubs'],
     playgroundType: 'board-compare',
     playgroundConfig: {},
+    model3d: { src: '/models/robotics/arduino-uno.glb', credit: { author: 'crimsonfalcon (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669' } },
   },
   {
     id: 'electronics-ohms-law',
