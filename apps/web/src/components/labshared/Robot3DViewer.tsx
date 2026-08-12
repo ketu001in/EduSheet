@@ -1,26 +1,46 @@
 'use client';
-import { Component, ReactNode, Suspense } from 'react';
+import { Component, ReactNode, Suspense, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Bounds, Center, Html, OrbitControls, useGLTF } from '@react-three/drei';
-import { Box, Loader2, RotateCcw } from 'lucide-react';
+import { Box, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 
-// A real, hold-and-spin 3D model viewer for any real, license-verified .glb
+// A real, hold-and-spin 3D model viewer for any real, license-verified glTF
 // file -- the direct upgrade from RotatableImageCard's single-photo tilt
 // illusion (see that file's header) to an actual volumetric model the
 // student can genuinely orbit around and inspect from any angle. Built
-// deliberately defensive: if the model file isn't present yet (a real,
-// licensed download the user sources and drops into
-// public/models/robotics/, see that folder's MANIFEST.md), this renders a
-// calm "coming soon" placeholder instead of crashing the page -- so this
-// component is safe to wire into content today and will light up
-// automatically the moment each file lands, no code changes needed.
+// deliberately defensive on two separate fronts:
+//   1. Missing file: if the model isn't present yet (a real, licensed
+//      download the user sources and drops into public/models/robotics/,
+//      see that folder's MANIFEST.md), this renders a calm "coming soon"
+//      placeholder instead of crashing the page.
+//   2. WebGL context loss: browsers cap how many live WebGL contexts can
+//      exist at once and will force-evict old ones under GPU/driver
+//      pressure (common on integrated graphics, or after inspecting many
+//      models in one session) -- confirmed via a real "THREE.WebGLRenderer:
+//      Context Lost" console error. `frameloop="demand"` (only render on
+//      an actual change, not a continuous 60fps loop) is the main defense
+//      since it cuts sustained GPU load dramatically; a "Tap to reload"
+//      retry path covers the rest, since a lost context is a genuine,
+//      recoverable browser event, not a missing-content case.
 export default function Robot3DViewer({ src, alt, height = 260 }: { src: string; alt: string; height?: number }) {
+  const [attempt, setAttempt] = useState(0);
   return (
     <div className="space-y-2">
       <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 overflow-hidden" style={{ height }}>
-        <ModelErrorBoundary fallback={<ComingSoonPlaceholder alt={alt} />}>
+        <ModelErrorBoundary key={attempt} fallback={<ComingSoonPlaceholder alt={alt} onRetry={() => setAttempt((a) => a + 1)} />}>
           <Suspense fallback={<LoadingPlaceholder />}>
-            <Canvas camera={{ position: [0, 0, 5], fov: 45 }} dpr={[1, 2]}>
+            <Canvas
+              frameloop="demand"
+              camera={{ position: [0, 0, 5], fov: 45 }}
+              dpr={[1, 1.5]}
+              gl={{ powerPreference: 'default', antialias: true }}
+              onCreated={({ gl }) => {
+                // Telling the browser we intend to handle context loss
+                // ourselves (instead of it silently giving up) makes it
+                // more likely to actually fire 'webglcontextrestored'.
+                gl.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault());
+              }}
+            >
               {/* A locally-composed studio-style light rig, deliberately used
                   instead of drei's <Environment preset="studio">: that preset
                   fetches its HDR lighting map from a third-party CDN
@@ -66,20 +86,29 @@ function LoadingPlaceholder() {
   );
 }
 
-function ComingSoonPlaceholder({ alt }: { alt: string }) {
+function ComingSoonPlaceholder({ alt, onRetry }: { alt: string; onRetry: () => void }) {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-400 p-4 text-center">
       <Box className="w-8 h-8" />
-      <p className="text-xs font-bold">3D model coming soon</p>
+      <p className="text-xs font-bold">3D view interrupted</p>
       <p className="text-[10px] text-slate-400">{alt}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-1 inline-flex items-center gap-1 rounded-full border border-slate-300 dark:border-slate-700 px-3 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+      >
+        <RefreshCw className="w-3 h-3" /> Tap to reload
+      </button>
     </div>
   );
 }
 
 // React error boundaries have no hook equivalent yet -- this is the
-// standard, minimal class-based pattern, used ONLY to catch a failed
-// model load (a missing file, a malformed GLTF) and swap in the calm
-// placeholder above instead of taking down the whole page.
+// standard, minimal class-based pattern. It catches two distinct failure
+// kinds identically (a missing/malformed model file, or a lost WebGL
+// context) and swaps in the placeholder above -- with a retry button that
+// remounts a fresh Canvas via the parent's `attempt` key, since a lost
+// context is genuinely recoverable and shouldn't be a dead end.
 class ModelErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode; fallback: ReactNode }) {
     super(props);
