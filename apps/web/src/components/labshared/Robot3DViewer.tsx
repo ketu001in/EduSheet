@@ -13,33 +13,38 @@ import { Box, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 //      download the user sources and drops into public/models/robotics/,
 //      see that folder's MANIFEST.md), this renders a calm placeholder
 //      instead of crashing the page.
-//   2. WebGL context loss on the *first* canvas of a session: confirmed
-//      via a real device's console ("THREE.WebGLRenderer: Context Lost"
-//      immediately followed by "R3F: Hooks can only be used within the
-//      Canvas component!"), reproducing reliably on first open and never
-//      on retry. That pattern is a race, not a hardware ceiling: the GLTF
-//      fetch is still in flight when the GPU process (cold-starting for
-//      this page's very first WebGL context) hiccups and R3F tears down
-//      its internal context; the fetch then resolves into a torn-down
-//      tree. On retry the file is already cached, so it resolves
-//      instantly with no window left for that race -- which is exactly
-//      why a manual retry always fixed it. Two fixes close the gap:
-//      `useGLTF.preload` starts the fetch immediately, before the Canvas
-//      even mounts, shrinking that race window; and the boundary below
-//      auto-heals once on its own (silently remounting, no user tap
-//      needed) since by then the file is cached and the retry is instant.
+//   2. WebGL context loss ("THREE.WebGLRenderer: Context Lost", real
+//      device console): confirmed via live testing that an *instant*
+//      remount retry still failed identically -- so this isn't a one-off
+//      timing race, it's the browser refusing the context outright. By
+//      default WebGL drops a context rather than hand back a
+//      degraded/software one; `failIfMajorPerformanceCaveat: false` below
+//      is the standard opt-in to accept that degraded context instead of
+//      losing it, which matters most exactly in restricted browsing modes
+//      (private/incognito, VPN/proxy browsers) that limit GPU access.
+//      Paired with delayed (not instant) auto-retries, since a real
+//      driver-level recovery needs actual wall-clock time, not just a
+//      same-tick remount.
 export default function Robot3DViewer({ src, alt, height = 260 }: { src: string; alt: string; height?: number }) {
   useGLTF.preload(src);
   return (
     <div className="space-y-2">
       <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 overflow-hidden" style={{ height }}>
-        <ModelErrorBoundary alt={alt} maxAutoRetries={1}>
+        <ModelErrorBoundary alt={alt} retryDelaysMs={[400, 1000, 2000]}>
           <Suspense fallback={<LoadingPlaceholder />}>
             <Canvas
               frameloop="demand"
               camera={{ position: [0, 0, 5], fov: 45 }}
               dpr={[1, 1.5]}
-              gl={{ powerPreference: 'default', antialias: true }}
+              gl={{
+                powerPreference: 'default',
+                antialias: true,
+                // Accept a degraded (e.g. software/ANGLE) context instead
+                // of the browser refusing to create one at all -- the
+                // default `true` is what causes an outright context loss
+                // in GPU-restricted browsing modes.
+                failIfMajorPerformanceCaveat: false,
+              }}
               onCreated={({ gl }) => {
                 // Telling the browser we intend to handle context loss
                 // ourselves (instead of it silently giving up) makes it
@@ -92,6 +97,15 @@ function LoadingPlaceholder() {
   );
 }
 
+function ReconnectingPlaceholder() {
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-400 p-4 text-center">
+      <Loader2 className="w-6 h-6 animate-spin" />
+      <p className="text-xs font-bold">Reconnecting 3D view...</p>
+    </div>
+  );
+}
+
 function ComingSoonPlaceholder({ alt, onRetry }: { alt: string; onRetry: () => void }) {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-400 p-4 text-center">
@@ -110,21 +124,25 @@ function ComingSoonPlaceholder({ alt, onRetry }: { alt: string; onRetry: () => v
 }
 
 // React error boundaries have no hook equivalent yet -- this is the
-// standard, minimal class-based pattern, extended to auto-heal from the
-// cold-start WebGL race described above: the first `maxAutoRetries`
-// failures remount the subtree silently (no fallback UI shown -- by
-// then the model is already cached, via useGLTF.preload above, so the
-// remount resolves instantly); only a failure *after* that budget is
-// exhausted shows the "3D view interrupted" placeholder, with a manual
-// "Tap to reload" for a user to trigger on a genuinely persistent
-// problem (e.g. an actually missing or malformed file).
+// standard, minimal class-based pattern, extended to auto-heal from
+// WebGL context loss: each entry in `retryDelaysMs` is one auto-retry,
+// waiting that many milliseconds (real wall-clock time, for the
+// browser/driver to actually recover) before remounting the subtree via
+// a key bump. A "Reconnecting..." placeholder shows during that wait, so
+// it never looks broken or blank. Only once every auto-retry is
+// exhausted does it show "3D view interrupted" with a manual "Tap to
+// reload" -- for a user to trigger on a genuinely persistent problem
+// (e.g. an actually missing or malformed file), separate from a
+// recoverable context loss.
 class ModelErrorBoundary extends Component<
-  { children: ReactNode; alt: string; maxAutoRetries?: number },
-  { hasError: boolean; retryKey: number }
+  { children: ReactNode; alt: string; retryDelaysMs: number[] },
+  { hasError: boolean; retrying: boolean; retryKey: number }
 > {
-  constructor(props: { children: ReactNode; alt: string; maxAutoRetries?: number }) {
+  private timer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(props: { children: ReactNode; alt: string; retryDelaysMs: number[] }) {
     super(props);
-    this.state = { hasError: false, retryKey: 0 };
+    this.state = { hasError: false, retrying: false, retryKey: 0 };
   }
   static getDerivedStateFromError() {
     return { hasError: true };
@@ -132,24 +150,24 @@ class ModelErrorBoundary extends Component<
   componentDidCatch(error: unknown) {
     // eslint-disable-next-line no-console
     console.warn('Robot3DViewer: model failed to load', error);
-    const maxAutoRetries = this.props.maxAutoRetries ?? 1;
-    if (this.state.retryKey < maxAutoRetries) {
-      this.setState((s) => ({ hasError: false, retryKey: s.retryKey + 1 }));
+    const { retryDelaysMs } = this.props;
+    if (this.state.retryKey < retryDelaysMs.length) {
+      this.setState({ retrying: true });
+      this.timer = setTimeout(() => {
+        this.setState((s) => ({ hasError: false, retrying: false, retryKey: s.retryKey + 1 }));
+      }, retryDelaysMs[this.state.retryKey]);
     }
   }
+  componentWillUnmount() {
+    if (this.timer) clearTimeout(this.timer);
+  }
   handleManualRetry = () => {
-    this.setState({ hasError: false, retryKey: 0 });
+    this.setState({ hasError: false, retrying: false, retryKey: 0 });
   };
   render() {
-    const maxAutoRetries = this.props.maxAutoRetries ?? 1;
     if (this.state.hasError) {
-      if (this.state.retryKey >= maxAutoRetries) {
-        return <ComingSoonPlaceholder alt={this.props.alt} onRetry={this.handleManualRetry} />;
-      }
-      // Still within the auto-retry budget: componentDidCatch above is
-      // about to clear hasError and bump retryKey in the same commit
-      // cycle, so this renders for effectively zero perceptible time.
-      return null;
+      if (this.state.retrying) return <ReconnectingPlaceholder />;
+      return <ComingSoonPlaceholder alt={this.props.alt} onRetry={this.handleManualRetry} />;
     }
     return <Fragment key={this.state.retryKey}>{this.props.children}</Fragment>;
   }
