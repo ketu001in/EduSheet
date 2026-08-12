@@ -57,18 +57,31 @@ remain, both optional.
 
 | Status | Component | Save as (folder) | Sketchfab URL | Author | License |
 |---|---|---|---|---|---|
-| ⬜ remaining | Robotic Prosthetic Hand (Youbionic) | `prosthetic-hand/` | https://sketchfab.com/3d-models/youbionic-hand-2019-db4efd60aec3417192a5592062abe2dc | ciccarese / Youbionic | CC Attribution |
+| ✅ done | Robotic Prosthetic Hand (Youbionic) | `prosthetic-hand/` | https://sketchfab.com/3d-models/youbionic-hand-2019-db4efd60aec3417192a5592062abe2dc | ciccarese / Youbionic | CC Attribution |
 
 `robotic-arm-6dof/` and `arduino-uno/` above are reused automatically for
 the Applications Gallery's "Robotic Arm Assembly Line" entry once
 present -- no separate download needed for those two.
+
+## Downloaded but not yet displayed anywhere
+
+- **Raspberry Pi 3** -- `raspberry-pi/` (source: https://sketchfab.com/3d-models/raspberry-pi-3-2d308283fc0f4d27b81f17a2793c5c4d
+  by JoSaCo, CC Attribution) is downloaded, verified, and sitting in this
+  folder, but deliberately left un-wired: no existing content entry
+  actually runs on a Raspberry Pi (Alexa/Google Home aren't Pi-based, and
+  swapping it in for Arduino Uno on the microcontroller-vs-microprocessor
+  entry would remove a model that's correctly matched to remove one that
+  wouldn't be). Rather than force a factually-wrong pairing, it's parked
+  here -- if a new Fundamentals or Applications entry is ever added where
+  a Raspberry Pi genuinely belongs (e.g. a "single-board computer" or
+  home-server/IoT-hub entry), point its `model3d.src` at
+  `/models/robotics/raspberry-pi/scene.gltf` and it'll work immediately.
 
 ## Not sourced yet (left as text-only, honestly, rather than a wrong model)
 
 - **LDR (Light Dependent Resistor)** -- no accurately-licensed match found on Sketchfab.
 - **Solenoid** -- no accurately-licensed match found (search returned unrelated plumbing valves).
 - **IMU / Gyroscope (MPU-6050)** -- only a weak, unverified match found; skipped rather than risk showing the wrong part.
-- **Raspberry Pi** -- a real CC-Attribution "Raspberry Pi 3" model exists (https://sketchfab.com/3d-models/raspberry-pi-3-2d308283fc0f4d27b81f17a2793c5c4d by JoSaCo) but isn't wired into content yet -- optional bonus if you want it, just ask and I'll wire it in once downloaded.
 
 If you or a student ever finds a better-licensed model for any of these
 (or want to replace any of the above with a nicer one), the same process

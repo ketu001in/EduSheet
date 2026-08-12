@@ -239,7 +239,7 @@ export const ROBOTICS_APPLICATIONS: RoboticsApplication[] = [
     careersAndFutures: 'Prosthetics and orthotics, biomedical signal processing, and assistive-device design are specialized fields combining engineering with direct human impact.',
     playgroundType: 'gesture-match',
     playgroundConfig: { commands: [{ label: 'Flex signal: strong', icon: '💪', actionLabel: 'Power Grip' }, { label: 'Flex signal: light', icon: '🤏', actionLabel: 'Pinch Grip' }, { label: 'Flex signal: quick double', icon: '✌️', actionLabel: 'Point Gesture' }] },
-    model3d: { src: '/models/robotics/prosthetic-hand.glb', credit: { author: 'ciccarese / Youbionic (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/youbionic-hand-2019-db4efd60aec3417192a5592062abe2dc' } },
+    model3d: { src: '/models/robotics/prosthetic-hand/scene.gltf', credit: { author: 'ciccarese / Youbionic (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/youbionic-hand-2019-db4efd60aec3417192a5592062abe2dc' } },
   },
 
   // -- Space & Exploration -----------------------------------------------------
