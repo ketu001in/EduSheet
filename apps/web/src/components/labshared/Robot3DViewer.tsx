@@ -1,7 +1,7 @@
 'use client';
 import { Component, ReactNode, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Bounds, Center, Environment, Html, OrbitControls, useGLTF } from '@react-three/drei';
+import { Bounds, Center, Html, OrbitControls, useGLTF } from '@react-three/drei';
 import { Box, Loader2, RotateCcw } from 'lucide-react';
 
 // A real, hold-and-spin 3D model viewer for any real, license-verified .glb
@@ -21,9 +21,18 @@ export default function Robot3DViewer({ src, alt, height = 260 }: { src: string;
         <ModelErrorBoundary fallback={<ComingSoonPlaceholder alt={alt} />}>
           <Suspense fallback={<LoadingPlaceholder />}>
             <Canvas camera={{ position: [0, 0, 5], fov: 45 }} dpr={[1, 2]}>
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[3, 4, 5]} intensity={1.1} />
-              <Environment preset="studio" />
+              {/* A locally-composed studio-style light rig, deliberately used
+                  instead of drei's <Environment preset="studio">: that preset
+                  fetches its HDR lighting map from a third-party CDN
+                  (raw.githack.com/pmndrs/drei-assets) at runtime, and if that
+                  fetch is slow, blocked, or unreachable, the load rejects and
+                  every model on the page falls back to "coming soon" at once.
+                  This rig needs no network call, so rendering never depends
+                  on an external service being up. */}
+              <ambientLight intensity={0.7} />
+              <directionalLight position={[3, 4, 5]} intensity={1.2} />
+              <directionalLight position={[-4, 2, -3]} intensity={0.5} />
+              <directionalLight position={[0, -3, 2]} intensity={0.35} />
               <Bounds fit clip observe margin={1.3}>
                 <Center>
                   <GltfModel src={src} />
