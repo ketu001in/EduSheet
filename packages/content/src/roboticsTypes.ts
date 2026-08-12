@@ -1,3 +1,5 @@
+import type { Model3DConfig } from './types';
+
 // Shared types for Robotics Lab (the first deep-dive section of Tech Lab)
 // -- curated (NOT AI-generated) real-world robotics applications, distinct
 // from Tech Lab's existing "New Build" flow (techProjectIdeas.ts), which
@@ -82,17 +84,6 @@ export interface RoboticsSpec {
 
 // A real, license-verified .glb file the student can hold and orbit around
 // in true 3D (see Robot3DViewer.tsx) -- the upgrade path from the
-// slider-and-formula-only "Try It Yourself" panels, per direct feedback
-// that those alone "looks very gimmicky". `src` is the expected path under
-// apps/web/public/models/robotics/ -- see that folder's MANIFEST.md for
-// where each file actually comes from and its license. Deliberately
-// optional: entries without a sourced file yet simply don't show a 3D
-// viewer, they keep today's formula panel exactly as it is.
-export interface Model3DConfig {
-  src: string;
-  credit: { author: string; license: string; url: string };
-}
-
 export interface RoboticsFundamental {
   id: string;
   section: RoboticsFundamentalSection;

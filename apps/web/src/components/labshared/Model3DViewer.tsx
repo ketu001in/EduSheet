@@ -7,12 +7,15 @@ import { Box, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 // A real, hold-and-spin 3D model viewer for any real, license-verified glTF
 // file -- the direct upgrade from RotatableImageCard's single-photo tilt
 // illusion (see that file's header) to an actual volumetric model the
-// student can genuinely orbit around and inspect from any angle. Built
+// student can genuinely orbit around and inspect from any angle. Started
+// as Robotics Lab's Robot3DViewer, renamed here once Chem Lab's Equipment
+// Studio needed the exact same viewer for real apparatus models -- nothing
+// about it is robot-specific, `src`/`alt` are the only inputs. Built
 // deliberately defensive on two separate fronts:
 //   1. Missing file: if the model isn't present yet (a real, licensed
-//      download the user sources and drops into public/models/robotics/,
-//      see that folder's MANIFEST.md), this renders a calm placeholder
-//      instead of crashing the page.
+//      download the user sources and drops into
+//      public/models/<lab>/<name>/, see that folder's MANIFEST.md), this
+//      renders a calm placeholder instead of crashing the page.
 //   2. WebGL context loss ("THREE.WebGLRenderer: Context Lost", real
 //      device console): confirmed via live testing that an *instant*
 //      remount retry still failed identically -- so this isn't a one-off
@@ -25,7 +28,7 @@ import { Box, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 //      Paired with delayed (not instant) auto-retries, since a real
 //      driver-level recovery needs actual wall-clock time, not just a
 //      same-tick remount.
-export default function Robot3DViewer({ src, alt, height = 260 }: { src: string; alt: string; height?: number }) {
+export default function Model3DViewer({ src, alt, height = 260 }: { src: string; alt: string; height?: number }) {
   useGLTF.preload(src);
   return (
     <div className="space-y-2">
@@ -149,7 +152,7 @@ class ModelErrorBoundary extends Component<
   }
   componentDidCatch(error: unknown) {
     // eslint-disable-next-line no-console
-    console.warn('Robot3DViewer: model failed to load', error);
+    console.warn('Model3DViewer: model failed to load', error);
     const { retryDelaysMs } = this.props;
     if (this.state.retryKey < retryDelaysMs.length) {
       this.setState({ retrying: true });

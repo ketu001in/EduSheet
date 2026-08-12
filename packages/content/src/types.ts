@@ -27,10 +27,25 @@ export function chemGradeBandForClass(gradeNumber: number): ChemGradeBand {
   return CHEM_GRADE_BANDS.find((b) => b.classNumbers.includes(gradeNumber)) || CHEM_GRADE_BANDS[CHEM_GRADE_BANDS.length - 1];
 }
 
+// A real, license-verified 3D model file, rendered by Model3DViewer
+// (apps/web/src/components/labshared/Model3DViewer.tsx) instead of a flat
+// photo or diagram. `src` is the expected path under
+// apps/web/public/models/<lab>/ -- see that folder's MANIFEST.md for where
+// each file actually comes from and its license. Deliberately optional:
+// entries without a sourced file yet simply don't show a 3D viewer, they
+// keep whatever they show today (a photo, an SVG diagram, nothing).
+// Originally introduced for Robotics Lab (see roboticsTypes.ts), moved
+// here once Chem Lab's Equipment Studio needed the same shape.
+export interface Model3DConfig {
+  src: string;
+  credit: { author: string; license: string; url: string };
+}
+
 export interface ChemApparatus {
   id: string;
   name: string;
   description: string;
+  model3d?: Model3DConfig;
 }
 
 export interface ChemReagent {

@@ -13,7 +13,7 @@ import RoboticsStage from '@/components/techlab/RoboticsStage';
 // See RoboticsFundamentalsExplorer.tsx for why this is dynamically
 // imported with ssr:false -- Three.js only loads when a modal with a
 // real 3D model is actually opened.
-const Robot3DViewer = dynamic(() => import('@/components/labshared/Robot3DViewer'), {
+const Model3DViewer = dynamic(() => import('@/components/labshared/Model3DViewer'), {
   ssr: false,
   loading: () => <div className="h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
 });
@@ -106,7 +106,7 @@ function RoboticsDetailModal({ app, onClose }: { app: RoboticsApplication; onClo
 
         {app.model3d && (
           <div className="space-y-1">
-            <Robot3DViewer src={app.model3d.src} alt={app.name} />
+            <Model3DViewer src={app.model3d.src} alt={app.name} />
             <p className="text-center text-[10px] text-slate-400">
               3D model: {app.model3d.credit.author} &middot; {app.model3d.credit.license} &middot;{' '}
               <a href={app.model3d.credit.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary-600">Source</a>
