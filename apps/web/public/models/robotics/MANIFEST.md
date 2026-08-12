@@ -44,16 +44,14 @@ usually invisible, but I'll sanity-check), then commit, push, and deploy.
 | ✅ done | Rotary Encoder (KY-040) | `rotary-encoder/` | https://sketchfab.com/3d-models/rotary-encoder-module-ky-040-dummy-26063555c841414fbd1bab9e204d34c1 | YouniqueĪdeaStudio | CC Attribution |
 | ✅ done | Servo Motor (SG90, 1:1 scale) | `servo-sg90/` | https://sketchfab.com/3d-models/sg90-servo-11-scale-c865adb97e32477f8016658e340375b6 | IQuanix | CC Attribution |
 | ✅ done | DC Motor (animated, working principle) | `dc-motor/` | https://sketchfab.com/3d-models/model-of-dc-motor-working-principle-e9ac2cf2f2d04180b02965c01f7a9a19 | Mansoor | CC Attribution |
-| ⬜ remaining | Stepper Motor (NEMA 17, 42x48mm) | `stepper-nema17/` | https://sketchfab.com/3d-models/nema-17-stepper-motor-42mm-x-48mm-b970d52c4b554768a1b576cb381abf07 | moogh | CC Attribution |
-| ⬜ remaining | Gear Train (animated meshing) | `gear-train/` | https://sketchfab.com/3d-models/nautilus-gears-train-mechanism-2c0b4a262a6c4323997d95920612dfeb | trinityscsp | CC Attribution |
-| ⬜ remaining | Line Follower Robot (differential drive) | `line-follower-robot/` | https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506 | zoe.goodward | CC Attribution |
-| ⬜ remaining | 6-Axis Industrial Robot Arm (DOF) | `robotic-arm-6dof/` | https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f | Jayson Stauffer | CC Attribution |
-| ⬜ remaining | Arduino Uno Board | `arduino-uno/` | https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669 | crimsonfalcon | CC Attribution |
+| ✅ done | Stepper Motor (NEMA 17, 42x48mm) | `stepper-nema17/` | https://sketchfab.com/3d-models/nema-17-stepper-motor-42mm-x-48mm-b970d52c4b554768a1b576cb381abf07 | moogh | CC Attribution |
+| ✅ done | Gear Train (animated meshing) | `gear-train/` | https://sketchfab.com/3d-models/nautilus-gears-train-mechanism-2c0b4a262a6c4323997d95920612dfeb | trinityscsp | CC Attribution |
+| ✅ done | Line Follower Robot (differential drive) | `line-follower-robot/` | https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506 | zoe.goodward | CC Attribution |
+| ✅ done | 6-Axis Industrial Robot Arm (DOF) | `robotic-arm-6dof/` | https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f | Jayson Stauffer | CC Attribution |
+| ✅ done | Arduino Uno Board | `arduino-uno/` | https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669 | crimsonfalcon | CC Attribution |
 
-The 6 done ones are already unzipped, moved into place, and wired into
-code to load `.../<folder>/scene.gltf`. The 5 remaining follow the exact
-same "Save as" folder pattern -- create the folder, unzip the download
-into it.
+All 11 Fundamentals models are now live. Only the two bonus items below
+remain, both optional.
 
 ## Applications Gallery (bonus, reuses two of the above)
 

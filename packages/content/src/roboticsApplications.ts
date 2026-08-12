@@ -40,7 +40,7 @@ export const ROBOTICS_APPLICATIONS: RoboticsApplication[] = [
     careersAndFutures: "Robotics technicians, automation engineers, and industrial designers are in high and growing demand as more factories adopt robotic arms -- India's PLI manufacturing push is accelerating this.",
     playgroundType: 'pick-and-place',
     playgroundConfig: { itemLabel: 'Car Door Panel', itemColor: '#3b82f6', pickZoneLabel: 'Stamping Station', placeZoneLabel: 'Assembly Conveyor', scenario: 'Move the stamped panel from the press to the conveyor without dropping it.' },
-    model3d: { src: '/models/robotics/robotic-arm-6dof.glb', credit: { author: 'Jayson Stauffer (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f' } },
+    model3d: { src: '/models/robotics/robotic-arm-6dof/scene.gltf', credit: { author: 'Jayson Stauffer (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f' } },
   },
   {
     id: 'industrial-warehouse-robot',

@@ -256,7 +256,7 @@ export const ROBOTICS_ACTUATORS: RoboticsFundamental[] = [
     commonUse: ['3D printer axis movement', 'CNC machine positioning', 'Camera focus/zoom mechanisms'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'stepper', inputLabel: 'Step Rate', inputUnit: 'steps/sec', inputMin: 10, inputMax: 2000, inputDefault: 400, outputLabel: 'Motor Speed', outputUnit: 'RPM', formulaDisplay: 'RPM = (steps per second × 60) ÷ steps per revolution', extraNote: 'Using a standard 200-step/revolution (1.8°/step) motor.' },
-    model3d: { src: '/models/robotics/stepper-nema17.glb', credit: { author: 'moogh (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/nema-17-stepper-motor-42mm-x-48mm-b970d52c4b554768a1b576cb381abf07' } },
+    model3d: { src: '/models/robotics/stepper-nema17/scene.gltf', credit: { author: 'moogh (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/nema-17-stepper-motor-42mm-x-48mm-b970d52c4b554768a1b576cb381abf07' } },
   },
   {
     id: 'actuator-solenoid',
@@ -380,7 +380,7 @@ export const ROBOTICS_MECHANISMS: RoboticsFundamental[] = [
     commonUse: ['Wheel drive systems in robots and vehicles', 'Clock mechanisms', 'Bicycle gearing'],
     playgroundType: 'formula-lab',
     playgroundConfig: { formulaKey: 'gear', inputLabel: 'Output Gear Teeth Count', inputUnit: 'teeth', inputMin: 10, inputMax: 100, inputDefault: 40, outputLabel: 'Output Speed', outputUnit: 'RPM', formulaDisplay: 'output RPM = input RPM × (input teeth ÷ output teeth)', extraNote: 'Fixed input gear: 20 teeth, spinning at 100 RPM.' },
-    model3d: { src: '/models/robotics/gear-train.glb', credit: { author: 'trinityscsp (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/nautilus-gears-train-mechanism-2c0b4a262a6c4323997d95920612dfeb' } },
+    model3d: { src: '/models/robotics/gear-train/scene.gltf', credit: { author: 'trinityscsp (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/nautilus-gears-train-mechanism-2c0b4a262a6c4323997d95920612dfeb' } },
   },
   {
     id: 'mechanism-differential-drive',
@@ -406,7 +406,7 @@ export const ROBOTICS_MECHANISMS: RoboticsFundamental[] = [
     commonUse: ['Robot vacuums', 'Wheelchairs', 'Warehouse AGVs', 'Tank/tracked vehicles'],
     playgroundType: 'differential-drive',
     playgroundConfig: {},
-    model3d: { src: '/models/robotics/line-follower-robot.glb', credit: { author: 'zoe.goodward (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506' } },
+    model3d: { src: '/models/robotics/line-follower-robot/scene.gltf', credit: { author: 'zoe.goodward (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506' } },
   },
   {
     id: 'mechanism-dof',
@@ -432,7 +432,7 @@ export const ROBOTICS_MECHANISMS: RoboticsFundamental[] = [
     commonUse: ['Industrial robotic arms', 'Surgical robots', 'Robotics competition arms in Indian ATL/robotics club kits'],
     playgroundType: 'none',
     playgroundConfig: {},
-    model3d: { src: '/models/robotics/robotic-arm-6dof.glb', credit: { author: 'Jayson Stauffer (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f' } },
+    model3d: { src: '/models/robotics/robotic-arm-6dof/scene.gltf', credit: { author: 'Jayson Stauffer (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/6-axis-industrial-robot-arm-3ecc74c22c584b2b8295f17dedcdb89f' } },
   },
 ];
 
@@ -459,7 +459,7 @@ export const ROBOTICS_ELECTRONICS: RoboticsFundamental[] = [
     commonUse: ['Arduino: beginner robotics kits, sensor/actuator control', 'Raspberry Pi: computer-vision robots, AI-based robots, home automation hubs'],
     playgroundType: 'board-compare',
     playgroundConfig: {},
-    model3d: { src: '/models/robotics/arduino-uno.glb', credit: { author: 'crimsonfalcon (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669' } },
+    model3d: { src: '/models/robotics/arduino-uno/scene.gltf', credit: { author: 'crimsonfalcon (Sketchfab)', license: 'CC Attribution', url: 'https://sketchfab.com/3d-models/arduino-uno-board-f31feafc5e9743abbdf33c54f9d92669' } },
   },
   {
     id: 'electronics-ohms-law',
