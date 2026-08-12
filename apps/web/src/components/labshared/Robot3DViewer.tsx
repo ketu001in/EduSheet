@@ -1,5 +1,5 @@
 'use client';
-import { Component, ReactNode, Suspense, useState } from 'react';
+import { Component, Fragment, ReactNode, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Bounds, Center, Html, OrbitControls, useGLTF } from '@react-three/drei';
 import { Box, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
@@ -11,23 +11,29 @@ import { Box, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 // deliberately defensive on two separate fronts:
 //   1. Missing file: if the model isn't present yet (a real, licensed
 //      download the user sources and drops into public/models/robotics/,
-//      see that folder's MANIFEST.md), this renders a calm "coming soon"
-//      placeholder instead of crashing the page.
-//   2. WebGL context loss: browsers cap how many live WebGL contexts can
-//      exist at once and will force-evict old ones under GPU/driver
-//      pressure (common on integrated graphics, or after inspecting many
-//      models in one session) -- confirmed via a real "THREE.WebGLRenderer:
-//      Context Lost" console error. `frameloop="demand"` (only render on
-//      an actual change, not a continuous 60fps loop) is the main defense
-//      since it cuts sustained GPU load dramatically; a "Tap to reload"
-//      retry path covers the rest, since a lost context is a genuine,
-//      recoverable browser event, not a missing-content case.
+//      see that folder's MANIFEST.md), this renders a calm placeholder
+//      instead of crashing the page.
+//   2. WebGL context loss on the *first* canvas of a session: confirmed
+//      via a real device's console ("THREE.WebGLRenderer: Context Lost"
+//      immediately followed by "R3F: Hooks can only be used within the
+//      Canvas component!"), reproducing reliably on first open and never
+//      on retry. That pattern is a race, not a hardware ceiling: the GLTF
+//      fetch is still in flight when the GPU process (cold-starting for
+//      this page's very first WebGL context) hiccups and R3F tears down
+//      its internal context; the fetch then resolves into a torn-down
+//      tree. On retry the file is already cached, so it resolves
+//      instantly with no window left for that race -- which is exactly
+//      why a manual retry always fixed it. Two fixes close the gap:
+//      `useGLTF.preload` starts the fetch immediately, before the Canvas
+//      even mounts, shrinking that race window; and the boundary below
+//      auto-heals once on its own (silently remounting, no user tap
+//      needed) since by then the file is cached and the retry is instant.
 export default function Robot3DViewer({ src, alt, height = 260 }: { src: string; alt: string; height?: number }) {
-  const [attempt, setAttempt] = useState(0);
+  useGLTF.preload(src);
   return (
     <div className="space-y-2">
       <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 overflow-hidden" style={{ height }}>
-        <ModelErrorBoundary key={attempt} fallback={<ComingSoonPlaceholder alt={alt} onRetry={() => setAttempt((a) => a + 1)} />}>
+        <ModelErrorBoundary alt={alt} maxAutoRetries={1}>
           <Suspense fallback={<LoadingPlaceholder />}>
             <Canvas
               frameloop="demand"
@@ -104,15 +110,21 @@ function ComingSoonPlaceholder({ alt, onRetry }: { alt: string; onRetry: () => v
 }
 
 // React error boundaries have no hook equivalent yet -- this is the
-// standard, minimal class-based pattern. It catches two distinct failure
-// kinds identically (a missing/malformed model file, or a lost WebGL
-// context) and swaps in the placeholder above -- with a retry button that
-// remounts a fresh Canvas via the parent's `attempt` key, since a lost
-// context is genuinely recoverable and shouldn't be a dead end.
-class ModelErrorBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+// standard, minimal class-based pattern, extended to auto-heal from the
+// cold-start WebGL race described above: the first `maxAutoRetries`
+// failures remount the subtree silently (no fallback UI shown -- by
+// then the model is already cached, via useGLTF.preload above, so the
+// remount resolves instantly); only a failure *after* that budget is
+// exhausted shows the "3D view interrupted" placeholder, with a manual
+// "Tap to reload" for a user to trigger on a genuinely persistent
+// problem (e.g. an actually missing or malformed file).
+class ModelErrorBoundary extends Component<
+  { children: ReactNode; alt: string; maxAutoRetries?: number },
+  { hasError: boolean; retryKey: number }
+> {
+  constructor(props: { children: ReactNode; alt: string; maxAutoRetries?: number }) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, retryKey: 0 };
   }
   static getDerivedStateFromError() {
     return { hasError: true };
@@ -120,9 +132,25 @@ class ModelErrorBoundary extends Component<{ children: ReactNode; fallback: Reac
   componentDidCatch(error: unknown) {
     // eslint-disable-next-line no-console
     console.warn('Robot3DViewer: model failed to load', error);
+    const maxAutoRetries = this.props.maxAutoRetries ?? 1;
+    if (this.state.retryKey < maxAutoRetries) {
+      this.setState((s) => ({ hasError: false, retryKey: s.retryKey + 1 }));
+    }
   }
+  handleManualRetry = () => {
+    this.setState({ hasError: false, retryKey: 0 });
+  };
   render() {
-    if (this.state.hasError) return this.props.fallback;
-    return this.props.children;
+    const maxAutoRetries = this.props.maxAutoRetries ?? 1;
+    if (this.state.hasError) {
+      if (this.state.retryKey >= maxAutoRetries) {
+        return <ComingSoonPlaceholder alt={this.props.alt} onRetry={this.handleManualRetry} />;
+      }
+      // Still within the auto-retry budget: componentDidCatch above is
+      // about to clear hasError and bump retryKey in the same commit
+      // cycle, so this renders for effectively zero perceptible time.
+      return null;
+    }
+    return <Fragment key={this.state.retryKey}>{this.props.children}</Fragment>;
   }
 }
