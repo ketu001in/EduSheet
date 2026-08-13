@@ -52,11 +52,32 @@ named just `.bin` (no basename) -- that's exactly what its `scene.gltf`
 references, not a mistake; it has no separate texture files either
 (material has no image maps).
 
-## Not sourced yet
+## Equipment Studio -- Phase 2 (5 items)
 
-Tripod stand, wire gauze, dropper, thermometer, watch glass, china dish,
-delivery tube, safety goggles, gloves, spatula, glass rod, gas jar, water
-trough, test tube holder, filter paper -- no verified match checked yet
-for these. Tell me if you want a second batch and I'll go source them the
-same way (check each model's own license page directly, same discipline
-as every model above and every Robotics model).
+| Status | Apparatus | Save as (folder) | Sketchfab URL | Author | License |
+|---|---|---|---|---|---|
+| ⬜ remaining | Tripod Stand | `tripod-stand/` | https://sketchfab.com/3d-models/tripod-stand-676ab614343941d7b51a77962a97f5af | VeeRuby Technologies Pvt Ltd | CC Attribution |
+| ⬜ remaining | Test Tube | `test-tube/` | https://sketchfab.com/3d-models/chemistry-4-test-tube-f933e29ea9114b0cbcd8bec005833f5a | Smoothie 3D | CC Attribution |
+| ⬜ remaining | Test Tube Holder | `test-tube-holder/` | https://sketchfab.com/3d-models/test-tube-holder-8841d9db0fda442388b22a8cd5baf25b | Jordan Gerhardt | CC Attribution |
+| ⬜ remaining | Safety Goggles | `safety-goggles/` | https://sketchfab.com/3d-models/safety-goggles-355f1e119c33452ea9e2e8d306360435 | Microsoft | CC Attribution |
+| ⬜ remaining | Lab Gloves | `gloves/` | https://sketchfab.com/3d-models/lab-equipment-gloves-3519914b790d47d7a80abbf4ee7919bf | eerotiainen | CC Attribution |
+
+Note: `gloves/` is a photogrammetry scan (797k triangles) -- noticeably
+heavier than the others, but the only genuine, correctly-licensed match
+found. If it loads slowly on lower-end devices, that's expected; a
+lighter alternative can replace it later without any other changes.
+
+## Not sourced -- checked, no honest match found
+
+- **Thermometer, Watch Glass, China Dish (Evaporating Dish), Gas Jar,
+  Water Trough, Wire Gauze, Delivery Tube, Glass Stirring Rod, Spatula**
+  -- searched directly, no correctly-licensed match found (either zero
+  results or only unrelated/mismatched items).
+- **Dropper** -- the closest real candidates were cosmetic serum-bottle
+  droppers (branded skincare products) or a non-downloadable listing;
+  showing either would be a wrong-item match, so left text-only.
+- **Filter Paper, pH / Litmus Paper** -- flat paper items don't gain much
+  from a 3D model; not searched.
+
+If you or a student ever finds a better-licensed model for any of these,
+same process applies -- send me the URL and I'll verify and wire it in.
