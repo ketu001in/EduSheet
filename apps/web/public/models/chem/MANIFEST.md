@@ -56,11 +56,14 @@ references, not a mistake; it has no separate texture files either
 
 | Status | Apparatus | Save as (folder) | Sketchfab URL | Author | License |
 |---|---|---|---|---|---|
-| ⬜ remaining | Tripod Stand | `tripod-stand/` | https://sketchfab.com/3d-models/tripod-stand-676ab614343941d7b51a77962a97f5af | VeeRuby Technologies Pvt Ltd | CC Attribution |
-| ⬜ remaining | Test Tube | `test-tube/` | https://sketchfab.com/3d-models/chemistry-4-test-tube-f933e29ea9114b0cbcd8bec005833f5a | Smoothie 3D | CC Attribution |
-| ⬜ remaining | Test Tube Holder | `test-tube-holder/` | https://sketchfab.com/3d-models/test-tube-holder-8841d9db0fda442388b22a8cd5baf25b | Jordan Gerhardt | CC Attribution |
-| ⬜ remaining | Safety Goggles | `safety-goggles/` | https://sketchfab.com/3d-models/safety-goggles-355f1e119c33452ea9e2e8d306360435 | Microsoft | CC Attribution |
-| ⬜ remaining | Lab Gloves | `gloves/` | https://sketchfab.com/3d-models/lab-equipment-gloves-3519914b790d47d7a80abbf4ee7919bf | eerotiainen | CC Attribution |
+| ✅ done | Tripod Stand | `tripod-stand/` | https://sketchfab.com/3d-models/tripod-stand-676ab614343941d7b51a77962a97f5af | VeeRuby Technologies Pvt Ltd | CC Attribution |
+| ✅ done | Test Tube | `test-tube/` | https://sketchfab.com/3d-models/chemistry-4-test-tube-f933e29ea9114b0cbcd8bec005833f5a | Smoothie 3D | CC Attribution |
+| ✅ done | Test Tube Holder | `test-tube-holder/` | https://sketchfab.com/3d-models/test-tube-holder-8841d9db0fda442388b22a8cd5baf25b | Jordan Gerhardt | CC Attribution |
+| ✅ done | Safety Goggles | `safety-goggles/` | https://sketchfab.com/3d-models/safety-goggles-355f1e119c33452ea9e2e8d306360435 | Microsoft | CC Attribution |
+| ✅ done | Lab Gloves | `gloves/` | https://sketchfab.com/3d-models/lab-equipment-gloves-3519914b790d47d7a80abbf4ee7919bf | eerotiainen | CC Attribution |
+
+All 5 Phase 2 models are now live -- Equipment Studio has 16 of 28
+apparatus items with real 3D models.
 
 Note: `gloves/` is a photogrammetry scan (797k triangles) -- noticeably
 heavier than the others, but the only genuine, correctly-licensed match
