@@ -35,17 +35,22 @@ deploy.
 
 | Status | Apparatus | Save as (folder) | Sketchfab URL | Author | License |
 |---|---|---|---|---|---|
-| ⬜ remaining | Beaker | `beaker/` | https://sketchfab.com/3d-models/beakers-b63ae471653f41e4b327cdcc796fc20c | cesar.seidel | CC Attribution |
-| ⬜ remaining | Conical (Erlenmeyer) Flask | `conical-flask/` | https://sketchfab.com/3d-models/free-conical-flask-laboratory-low-poly-f2991abcaaa44616ad5f72d29a3d47b3 | Naked Singularity Studio | CC Attribution |
-| ⬜ remaining | Round-Bottom Flask | `round-bottom-flask/` | https://sketchfab.com/3d-models/round-bottom-flasks-7433a11498464de78f7751578bbbe211 | cesar.seidel | CC Attribution |
-| ⬜ remaining | Measuring Cylinder | `measuring-cylinder/` | https://sketchfab.com/3d-models/graduated-cylinders-e0a1a66e2d104e4fb5b410ea84cd6b6f | cesar.seidel | CC Attribution |
-| ⬜ remaining | Test Tube Rack | `test-tube-rack/` | https://sketchfab.com/3d-models/test-tube-rack-f09bcbfe529e4314a1acbf7b7d1e867f | Harry Bond | CC Attribution |
-| ⬜ remaining | Bunsen Burner | `bunsen-burner/` | https://sketchfab.com/3d-models/bunsen-burner-5185e41b2beb48fa8f15ca3707f43e10 | Dreamsoft Innovations Pvt Ltd | CC Attribution |
-| ⬜ remaining | Funnel | `funnel/` | https://sketchfab.com/3d-models/cc0-funnel-3-9c71ecea8e0941af9f0e7b59895f7fd4 | plaggy | CC0 (Public Domain) |
-| ⬜ remaining | Burette | `burette/` | https://sketchfab.com/3d-models/burette-4bb5f945638a46ba9ea5684d0f38ebad | 3dLabWare | CC Attribution |
-| ⬜ remaining | Volumetric Pipette | `pipette/` | https://sketchfab.com/3d-models/pipette-laboratory-essential-tool-4ed0651f9de14cdf96891449acb7cc38 | 3dLabWare | CC Attribution |
-| ⬜ remaining | Retort Stand with Clamp | `retort-stand/` | https://sketchfab.com/3d-models/universal-support-8f78057785f447e5a44758464a8186c0 | 3dLabWare | CC Attribution |
-| ⬜ remaining | Boiling Tube | `boiling-tube/` | https://sketchfab.com/3d-models/large-tube-and-rack-7743f61c59584492a3811dda9ef1f6da | 3dLabWare | CC Attribution |
+| ✅ done | Beaker | `beaker/` | https://sketchfab.com/3d-models/beakers-b63ae471653f41e4b327cdcc796fc20c | cesar.seidel | CC Attribution |
+| ✅ done | Conical (Erlenmeyer) Flask | `conical-flask/` | https://sketchfab.com/3d-models/free-conical-flask-laboratory-low-poly-f2991abcaaa44616ad5f72d29a3d47b3 | Naked Singularity Studio | CC Attribution |
+| ✅ done | Round-Bottom Flask | `round-bottom-flask/` | https://sketchfab.com/3d-models/round-bottom-flasks-7433a11498464de78f7751578bbbe211 | cesar.seidel | CC Attribution |
+| ✅ done | Measuring Cylinder | `measuring-cylinder/` | https://sketchfab.com/3d-models/graduated-cylinders-e0a1a66e2d104e4fb5b410ea84cd6b6f | cesar.seidel | CC Attribution |
+| ✅ done | Test Tube Rack | `test-tube-rack/` | https://sketchfab.com/3d-models/test-tube-rack-f09bcbfe529e4314a1acbf7b7d1e867f | Harry Bond | CC Attribution |
+| ✅ done | Bunsen Burner | `bunsen-burner/` | https://sketchfab.com/3d-models/bunsen-burner-5185e41b2beb48fa8f15ca3707f43e10 | Dreamsoft Innovations Pvt Ltd | CC Attribution |
+| ✅ done | Funnel | `funnel/` | https://sketchfab.com/3d-models/cc0-funnel-3-9c71ecea8e0941af9f0e7b59895f7fd4 | plaggy | CC0 (Public Domain) |
+| ✅ done | Burette | `burette/` | https://sketchfab.com/3d-models/burette-4bb5f945638a46ba9ea5684d0f38ebad | 3dLabWare | CC Attribution |
+| ✅ done | Volumetric Pipette | `pipette/` | https://sketchfab.com/3d-models/pipette-laboratory-essential-tool-4ed0651f9de14cdf96891449acb7cc38 | 3dLabWare | CC Attribution |
+| ✅ done | Retort Stand with Clamp | `retort-stand/` | https://sketchfab.com/3d-models/universal-support-8f78057785f447e5a44758464a8186c0 | 3dLabWare | CC Attribution |
+| ✅ done | Boiling Tube | `boiling-tube/` | https://sketchfab.com/3d-models/large-tube-and-rack-7743f61c59584492a3811dda9ef1f6da | 3dLabWare | CC Attribution |
+
+All 11 Phase 1 models are now live. `burette/`'s buffer file is genuinely
+named just `.bin` (no basename) -- that's exactly what its `scene.gltf`
+references, not a mistake; it has no separate texture files either
+(material has no image maps).
 
 ## Not sourced yet
 

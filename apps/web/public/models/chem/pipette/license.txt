@@ -1,0 +1,11 @@
+Model Information:
+* title:	Pipette - Laboratory Essential Tool
+* source:	https://sketchfab.com/3d-models/pipette-laboratory-essential-tool-4ed0651f9de14cdf96891449acb7cc38
+* author:	3dLabWare (https://sketchfab.com/3dlabwaremodels)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Pipette - Laboratory Essential Tool" (https://sketchfab.com/3d-models/pipette-laboratory-essential-tool-4ed0651f9de14cdf96891449acb7cc38) by 3dLabWare (https://sketchfab.com/3dlabwaremodels) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
