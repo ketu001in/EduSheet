@@ -1,16 +1,26 @@
 'use client';
 import { useState } from 'react';
-import { Zap, RefreshCw, Play } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Zap, RefreshCw, Play, Sparkles } from 'lucide-react';
 import { AIPlaygroundType } from '@edusheets/content';
 import {
-  perceptronOutput, perceptronTrainStep, perceptronClass, SPAM_TRAINING_POINTS, PerceptronWeights,
+  perceptronOutput, perceptronTrainStep, SPAM_TRAINING_POINTS, PerceptronWeights,
   XOR_POINTS, perceptronXorScore, BEST_POSSIBLE_PERCEPTRON_XOR_SCORE,
   stepActivation, sigmoidActivation, reluActivation, tanhActivation,
 } from '@/lib/aiCodingEngine';
+import type { DecisionPlanePoint } from '@/components/techlab/DecisionPlaneScene';
 
 // AI Lab's playground dispatcher -- see aiTypes.ts's header for why this
 // is a dedicated file rather than sharing TechFoundationStage.tsx (which
-// now only serves Coding Lab's search-race).
+// now only serves Coding Lab's search-race). Playgrounds that need a real
+// 3D scene lazy-load it (ssr:false) so Three.js only downloads when a
+// visitor actually opens one of those two concepts, same discipline as
+// Model3DViewer.
+const DecisionPlaneScene = dynamic(() => import('@/components/techlab/DecisionPlaneScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-64 rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+
 export default function AIFoundationStage({ type }: { type: AIPlaygroundType }) {
   switch (type) {
     case 'perceptron-trainer': return <PerceptronTrainerScene />;
@@ -21,23 +31,25 @@ export default function AIFoundationStage({ type }: { type: AIPlaygroundType }) 
 }
 
 function StageCard({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border-2 border-dashed border-primary-300 dark:border-primary-800 bg-primary-50/40 dark:bg-primary-950/10 p-4 md:p-5 space-y-3">{children}</div>;
+  return (
+    <div className="rounded-2xl border-2 border-primary-200 dark:border-primary-900 bg-gradient-to-br from-primary-50/60 via-white to-accent-50/40 dark:from-primary-950/20 dark:via-slate-950 dark:to-accent-950/10 p-4 md:p-5 space-y-3 shadow-sm">
+      {children}
+    </div>
+  );
+}
+
+function StageHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 text-sm font-bold bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent">
+      <Zap className="w-4 h-4 text-primary-600" /> {children}
+    </div>
+  );
 }
 
 // -- Perceptron trainer: a real spam/not-spam toy dataset, trained via the
-// actual Rosenblatt (1958) update rule, one misclassified point at a time.
-const PLOT_MAX = 8; // both features (link count, exclamation count) range 0-8
-function toPlotScreen(x: number, y: number) {
-  return { sx: (x / PLOT_MAX) * 180 + 10, sy: 190 - (y / PLOT_MAX) * 180 };
-}
-function boundaryLinePoints(w1: number, w2: number, bias: number, xMin: number, xMax: number, toScreen: (x: number, y: number) => { sx: number; sy: number }) {
-  if (Math.abs(w2) < 0.001) return null;
-  const y1 = -(w1 * xMin + bias) / w2;
-  const y2 = -(w1 * xMax + bias) / w2;
-  const p1 = toScreen(xMin, y1);
-  const p2 = toScreen(xMax, y2);
-  return `${p1.sx},${p1.sy} ${p2.sx},${p2.sy}`;
-}
+// actual Rosenblatt (1958) update rule, one misclassified point at a time
+// -- rendered as a genuine rotatable 3D decision plane (drag to spin).
+const SPAM_MAX = 8; // both features (link count, exclamation count) range 0-8
 
 function PerceptronTrainerScene() {
   const [weights, setWeights] = useState<PerceptronWeights>({ w1: 0, w2: 0, bias: 0 });
@@ -66,38 +78,28 @@ function PerceptronTrainerScene() {
   };
   const reset = () => { setWeights({ w1: 0, w2: 0, bias: 0 }); setTrainIndex(0); setSteps(0); };
 
-  const linePoints = boundaryLinePoints(weights.w1, weights.w2, weights.bias, -1, PLOT_MAX + 1, toPlotScreen);
+  const scenePoints: DecisionPlanePoint[] = SPAM_TRAINING_POINTS.map((p) => ({
+    x: p.x, z: p.y,
+    correct: (perceptronOutput(weights.w1, weights.w2, weights.bias, p.x, p.y) >= 0 ? 1 : -1) === p.label,
+    colorClass: p.label === 1 ? 'a' : 'b',
+  }));
 
   return (
     <StageCard>
-      <div className="flex items-center gap-2 text-sm font-bold text-primary-700 dark:text-primary-300">
-        <Zap className="w-4 h-4" /> Train a Real Spam Classifier
-      </div>
-      <p className="text-center text-xs text-slate-500">X-axis: number of links in the email. Y-axis: number of exclamation marks. Each "Train Step" applies Rosenblatt&apos;s actual 1958 update rule to one misclassified email.</p>
-      <div className="flex justify-center">
-        <svg viewBox="0 0 200 200" className="w-60 h-60 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800">
-          <line x1={10} y1={10} x2={10} y2={190} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
-          <line x1={10} y1={190} x2={190} y2={190} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
-          {linePoints && <polyline points={linePoints} className="stroke-primary-600" strokeWidth={2} fill="none" />}
-          {SPAM_TRAINING_POINTS.map((p, i) => {
-            const { sx, sy } = toPlotScreen(p.x, p.y);
-            const isCorrect = (perceptronOutput(weights.w1, weights.w2, weights.bias, p.x, p.y) >= 0 ? 1 : -1) === p.label;
-            return (
-              <circle key={i} cx={sx} cy={sy} r={6} className={p.label === 1 ? 'fill-amber-500' : 'fill-sky-500'} stroke={isCorrect ? 'none' : '#dc2626'} strokeWidth={isCorrect ? 0 : 2.5} />
-            );
-          })}
-        </svg>
-      </div>
+      <StageHeading>Train a Real Spam Classifier</StageHeading>
+      <p className="text-center text-xs text-slate-500">One axis: links in the email. Other axis: exclamation marks. Height: the perceptron's weighted sum -- drag to rotate. Each "Train Step" applies Rosenblatt&apos;s actual 1958 update rule to one misclassified email.</p>
+      <DecisionPlaneScene points={scenePoints} w1={weights.w1} w2={weights.w2} bias={weights.bias} xMax={SPAM_MAX} zMax={SPAM_MAX} height={280} />
       <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-slate-500">
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" /> Not spam</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> Spam</span>
-        <span>Red outline = misclassified</span>
+        <span>Red ring = misclassified</span>
       </div>
       <div className="flex justify-center gap-2">
-        <button onClick={trainStep} disabled={converged} className="px-4 py-2 rounded-lg bg-primary-600 text-white font-bold text-sm flex items-center gap-1.5 disabled:opacity-50"><Play className="w-4 h-4" /> Train Step</button>
-        <button onClick={reset} className="px-4 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-800 font-bold text-sm flex items-center gap-1.5"><RefreshCw className="w-4 h-4" /> Reset</button>
+        <button onClick={trainStep} disabled={converged} className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold text-sm flex items-center gap-1.5 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"><Play className="w-4 h-4" /> Train Step</button>
+        <button onClick={reset} className="px-4 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-800 font-bold text-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all"><RefreshCw className="w-4 h-4" /> Reset</button>
       </div>
-      <p className={`text-center text-sm font-bold ${converged ? 'text-accent-600' : 'text-slate-500'}`}>
+      <p className={`text-center text-sm font-bold transition-all ${converged ? 'text-accent-600 scale-105' : 'text-slate-500'}`}>
+        {converged && <Sparkles className="w-4 h-4 inline mr-1 -mt-0.5" />}
         {correct}/{SPAM_TRAINING_POINTS.length} correctly classified after {steps} training step{steps === 1 ? '' : 's'}{converged ? ' -- fully trained!' : ''}
       </p>
     </StageCard>
@@ -106,40 +108,26 @@ function PerceptronTrainerScene() {
 
 // -- XOR demo: prove, live, that no single perceptron can ever separate
 // XOR -- BEST_POSSIBLE_PERCEPTRON_XOR_SCORE was verified by brute-force
-// grid search (see aiCodingEngine.ts's comment).
-function toXorScreen(x: number, y: number) {
-  return { sx: x * 160 + 20, sy: 180 - y * 160 };
-}
+// grid search (see aiCodingEngine.ts's comment). Also a rotatable 3D
+// plane, since seeing it fail to separate all four corners from every
+// angle is far more convincing than a flat line ever could be.
 function XorDemoScene() {
   const [w1, setW1] = useState(1);
   const [w2, setW2] = useState(1);
   const [bias, setBias] = useState(-0.5);
   const score = perceptronXorScore(w1, w2, bias);
-  const linePoints = boundaryLinePoints(w1, w2, bias, -0.5, 1.5, toXorScreen);
+
+  const scenePoints: DecisionPlanePoint[] = XOR_POINTS.map((p) => ({
+    x: p.x, z: p.y,
+    correct: (perceptronOutput(w1, w2, bias, p.x, p.y) >= 0 ? 1 : 0) === p.label,
+    colorClass: p.label === 1 ? 'a' : 'b',
+  }));
 
   return (
     <StageCard>
-      <div className="flex items-center gap-2 text-sm font-bold text-primary-700 dark:text-primary-300">
-        <Zap className="w-4 h-4" /> Try to Beat XOR
-      </div>
-      <p className="text-center text-xs text-slate-500">Adjust the weights however you like -- no single straight line can ever separate the 1s from the 0s below.</p>
-      <div className="flex justify-center">
-        <svg viewBox="0 0 200 200" className="w-56 h-56 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800">
-          <line x1={20} y1={20} x2={20} y2={180} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
-          <line x1={20} y1={180} x2={180} y2={180} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
-          {linePoints && <polyline points={linePoints} className="stroke-primary-600" strokeWidth={2} fill="none" />}
-          {XOR_POINTS.map((p, i) => {
-            const { sx, sy } = toXorScreen(p.x, p.y);
-            const isCorrect = (perceptronOutput(w1, w2, bias, p.x, p.y) >= 0 ? 1 : 0) === p.label;
-            return (
-              <g key={i}>
-                <circle cx={sx} cy={sy} r={9} className={p.label === 1 ? 'fill-amber-500' : 'fill-sky-500'} stroke={isCorrect ? 'none' : '#dc2626'} strokeWidth={isCorrect ? 0 : 2.5} />
-                <text x={sx} y={sy + 3} textAnchor="middle" className="fill-white text-[9px] font-bold">{p.label}</text>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
+      <StageHeading>Try to Beat XOR</StageHeading>
+      <p className="text-center text-xs text-slate-500">Adjust the weights however you like and rotate the view -- no single plane can ever sort all four corners onto the correct side.</p>
+      <DecisionPlaneScene points={scenePoints} w1={w1} w2={w2} bias={bias} xMax={1} zMax={1} height={280} />
       <div className="grid grid-cols-3 gap-3">
         <label className="block text-xs font-bold text-slate-500 space-y-1">
           <span>Weight w1 ({w1.toFixed(1)})</span>
@@ -160,7 +148,10 @@ function XorDemoScene() {
   );
 }
 
-// -- Activation functions: real formulas, plotted live -----------------------
+// -- Activation functions: real formulas, plotted live -- a function curve
+// is genuinely clearest as a 2D graph (forcing this into 3D would add
+// nothing but noise), so this stays a crisp SVG plot with a modernized,
+// gradient-filled treatment instead.
 type FnId = 'step' | 'sigmoid' | 'tanh' | 'relu';
 const FN_DEFS: Record<FnId, { label: string; fn: (x: number) => number; yMin: number; yMax: number }> = {
   step: { label: 'Step', fn: stepActivation, yMin: -0.2, yMax: 1.2 },
@@ -183,24 +174,31 @@ function ActivationFunctionsScene() {
     const { sx, sy } = toScreen(px, fn(px));
     return `${sx},${sy}`;
   }).join(' ');
+  const zeroY = toScreen(0, 0).sy;
+  const fillPoints = `10,${zeroY} ${curvePoints} 190,${zeroY}`;
   const marker = toScreen(x, y);
 
   return (
     <StageCard>
-      <div className="flex items-center gap-2 text-sm font-bold text-primary-700 dark:text-primary-300">
-        <Zap className="w-4 h-4" /> Plot a Real Activation Function
-      </div>
+      <StageHeading>Plot a Real Activation Function</StageHeading>
       <div className="flex justify-center gap-1.5 flex-wrap">
         {(Object.keys(FN_DEFS) as FnId[]).map((id) => (
-          <button key={id} onClick={() => setFnId(id)} className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all ${fnId === id ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' : 'border-slate-200 dark:border-slate-800'}`}>{FN_DEFS[id].label}</button>
+          <button key={id} onClick={() => setFnId(id)} className={`px-3 py-1 rounded-full text-xs font-bold border-2 transition-all hover:scale-105 active:scale-95 ${fnId === id ? 'border-primary-600 bg-gradient-to-r from-primary-600 to-accent-500 text-white shadow-md' : 'border-slate-200 dark:border-slate-800'}`}>{FN_DEFS[id].label}</button>
         ))}
       </div>
       <div className="flex justify-center">
         <svg viewBox="0 0 200 200" className="w-60 h-60 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800">
+          <defs>
+            <linearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
+            </linearGradient>
+          </defs>
           <line x1={10} y1={190} x2={190} y2={190} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
           <line x1={toScreen(0, 0).sx} y1={10} x2={toScreen(0, 0).sx} y2={190} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
-          <polyline points={curvePoints} className="stroke-primary-600" strokeWidth={2} fill="none" />
-          <circle cx={marker.sx} cy={marker.sy} r={5} className="fill-accent-500" />
+          <polygon points={fillPoints} fill="url(#curveFill)" />
+          <polyline points={curvePoints} className="stroke-primary-600" strokeWidth={2.5} fill="none" strokeLinecap="round" />
+          <circle cx={marker.sx} cy={marker.sy} r={6} className="fill-accent-500" stroke="white" strokeWidth={2} />
         </svg>
       </div>
       <label className="block text-xs font-bold text-slate-500 space-y-1 max-w-xs mx-auto">
