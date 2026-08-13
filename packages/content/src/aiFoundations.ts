@@ -166,4 +166,90 @@ export const AI_FOUNDATIONS: AIConcept[] = [
     realExamples: ['Facial recognition accuracy gaps across skin tones, documented in real published research', "Hiring-screening AI tools shown to replicate biases present in a company's past hiring data", 'Voice assistants historically performing worse on certain accents due to unbalanced training data'],
     playgroundType: 'none',
   },
+
+  // -- Classic ML Algorithms (Phase 2) ---------------------------------------
+  // Real, pre-deep-learning algorithms that are still genuinely used today
+  // -- each with a playground backed by the actual formula/algorithm
+  // (aiCodingEngine.ts), verified with a standalone script before shipping,
+  // exactly like Foundations above. 3D or richly interactive where that's a
+  // genuine teaching win (kNN's distance made literal as height, k-means'
+  // true 3-feature clustering), a clean 2D interactive where that's
+  // actually clearer (linear regression's click-to-add-point live refit,
+  // the decision tree's animated split).
+  {
+    id: 'ai-knn',
+    section: 'classic-ml',
+    name: 'k-Nearest Neighbors (kNN)',
+    tagline: 'Classify something new by literally looking at what\'s closest to it.',
+    overview: 'k-Nearest Neighbors classifies a new example by finding the k most similar labeled examples already in the data, and taking a majority vote among them.',
+    howItWorks: [
+      'Every training example is stored as a point in feature space -- no separate "training" phase happens beforehand, which is why kNN is called a "lazy learning" algorithm.',
+      'To classify a new point, calculate the real Euclidean distance from it to every stored point, and find the k closest ones.',
+      'The new point is assigned whichever class is the majority among those k nearest neighbors.',
+    ],
+    keyFacts: [
+      'The algorithm was first formalized by Evelyn Fix and Joseph Hodges in a 1951 US Air Force technical report, then rigorously analyzed by Thomas Cover and Peter Hart in a landmark 1967 paper -- genuinely one of the oldest classification methods still in real use today.',
+      'Choosing k matters a lot: a very small k (like 1) makes the classifier sensitive to noisy individual points, while a very large k can blur together boundaries between real classes.',
+      'kNN needs to compute a distance to every stored point for every single new prediction -- it stays accurate but gets genuinely slower as the dataset grows, unlike a perceptron whose trained weights predict in constant time.',
+    ],
+    realExamples: ['Recommendation systems finding "customers similar to you"', 'Illustrative here of the classic Iris flower classification problem (petal measurements), one of the most-used teaching datasets in all of statistics and ML, from R.A. Fisher\'s 1936 paper', 'Anomaly detection: flagging a data point whose nearest neighbors are all unusually far away'],
+    playgroundType: 'knn',
+  },
+  {
+    id: 'ai-linear-regression',
+    section: 'classic-ml',
+    name: 'Linear Regression',
+    tagline: 'The straight line that best predicts a real number, not just a class.',
+    overview: 'Linear regression fits a straight line through data to predict a continuous number (like a score or a price), rather than classifying into categories.',
+    howItWorks: [
+      'Given points with an input (x) and a real-valued output (y), linear regression finds the line y = slope*x + intercept that minimizes the total squared distance between the line and every actual point.',
+      'This "least squares" solution has an exact closed-form formula -- no iterative training loop is needed, unlike the perceptron.',
+      'R-squared (R2) measures how well the line actually explains the data\'s variation -- 1.0 means a perfect fit, 0 means the line predicts no better than just guessing the average.',
+    ],
+    keyFacts: [
+      'The method of least squares was first published by Adrien-Marie Legendre in 1805, with Carl Friedrich Gauss claiming (and later demonstrating) he had used it privately as early as 1795 -- a genuinely famous priority dispute in the history of mathematics.',
+      'Unlike a perceptron\'s classification boundary, linear regression\'s output is a continuous number -- predicting an exam score or a house price, not a yes/no category.',
+      'A line can only capture a genuinely LINEAR relationship well -- real-world data that curves needs a different (polynomial or non-linear) model, and forcing a straight line onto curved data gives a systematically misleading fit.',
+    ],
+    realExamples: ['Predicting an exam score from hours studied', 'Estimating house price from floor area', 'Economists forecasting demand from price, one of the original real-world uses of regression analysis'],
+    playgroundType: 'linear-regression',
+  },
+  {
+    id: 'ai-kmeans',
+    section: 'classic-ml',
+    name: 'k-Means Clustering',
+    tagline: 'Find hidden groups in data with no labels at all -- real unsupervised learning.',
+    overview: 'k-Means groups data into k clusters based purely on how close points are to each other, with no labeled examples telling it what the "right" groups are.',
+    howItWorks: [
+      'Start with k initial "centroids" (cluster centers), one per cluster.',
+      'ASSIGN step: every data point joins whichever centroid is nearest to it (real Euclidean distance).',
+      'UPDATE step: each centroid moves to the actual average position of all the points now assigned to it -- repeat assign-then-update until the centroids stop moving.',
+    ],
+    keyFacts: [
+      'This specific iterate-assign-then-update procedure is called Lloyd\'s algorithm, after Stuart Lloyd, who described it in a 1957 Bell Labs technical report (not published publicly until 1982) -- while the term "k-means" itself was coined by James MacQueen in a separate 1967 paper.',
+      'k-Means is genuinely UNSUPERVISED -- unlike the perceptron or kNN, it is never told the correct groupings; it only ever sees the raw, unlabeled data.',
+      'The algorithm is not guaranteed to find the single best possible clustering -- different random starting centroids can converge to different final groupings, which is why real implementations often run it multiple times and keep the best result.',
+    ],
+    realExamples: ['Customer segmentation: grouping shoppers by purchasing behavior with no predefined categories', 'Image compression: clustering similar pixel colors together to reduce a photo\'s file size', 'Illustrative here of grouping students by real study habits (hours studied, hours slept, screen time) into natural clusters'],
+    playgroundType: 'kmeans',
+  },
+  {
+    id: 'ai-decision-trees',
+    section: 'classic-ml',
+    name: 'Decision Trees',
+    tagline: 'A flowchart of yes/no questions, each one chosen by real math to be maximally informative.',
+    overview: 'A decision tree classifies data by asking a sequence of simple yes/no questions, each one automatically chosen to split the data as informatively as possible.',
+    howItWorks: [
+      'ENTROPY measures how "mixed up" a set of labels is -- a perfectly pure set (all one class) has entropy 0; an evenly 50/50 mixed set has the maximum entropy of 1 (in bits).',
+      'To find the best question (split) at any point, the algorithm tests every candidate threshold and calculates the INFORMATION GAIN -- how much entropy drops after splitting the data at that threshold.',
+      'The threshold with the highest information gain becomes that node\'s actual question -- this exact process (ID3) is what real decision-tree software runs.',
+    ],
+    keyFacts: [
+      'Entropy comes directly from Claude Shannon\'s foundational 1948 paper "A Mathematical Theory of Communication", which founded the entire field of information theory.',
+      'The specific information-gain splitting algorithm used here (ID3) was published by Ross Quinlan in 1986, and remains the conceptual basis for more advanced modern tree algorithms.',
+      'A single decision tree can overfit real data by growing splits that are too specific to the training examples -- which is exactly why modern systems often combine many trees together (a "random forest") rather than relying on just one.',
+    ],
+    realExamples: ['Illustrative here of a classic "hours studied -> pass or fail" teaching example', 'Medical diagnosis flowcharts asking a sequence of yes/no symptom questions', 'Credit approval systems historically built on real decision-tree logic'],
+    playgroundType: 'decision-tree',
+  },
 ];

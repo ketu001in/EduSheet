@@ -9,14 +9,26 @@ import {
   stepActivation, sigmoidActivation, reluActivation, tanhActivation,
 } from '@/lib/aiCodingEngine';
 import type { DecisionPlanePoint } from '@/components/techlab/DecisionPlaneScene';
+// Linear regression and decision trees are plain SVG (no WebGL), so they
+// don't need ssr:false code-splitting the way the 3D scenes below do.
+import LinearRegressionScene from '@/components/techlab/LinearRegressionScene';
+import DecisionTreeScene from '@/components/techlab/DecisionTreeScene';
 
 // AI Lab's playground dispatcher -- see aiTypes.ts's header for why this
 // is a dedicated file rather than sharing TechFoundationStage.tsx (which
 // now only serves Coding Lab's search-race). Playgrounds that need a real
 // 3D scene lazy-load it (ssr:false) so Three.js only downloads when a
-// visitor actually opens one of those two concepts, same discipline as
+// visitor actually opens one of those concepts, same discipline as
 // Model3DViewer.
 const DecisionPlaneScene = dynamic(() => import('@/components/techlab/DecisionPlaneScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-64 rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const KnnScene = dynamic(() => import('@/components/techlab/KnnScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-64 rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const KMeansScene = dynamic(() => import('@/components/techlab/KMeansScene'), {
   ssr: false,
   loading: () => <div className="w-full h-64 rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
 });
@@ -26,6 +38,10 @@ export default function AIFoundationStage({ type }: { type: AIPlaygroundType }) 
     case 'perceptron-trainer': return <PerceptronTrainerScene />;
     case 'xor-demo': return <XorDemoScene />;
     case 'activation-functions': return <ActivationFunctionsScene />;
+    case 'knn': return <KnnScene />;
+    case 'linear-regression': return <LinearRegressionScene />;
+    case 'kmeans': return <KMeansScene />;
+    case 'decision-tree': return <DecisionTreeScene />;
     default: return null;
   }
 }
