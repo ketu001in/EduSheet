@@ -5,7 +5,7 @@ import {
   ALL_DEEP_DIVES, ROBOTICS_APPLICATIONS,
   ROBOTICS_SENSORS, ROBOTICS_ACTUATORS, ROBOTICS_CONTROL_SYSTEMS, ROBOTICS_MECHANISMS,
   ROBOTICS_ELECTRONICS, ROBOTICS_CLASSIFICATION, ROBOTICS_HISTORY,
-  AI_CONCEPTS, CODING_CONCEPTS,
+  AI_FOUNDATIONS, CODING_CONCEPTS,
 } from '@edusheets/content';
 
 // Every content type an admin can edit at /admin/content. Adding a new lab's
@@ -60,6 +60,6 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeDef[] = [
   { id: 'robotics-electronics', label: 'Tech Lab: Robotics Electronics', items: ROBOTICS_ELECTRONICS },
   { id: 'robotics-classification', label: 'Tech Lab: Robot Classification', items: ROBOTICS_CLASSIFICATION },
   { id: 'robotics-history', label: 'Tech Lab: Robotics History', items: ROBOTICS_HISTORY },
-  { id: 'ai-concept', label: 'Tech Lab: AI Concepts', items: AI_CONCEPTS },
+  { id: 'ai-concept', label: 'Tech Lab: AI Concepts', items: AI_FOUNDATIONS },
   { id: 'coding-concept', label: 'Tech Lab: Coding Concepts', items: CODING_CONCEPTS },
 ];

@@ -1,108 +1,11 @@
 import { TechFoundationConcept } from './techFoundationsTypes';
 
-// AI Lab and Coding Lab -- kept intentionally foundational for now, per
-// explicit instruction to deep-dive Robotics first. Still held to the same
-// bar as everywhere else: real, verifiable facts (named researchers,
+// Coding Lab -- kept intentionally foundational for now (AI Lab was
+// promoted to its own dedicated system, see aiTypes.ts/aiFoundations.ts,
+// once it needed real sections/history/applications). Still held to the
+// same bar as everywhere else: real, verifiable facts (named researchers,
 // dates, documented studies, real algorithmic comparisons), never
 // generated, and a genuine formula-backed interactive wherever one exists.
-export const AI_CONCEPTS: TechFoundationConcept[] = [
-  {
-    id: 'ai-vs-traditional-programming',
-    lab: 'ai',
-    name: 'What Is AI? (vs Traditional Programming)',
-    tagline: 'One starts with rules. The other starts with examples.',
-    overview: 'Traditional programming and machine learning solve problems in fundamentally opposite directions.',
-    howItWorks: [
-      'Traditional programming: a human writes explicit RULES; the computer applies those rules to INPUT data to produce OUTPUT.',
-      'Machine learning: a human provides many INPUT-OUTPUT example pairs (training data), and the algorithm works out the RULES, a model, that best fit those examples.',
-      'Once trained, that learned model can be applied to brand-new inputs it has never seen before, predicting a reasonable output based on the patterns it found.',
-    ],
-    keyFacts: [
-      'This "rules vs examples" framing is literally how Arthur Samuel, who coined the term "machine learning" in 1959, described it: giving computers the ability to learn without being explicitly programmed for every case.',
-      "A traditional program behaves 100% predictably given the same input every time; a trained ML model's output depends entirely on the quality and pattern of its training data.",
-      "Not all AI is machine learning -- some AI systems, like simple rule-based chatbots, are just carefully hand-coded traditional programs with no learning involved at all.",
-    ],
-    realExamples: ['A calculator app (traditional programming: exact rules for arithmetic)', 'Google Teachable Machine image classifiers (machine learning: trained from example photos)', 'Email spam filters (a real mix of rule-based and ML-based techniques)'],
-    playgroundType: 'none',
-  },
-  {
-    id: 'ai-types-of-ml',
-    lab: 'ai',
-    name: 'Types of Machine Learning',
-    tagline: 'Three fundamentally different approaches, depending on what training data is even available.',
-    overview: 'Machine learning splits into three approaches: supervised, unsupervised, and reinforcement learning.',
-    howItWorks: [
-      'SUPERVISED learning: trained on labeled examples, input paired with the correct output -- e.g. photos labeled "cat" or "dog".',
-      'UNSUPERVISED learning: trained on unlabeled data, looking for hidden patterns or groupings on its own -- e.g. grouping customers into segments with no predefined categories.',
-      'REINFORCEMENT learning: an agent learns by trial and error, receiving rewards or penalties for its actions in an environment -- e.g. a game-playing AI learning by playing millions of matches against itself.',
-    ],
-    keyFacts: [
-      "Google Teachable Machine, used elsewhere in Tech Lab's AI projects, is a supervised learning tool -- every training photo is labeled by the student.",
-      "DeepMind's AlphaGo, which beat world champion Go players in 2016, was trained substantially using reinforcement learning, playing millions of games against itself.",
-      'Unsupervised learning is genuinely harder to evaluate than supervised learning, since there is no single "correct answer" to check the result against.',
-    ],
-    realExamples: ['Supervised: Teachable Machine classifiers, spam detection', 'Unsupervised: customer segmentation, bank fraud anomaly detection', 'Reinforcement: game-playing AI, robot locomotion training'],
-    playgroundType: 'none',
-  },
-  {
-    id: 'ai-perceptron',
-    lab: 'ai',
-    name: "The Perceptron -- AI's Simplest Building Block",
-    tagline: 'One artificial neuron doing simple weighted arithmetic -- the direct ancestor of every modern neural network.',
-    overview: "Long before deep learning, a single \"perceptron\" was the first working model of how a neural network could learn to classify things.",
-    howItWorks: [
-      'Each input value is multiplied by its own adjustable "weight", and all the results are added together along with a "bias" value.',
-      'If that final sum is positive (or above a threshold), the perceptron outputs one class; if negative, it outputs the other.',
-      '"Training" the perceptron means adjusting its weights and bias, based on its mistakes on example data, until it correctly separates the two classes.',
-    ],
-    keyFacts: [
-      'Invented by Frank Rosenblatt in 1958 at Cornell -- the perceptron is the direct ancestor of every modern neural network, including the ones behind image recognition and large language models today.',
-      'A single perceptron can only learn to separate data that is "linearly separable" -- a real limitation famously proven in 1969, which temporarily slowed AI research for years.',
-      'Modern deep neural networks are, at their core, many perceptron-like units connected in layers -- the same weighted-sum-plus-threshold idea, stacked millions of times.',
-    ],
-    realExamples: ['The mathematical building block inside every modern neural network layer', 'Simple linear classifiers still used for genuinely simple, linearly-separable problems', 'The Mark I Perceptron machine (1958), one of the first neural-network hardware implementations ever built'],
-    playgroundType: 'perceptron',
-  },
-  {
-    id: 'ai-training-data',
-    lab: 'ai',
-    name: 'Training Data: The Fuel of Machine Learning',
-    tagline: 'A model is only ever as good as the data it learned from -- genuinely the single biggest factor in whether AI works.',
-    overview: 'Training data quality and representativeness is usually the single biggest factor in whether a machine learning system works well or badly.',
-    howItWorks: [
-      'More training examples generally let a model learn more reliable, general patterns, rather than memorizing quirks of just a few examples.',
-      'Training data must be representative -- covering the real variety of cases the model will actually see, not just the easiest examples to collect.',
-      '"Overfitting" happens when a model learns the training examples too exactly, including their noise, and then performs poorly on new, real-world data.',
-    ],
-    keyFacts: [
-      '"Garbage in, garbage out" is a genuinely accurate description of machine learning -- a model trained on biased or unrepresentative data makes biased or unreliable predictions, no matter how sophisticated its algorithm is.',
-      'Large modern language models are trained on datasets containing many billions of words -- unimaginable scale for a classroom project, but the same underlying principle as training a Teachable Machine model on 20 photos.',
-      'Data labeling -- humans manually tagging training examples with correct answers -- is a genuine, large global industry, since supervised learning depends entirely on correctly labeled data.',
-    ],
-    realExamples: ['A Teachable Machine model trained on too few photos performing badly on new ones', 'Self-driving car companies collecting millions of real driving miles as training data', 'ImageNet, a famous dataset of over 14 million labeled images that helped launch the modern deep learning era'],
-    playgroundType: 'none',
-  },
-  {
-    id: 'ai-bias',
-    lab: 'ai',
-    name: 'Bias in AI',
-    tagline: 'A real, well-documented problem -- not a hypothetical one.',
-    overview: "When training data doesn't fairly represent the real world, the resulting AI model can make systematically unfair or inaccurate predictions for underrepresented groups.",
-    howItWorks: [
-      'If a training dataset over-represents certain groups or situations and under-represents others, the model learns patterns that work well for the over-represented cases and poorly for the rest.',
-      'This bias can enter completely unintentionally, through whoever happened to be easiest or cheapest to collect data from.',
-      "Detecting bias requires deliberately testing a model's performance separately across different real-world groups, not just checking its overall average accuracy.",
-    ],
-    keyFacts: [
-      'A well-documented real case: early facial recognition systems from multiple major companies were shown in peer-reviewed research (the 2018 "Gender Shades" study) to have significantly higher error rates on darker-skinned faces and women, tracing directly back to unbalanced training data.',
-      'Bias is not fixed by "better algorithms" alone -- it fundamentally requires more representative, more carefully audited training data.',
-      'Recognizing and testing for AI bias is now a standard, required part of responsible AI development at major technology companies.',
-    ],
-    realExamples: ['Facial recognition accuracy gaps across skin tones, documented in real published research', "Hiring-screening AI tools shown to replicate biases present in a company's past hiring data", 'Voice assistants historically performing worse on certain accents due to unbalanced training data'],
-    playgroundType: 'none',
-  },
-];
-
 export const CODING_CONCEPTS: TechFoundationConcept[] = [
   {
     id: 'coding-algorithms',

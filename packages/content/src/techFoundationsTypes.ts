@@ -1,10 +1,10 @@
-// Shared types for the AI Lab and Coding Lab sections of Tech Lab -- basic
-// level for now (per explicit instruction: deep-dive Robotics first, keep
-// AI/Coding foundational at this stage), but held to the same standard as
+// Shared types for Coding Lab (AI Lab was promoted to its own dedicated
+// system -- see aiTypes.ts -- once it needed real sections, history, and
+// an applications gallery). Still held to the same standard as
 // everywhere else: real, verifiable content, not googleable trivia, and a
 // genuine interactive tied to real logic where one exists.
-export type TechFoundationLab = 'ai' | 'coding';
-export type TechFoundationPlaygroundType = 'perceptron' | 'search-race' | 'none';
+export type TechFoundationLab = 'coding';
+export type TechFoundationPlaygroundType = 'search-race' | 'none';
 
 export interface TechFoundationConcept {
   id: string;

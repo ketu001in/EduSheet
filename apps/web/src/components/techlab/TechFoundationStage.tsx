@@ -2,11 +2,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Zap, Play, RotateCcw } from 'lucide-react';
 import { TechFoundationPlaygroundType } from '@edusheets/content';
-import { perceptronClass, linearSearch, binarySearch } from '@/lib/aiCodingEngine';
+import { linearSearch, binarySearch } from '@/lib/aiCodingEngine';
 
+// Coding Lab's playground dispatcher -- AI Lab's playgrounds (perceptron
+// trainer, XOR demo, activation functions) moved to their own dedicated
+// AIFoundationStage.tsx once AI Lab got promoted to its own content
+// system (see aiTypes.ts's header).
 export default function TechFoundationStage({ type }: { type: TechFoundationPlaygroundType }) {
   switch (type) {
-    case 'perceptron': return <PerceptronScene />;
     case 'search-race': return <SearchRaceScene />;
     default: return null;
   }
@@ -14,70 +17,6 @@ export default function TechFoundationStage({ type }: { type: TechFoundationPlay
 
 function StageCard({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl border-2 border-dashed border-primary-300 dark:border-primary-800 bg-primary-50/40 dark:bg-primary-950/10 p-4 md:p-5 space-y-3">{children}</div>;
-}
-
-// -- Perceptron: train weights by hand, watch the real decision boundary move -
-const SAMPLE_POINTS: { x: number; y: number; label: 'A' | 'B' }[] = [
-  { x: 3, y: 3, label: 'A' }, { x: 4, y: 1, label: 'A' }, { x: 2, y: 4, label: 'A' }, { x: 1, y: 3, label: 'A' },
-  { x: -3, y: -2, label: 'B' }, { x: -2, y: -4, label: 'B' }, { x: -4, y: -1, label: 'B' }, { x: -1, y: -3, label: 'B' },
-];
-function PerceptronScene() {
-  const [w1, setW1] = useState(1);
-  const [w2, setW2] = useState(1);
-  const [bias, setBias] = useState(0);
-
-  const toScreen = (x: number, y: number) => ({ sx: (x + 5) * 20, sy: (5 - y) * 20 });
-  const correct = SAMPLE_POINTS.filter((p) => perceptronClass(w1, w2, bias, p.x, p.y) === p.label).length;
-
-  // Boundary line: w1*x + w2*y + bias = 0 -> y = -(w1*x + bias)/w2
-  let linePoints: string | null = null;
-  if (Math.abs(w2) > 0.001) {
-    const y1 = -(w1 * -5 + bias) / w2;
-    const y2 = -(w1 * 5 + bias) / w2;
-    const p1 = toScreen(-5, y1);
-    const p2 = toScreen(5, y2);
-    linePoints = `${p1.sx},${p1.sy} ${p2.sx},${p2.sy}`;
-  }
-
-  return (
-    <StageCard>
-      <div className="flex items-center gap-2 text-sm font-bold text-primary-700 dark:text-primary-300">
-        <Zap className="w-4 h-4" /> Try It Yourself
-      </div>
-      <p className="text-center text-xs text-slate-500">Adjust the weights until the line separates class A (blue) from class B (orange) -- this IS what "training" means.</p>
-      <div className="flex justify-center">
-        <svg viewBox="0 0 200 200" className="w-56 h-56 rounded-xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800">
-          <line x1={0} y1={100} x2={200} y2={100} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
-          <line x1={100} y1={0} x2={100} y2={200} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
-          {linePoints && <polyline points={linePoints} className="stroke-primary-600" strokeWidth={2} fill="none" />}
-          {SAMPLE_POINTS.map((p, i) => {
-            const { sx, sy } = toScreen(p.x, p.y);
-            const isCorrect = perceptronClass(w1, w2, bias, p.x, p.y) === p.label;
-            return (
-              <circle key={i} cx={sx} cy={sy} r={6} className={p.label === 'A' ? 'fill-sky-500' : 'fill-amber-500'} stroke={isCorrect ? 'none' : '#dc2626'} strokeWidth={isCorrect ? 0 : 2.5} />
-            );
-          })}
-        </svg>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <label className="block text-xs font-bold text-slate-500 space-y-1">
-          <span>Weight w1 ({w1.toFixed(1)})</span>
-          <input type="range" min={-3} max={3} step={0.1} value={w1} onChange={(e) => setW1(parseFloat(e.target.value))} className="w-full accent-primary-600" />
-        </label>
-        <label className="block text-xs font-bold text-slate-500 space-y-1">
-          <span>Weight w2 ({w2.toFixed(1)})</span>
-          <input type="range" min={-3} max={3} step={0.1} value={w2} onChange={(e) => setW2(parseFloat(e.target.value))} className="w-full accent-primary-600" />
-        </label>
-        <label className="block text-xs font-bold text-slate-500 space-y-1">
-          <span>Bias ({bias.toFixed(1)})</span>
-          <input type="range" min={-3} max={3} step={0.1} value={bias} onChange={(e) => setBias(parseFloat(e.target.value))} className="w-full accent-primary-600" />
-        </label>
-      </div>
-      <p className={`text-center text-sm font-bold ${correct === SAMPLE_POINTS.length ? 'text-accent-600' : 'text-slate-500'}`}>
-        {correct}/{SAMPLE_POINTS.length} points correctly classified{correct === SAMPLE_POINTS.length ? ' -- perfectly separated!' : ' (red outline = misclassified)'}
-      </p>
-    </StageCard>
-  );
 }
 
 // -- Linear vs Binary Search race, on a real sorted array --------------------

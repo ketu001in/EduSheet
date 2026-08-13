@@ -36,3 +36,5 @@ export * from './roboticsApplications';
 export * from './roboticsFundamentals';
 export * from './techFoundationsTypes';
 export * from './techFoundations';
+export * from './aiTypes';
+export * from './aiFoundations';
