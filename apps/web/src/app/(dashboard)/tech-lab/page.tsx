@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Trash2, Eye, Printer, X, Sparkles, Cpu, Loader2, RefreshCw, FileDown,
-  Bot, Brain, Code2, Wrench, ShieldAlert, PlayCircle, ExternalLink,
+  Bot, Brain, Code2, Wrench, ShieldAlert, PlayCircle, ExternalLink, ArrowRight, FolderOpen,
 } from 'lucide-react';
 import {
   fetchTechProjects, fetchTechProject, deleteTechProject, downloadTechProjectPdf, regenerateTechProjectPdf,
@@ -98,28 +98,38 @@ export default function TechLabPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link href="/tech-lab/robotics" className="block glass-card rounded-2xl p-5 space-y-2.5 hover:border-primary-400 hover:-translate-y-0.5 transition-all">
-          <div className="w-11 h-11 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
-            <Bot className="w-5 h-5" />
-          </div>
-          <h3 className="font-bold text-sm">Robotics Lab</h3>
-          <p className="text-xs text-slate-500 leading-relaxed">Real sensor specs, actuator math, control theory, and 24 real robots doing real jobs -- every one genuinely playable.</p>
-        </Link>
-        <Link href="/tech-lab/ai" className="block glass-card rounded-2xl p-5 space-y-2.5 hover:border-primary-400 hover:-translate-y-0.5 transition-all">
-          <div className="w-11 h-11 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
-            <Brain className="w-5 h-5" />
-          </div>
-          <h3 className="font-bold text-sm">AI Lab</h3>
-          <p className="text-xs text-slate-500 leading-relaxed">What machine learning actually is, the real types of learning, and a working perceptron you can train by hand.</p>
-        </Link>
-        <Link href="/tech-lab/coding" className="block glass-card rounded-2xl p-5 space-y-2.5 hover:border-primary-400 hover:-translate-y-0.5 transition-all">
-          <div className="w-11 h-11 rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
-            <Code2 className="w-5 h-5" />
-          </div>
-          <h3 className="font-bold text-sm">Coding Lab</h3>
-          <p className="text-xs text-slate-500 leading-relaxed">Algorithms, loops, conditionals, functions -- and a real race between linear and binary search.</p>
-        </Link>
+      <div className="space-y-3">
+        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Choose a Lab</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <LabHubCard
+            href="/tech-lab/robotics"
+            icon={Bot}
+            name="Robotics Lab"
+            description="Real sensor specs, actuator math, control theory, and 24 real robots doing real jobs -- every one genuinely playable."
+            colorClasses={{ badge: 'bg-indigo-600', ring: 'hover:border-indigo-500', stripe: 'bg-indigo-600', cta: 'text-indigo-600 dark:text-indigo-400' }}
+          />
+          <LabHubCard
+            href="/tech-lab/ai"
+            icon={Brain}
+            name="AI Lab"
+            description="What machine learning actually is, real classic ML algorithms, and a working perceptron you can train by hand."
+            colorClasses={{ badge: 'bg-violet-600', ring: 'hover:border-violet-500', stripe: 'bg-violet-600', cta: 'text-violet-600 dark:text-violet-400' }}
+          />
+          <LabHubCard
+            href="/tech-lab/coding"
+            icon={Code2}
+            name="Coding Lab"
+            description="Algorithms, loops, conditionals, functions -- and a real race between linear and binary search."
+            colorClasses={{ badge: 'bg-teal-600', ring: 'hover:border-teal-500', stripe: 'bg-teal-600', cta: 'text-teal-600 dark:text-teal-400' }}
+          />
+        </div>
+      </div>
+
+      <div className="torn-edge" />
+
+      <div className="flex items-center gap-2">
+        <FolderOpen className="w-4 h-4 text-slate-400" />
+        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Your Builds</p>
       </div>
 
       {isLoading ? (
@@ -354,5 +364,36 @@ export default function TechLabPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// The 3 primary lab entry points -- deliberately louder and more colorful
+// than the "Your Builds" project cards below (a full-color icon badge, a
+// colored top stripe, a distinct color per lab, an explicit "Explore Lab"
+// CTA) specifically so they read as top-level NAVIGATION into a whole
+// lab, not as one more item in the list of things you've generated.
+// Direct fix for feedback that the two card types were visually
+// indistinguishable.
+function LabHubCard({ href, icon: Icon, name, description, colorClasses }: {
+  href: string;
+  icon: typeof Bot;
+  name: string;
+  description: string;
+  colorClasses: { badge: string; ring: string; stripe: string; cta: string };
+}) {
+  return (
+    <Link href={href} className={`group block glass-card rounded-2xl overflow-hidden ${colorClasses.ring} hover:-translate-y-1 transition-all`}>
+      <div className={`h-1.5 ${colorClasses.stripe}`} />
+      <div className="p-5 space-y-3">
+        <div className={`w-12 h-12 rounded-xl ${colorClasses.badge} text-white flex items-center justify-center shadow-sm`}>
+          <Icon className="w-6 h-6" />
+        </div>
+        <h3 className="font-bold text-base">{name}</h3>
+        <p className="text-xs text-slate-500 leading-relaxed">{description}</p>
+        <p className={`text-xs font-bold flex items-center gap-1 ${colorClasses.cta} group-hover:gap-1.5 transition-all`}>
+          Explore Lab <ArrowRight className="w-3.5 h-3.5" />
+        </p>
+      </div>
+    </Link>
   );
 }
