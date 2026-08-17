@@ -5,7 +5,7 @@ import {
   ALL_DEEP_DIVES, ROBOTICS_APPLICATIONS,
   ROBOTICS_SENSORS, ROBOTICS_ACTUATORS, ROBOTICS_CONTROL_SYSTEMS, ROBOTICS_MECHANISMS,
   ROBOTICS_ELECTRONICS, ROBOTICS_CLASSIFICATION, ROBOTICS_HISTORY, ROBOTICS_EXPERIMENTS,
-  AI_FOUNDATIONS, CODING_CONCEPTS,
+  AI_FOUNDATIONS, CODING_CONCEPTS, AI_EXPERIMENTS,
 } from '@edusheets/content';
 
 // Every content type an admin can edit at /admin/content. Adding a new lab's
@@ -62,5 +62,6 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeDef[] = [
   { id: 'robotics-history', label: 'Tech Lab: Robotics History', items: ROBOTICS_HISTORY },
   { id: 'robotics-experiment', label: 'Tech Lab: Robotics Hands-On Experiments', items: ROBOTICS_EXPERIMENTS },
   { id: 'ai-concept', label: 'Tech Lab: AI Concepts', items: AI_FOUNDATIONS },
+  { id: 'ai-experiment', label: 'Tech Lab: AI Hands-On Experiments', items: AI_EXPERIMENTS },
   { id: 'coding-concept', label: 'Tech Lab: Coding Concepts', items: CODING_CONCEPTS },
 ];

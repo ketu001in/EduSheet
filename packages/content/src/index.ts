@@ -40,3 +40,5 @@ export * from './techFoundationsTypes';
 export * from './techFoundations';
 export * from './aiTypes';
 export * from './aiFoundations';
+export * from './aiExperimentTypes';
+export * from './aiExperiments';
