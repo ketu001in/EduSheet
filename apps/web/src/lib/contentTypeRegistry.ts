@@ -4,7 +4,7 @@ import {
   CHEM_REFERENCE_CHARTS, AROMATIC_MODULES, BENZENE_DERIVATIVES, ATOMIC_MODELS, IONIC_BOND_PAIRS, COVALENT_MOLECULES,
   ALL_DEEP_DIVES, ROBOTICS_APPLICATIONS,
   ROBOTICS_SENSORS, ROBOTICS_ACTUATORS, ROBOTICS_CONTROL_SYSTEMS, ROBOTICS_MECHANISMS,
-  ROBOTICS_ELECTRONICS, ROBOTICS_CLASSIFICATION, ROBOTICS_HISTORY,
+  ROBOTICS_ELECTRONICS, ROBOTICS_CLASSIFICATION, ROBOTICS_HISTORY, ROBOTICS_EXPERIMENTS,
   AI_FOUNDATIONS, CODING_CONCEPTS,
 } from '@edusheets/content';
 
@@ -60,6 +60,7 @@ export const CONTENT_TYPE_REGISTRY: ContentTypeDef[] = [
   { id: 'robotics-electronics', label: 'Tech Lab: Robotics Electronics', items: ROBOTICS_ELECTRONICS },
   { id: 'robotics-classification', label: 'Tech Lab: Robot Classification', items: ROBOTICS_CLASSIFICATION },
   { id: 'robotics-history', label: 'Tech Lab: Robotics History', items: ROBOTICS_HISTORY },
+  { id: 'robotics-experiment', label: 'Tech Lab: Robotics Hands-On Experiments', items: ROBOTICS_EXPERIMENTS },
   { id: 'ai-concept', label: 'Tech Lab: AI Concepts', items: AI_FOUNDATIONS },
   { id: 'coding-concept', label: 'Tech Lab: Coding Concepts', items: CODING_CONCEPTS },
 ];
