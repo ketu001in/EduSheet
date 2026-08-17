@@ -16,6 +16,8 @@ const BlockCodingStudioScene = dyn(() => import('@/components/techlab/BlockCodin
 const SortingRace = dyn(() => import('@/components/techlab/SortingRaceScene'));
 const RecursionVisualizer = dyn(() => import('@/components/techlab/RecursionVisualizerScene'));
 const DataStructurePlayground = dyn(() => import('@/components/techlab/DataStructurePlaygroundScene'));
+const CaesarCipher = dyn(() => import('@/components/techlab/CaesarCipherScene'));
+const NumberSystem = dyn(() => import('@/components/techlab/NumberSystemScene'));
 
 export default function CodingExperimentStage({ type }: { type: CodingExperimentPlaygroundType }) {
   switch (type) {
@@ -23,6 +25,8 @@ export default function CodingExperimentStage({ type }: { type: CodingExperiment
     case 'sorting-race': return <SortingRace />;
     case 'recursion-visualizer': return <RecursionVisualizer />;
     case 'data-structure-playground': return <DataStructurePlayground />;
+    case 'caesar-cipher': return <CaesarCipher />;
+    case 'number-system-converter': return <NumberSystem />;
     default: return null;
   }
 }

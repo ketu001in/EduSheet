@@ -1,14 +1,16 @@
 'use client';
 import { useMemo, useState } from 'react';
 import {
-  X, Sparkles, ListChecks, Briefcase, Blocks, BarChart3, GitBranch, Layers3, FlaskConical,
+  X, Sparkles, ListChecks, Briefcase, Blocks, BarChart3, GitBranch, Layers3, FlaskConical, KeyRound, Binary,
 } from 'lucide-react';
 import { CODING_EXPERIMENTS, CodingExperiment, GradeBand } from '@edusheets/content';
 import { useContent } from '@/lib/useContent';
 import SpeakButton from '@/components/labshared/SpeakButton';
 import CodingExperimentStage from '@/components/techlab/CodingExperimentStage';
 
-const CATEGORY_ICON = { 'visual-programming': Blocks, algorithms: BarChart3, 'data-structures': Layers3 } as const;
+const CATEGORY_ICON = {
+  'visual-programming': Blocks, algorithms: BarChart3, 'data-structures': Layers3, cryptography: KeyRound, 'number-systems': Binary,
+} as const;
 const GRADE_META: Record<GradeBand, string> = {
   junior: 'Junior (grades 3-5)', middle: 'Middle (grades 6-8)', senior: 'Senior (grades 9-10)', plusTwo: '+2 (grades 11-12)',
 };

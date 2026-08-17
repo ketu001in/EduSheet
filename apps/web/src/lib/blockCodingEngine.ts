@@ -197,6 +197,128 @@ export const BLOCK_MISSIONS: BlockMission[] = [
       renderAll(ws);
     },
   },
+  {
+    id: 'countdown',
+    title: 'Countdown Blastoff',
+    gradeBand: 'junior',
+    goal: 'Print 5, 4, 3, 2, 1 (one per line), then print "Blastoff!" on its own line.',
+    hint: 'The "count with i from 5 to 1 by -1" loop is already set up -- add a print block for "i" inside it, then a print block for "Blastoff!" after the loop ends.',
+    expectedOutput: ['5', '4', '3', '2', '1', 'Blastoff!'].join('\n'),
+    build: (ws) => {
+      const v = ws.getVariableMap().createVariable('i')!;
+      const forBlock = newBlock(ws, 'controls_for');
+      forBlock.setFieldValue(v.getId(), 'VAR');
+      const from = newBlock(ws, 'math_number'); from.setFieldValue('5', 'NUM');
+      const to = newBlock(ws, 'math_number'); to.setFieldValue('1', 'NUM');
+      const by = newBlock(ws, 'math_number'); by.setFieldValue('-1', 'NUM');
+      forBlock.getInput('FROM')!.connection!.connect(from.outputConnection!);
+      forBlock.getInput('TO')!.connection!.connect(to.outputConnection!);
+      forBlock.getInput('BY')!.connection!.connect(by.outputConnection!);
+      renderAll(ws);
+    },
+  },
+  {
+    id: 'multiplication-table',
+    title: 'Multiplication Table',
+    gradeBand: 'middle',
+    goal: 'Print the 5-times table from "5 x 1 = 5" through "5 x 10 = 50", one line each.',
+    hint: 'Use "join" from Text (click its gear icon to add more slots) to build a string like "5 x " + i + " = " + (5 * i), then print it inside the loop.',
+    expectedOutput: Array.from({ length: 10 }, (_, i) => `5 x ${i + 1} = ${5 * (i + 1)}`).join('\n'),
+    build: (ws) => {
+      const v = ws.getVariableMap().createVariable('i')!;
+      const forBlock = newBlock(ws, 'controls_for');
+      forBlock.setFieldValue(v.getId(), 'VAR');
+      const from = newBlock(ws, 'math_number'); from.setFieldValue('1', 'NUM');
+      const to = newBlock(ws, 'math_number'); to.setFieldValue('10', 'NUM');
+      const by = newBlock(ws, 'math_number'); by.setFieldValue('1', 'NUM');
+      forBlock.getInput('FROM')!.connection!.connect(from.outputConnection!);
+      forBlock.getInput('TO')!.connection!.connect(to.outputConnection!);
+      forBlock.getInput('BY')!.connection!.connect(by.outputConnection!);
+      renderAll(ws);
+    },
+  },
+  {
+    id: 'sum-1-to-100',
+    title: "Gauss's Sum",
+    gradeBand: 'middle',
+    goal: 'Add up every whole number from 1 to 100 and print the final total.',
+    hint: 'A variable "sum" already starts at 0. Inside the loop, set "sum" to "sum + i" each time, then print "sum" after the loop ends. (A young Carl Friedrich Gauss reportedly worked this exact sum out in seconds as a schoolboy -- see if your program agrees with him.)',
+    expectedOutput: '5050',
+    build: (ws) => {
+      const vSum = ws.getVariableMap().createVariable('sum')!;
+      const vI = ws.getVariableMap().createVariable('i')!;
+      const setSum = newBlock(ws, 'variables_set');
+      setSum.setFieldValue(vSum.getId(), 'VAR');
+      const zero = newBlock(ws, 'math_number'); zero.setFieldValue('0', 'NUM');
+      setSum.getInput('VALUE')!.connection!.connect(zero.outputConnection!);
+
+      const forBlock = newBlock(ws, 'controls_for');
+      forBlock.setFieldValue(vI.getId(), 'VAR');
+      const from = newBlock(ws, 'math_number'); from.setFieldValue('1', 'NUM');
+      const to = newBlock(ws, 'math_number'); to.setFieldValue('100', 'NUM');
+      const by = newBlock(ws, 'math_number'); by.setFieldValue('1', 'NUM');
+      forBlock.getInput('FROM')!.connection!.connect(from.outputConnection!);
+      forBlock.getInput('TO')!.connection!.connect(to.outputConnection!);
+      forBlock.getInput('BY')!.connection!.connect(by.outputConnection!);
+
+      setSum.nextConnection!.connect(forBlock.previousConnection!);
+      renderAll(ws);
+    },
+  },
+  {
+    id: 'fizzbuzz',
+    title: 'FizzBuzz',
+    gradeBand: 'senior',
+    goal: 'For numbers 1 to 15: print "FizzBuzz" for multiples of 15, "Fizz" for multiples of 3, "Buzz" for multiples of 5, otherwise print the number itself.',
+    hint: 'Use "if/else if/else" from Logic (click its gear icon to add two "else if" branches and an "else"). Check "remainder of i / 15 = 0" first, then "/ 3", then "/ 5" -- order matters, since every multiple of 15 is also a multiple of 3 and 5.',
+    expectedOutput: Array.from({ length: 15 }, (_, idx) => {
+      const i = idx + 1;
+      if (i % 15 === 0) return 'FizzBuzz';
+      if (i % 3 === 0) return 'Fizz';
+      if (i % 5 === 0) return 'Buzz';
+      return String(i);
+    }).join('\n'),
+    build: (ws) => {
+      const v = ws.getVariableMap().createVariable('i')!;
+      const forBlock = newBlock(ws, 'controls_for');
+      forBlock.setFieldValue(v.getId(), 'VAR');
+      const from = newBlock(ws, 'math_number'); from.setFieldValue('1', 'NUM');
+      const to = newBlock(ws, 'math_number'); to.setFieldValue('15', 'NUM');
+      const by = newBlock(ws, 'math_number'); by.setFieldValue('1', 'NUM');
+      forBlock.getInput('FROM')!.connection!.connect(from.outputConnection!);
+      forBlock.getInput('TO')!.connection!.connect(to.outputConnection!);
+      forBlock.getInput('BY')!.connection!.connect(by.outputConnection!);
+      renderAll(ws);
+    },
+  },
+  {
+    id: 'is-even-function',
+    title: 'Function With a Parameter',
+    gradeBand: 'senior',
+    goal: 'Finish the "isEven" function so it returns true or false, then call it and print the result for 4, 7, and 10.',
+    hint: 'The function and its parameter "n" are already set up. Plug "remainder of n / 2 = 0" into the return slot, then add three "call isEven" blocks (each wrapped in a print block) for 4, 7, and 10.',
+    expectedOutput: ['true', 'false', 'true'].join('\n'),
+    build: (ws) => {
+      const defBlock = newBlock(ws, 'procedures_defreturn');
+      defBlock.setFieldValue('isEven', 'NAME');
+      (defBlock as unknown as { loadExtraState: (state: unknown) => void }).loadExtraState({ params: [{ name: 'n', id: 'isEvenParamN' }] });
+      renderAll(ws);
+    },
+  },
+  {
+    id: 'celsius-to-fahrenheit',
+    title: 'Temperature Converter Function',
+    gradeBand: 'plusTwo',
+    goal: 'Finish the "celsiusToFahrenheit" function using the real formula (C x 9 / 5) + 32, then call it and print the result for 0, 100, and 37 degrees Celsius.',
+    hint: 'The function and its parameter "celsius" are already set up. Build "(celsius x 9) / 5 + 32" using Math blocks and plug it into the return slot, then add three "call" blocks (each wrapped in a print block) for 0, 100, and 37.',
+    expectedOutput: ['32', '212', '98.6'].join('\n'),
+    build: (ws) => {
+      const defBlock = newBlock(ws, 'procedures_defreturn');
+      defBlock.setFieldValue('celsiusToFahrenheit', 'NAME');
+      (defBlock as unknown as { loadExtraState: (state: unknown) => void }).loadExtraState({ params: [{ name: 'celsius', id: 'c2fParamC' }] });
+      renderAll(ws);
+    },
+  },
 ];
 
 export function buildMission(workspace: Blockly.Workspace, missionId: string) {

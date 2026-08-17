@@ -9,13 +9,15 @@
 // advanced difficulty) because the explicit goal of this pass was
 // covering every school stage, not just ramping difficulty within one
 // audience.
-export type CodingExperimentCategory = 'visual-programming' | 'algorithms' | 'data-structures';
+export type CodingExperimentCategory = 'visual-programming' | 'algorithms' | 'data-structures' | 'cryptography' | 'number-systems';
 export type GradeBand = 'junior' | 'middle' | 'senior' | 'plusTwo';
 export type CodingExperimentPlaygroundType =
   | 'block-coding-studio'
   | 'sorting-race'
   | 'recursion-visualizer'
-  | 'data-structure-playground';
+  | 'data-structure-playground'
+  | 'caesar-cipher'
+  | 'number-system-converter';
 
 export interface CodingExperiment {
   id: string;
