@@ -13,11 +13,15 @@ import { Loader2, RefreshCw } from 'lucide-react';
 // lights/meshes/controls in this rather than re-deriving the same
 // settings from scratch.
 export default function SafeR3FCanvas({
-  height = 280, children, camera,
+  height = 280, children, camera, shadows = false,
 }: {
   height?: number;
   children: ReactNode;
   camera?: CanvasProps['camera'];
+  // Off by default (existing scenes are unaffected) -- opt in per-scene
+  // for ones that actually place objects on a surface, where a real
+  // shadow is a genuine, cheap depth cue, not decoration.
+  shadows?: boolean;
 }) {
   return (
     <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900/60 dark:to-slate-950 overflow-hidden" style={{ height }}>
@@ -25,6 +29,7 @@ export default function SafeR3FCanvas({
         <Suspense fallback={<LoadingPlaceholder />}>
           <Canvas
             frameloop="demand"
+            shadows={shadows}
             camera={camera ?? { position: [4.5, 3.5, 4.5], fov: 42 }}
             dpr={[1, 1.5]}
             gl={{ powerPreference: 'default', antialias: true, failIfMajorPerformanceCaveat: false }}
