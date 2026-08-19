@@ -18,6 +18,22 @@ const Electrolysis3DScene = dynamic(() => import('./Electrolysis3DScene'), {
   ssr: false,
   loading: () => <div className="w-full h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
 });
+const RatioMixer3DScene = dynamic(() => import('./RatioMixer3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[230px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const OctetBuilder3DScene = dynamic(() => import('./OctetBuilder3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const Periodicity3DScene = dynamic(() => import('./Periodicity3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[200px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const DiffusionRace3DScene = dynamic(() => import('./DiffusionRace3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[220px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
 
 // The "Try It Yourself" playground every Concepts Corner entry now carries --
 // direct response to user feedback that pure statement + step-through
@@ -132,16 +148,7 @@ function RatioMixerPlayground() {
       <p className="text-center text-xs text-slate-500">Water is always Hydrogen : Oxygen = 1 : 8 by mass. Try to match Oxygen to the required ratio.</p>
       <Slider label="Hydrogen used" unit="g" value={massH} min={1} max={10} step={0.5} onChange={setMassH} />
       <Slider label="Oxygen you add" unit="g" value={massO} min={1} max={80} step={0.5} onChange={setMassO} />
-      <div className="flex items-end justify-center gap-6 h-24">
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-10 bg-sky-300 dark:bg-sky-800 rounded-t-lg" style={{ height: `${Math.min(100, (massH / 10) * 100)}%` }} />
-          <p className="text-[10px] font-bold text-slate-500">H: {massH}g</p>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-10 bg-rose-300 dark:bg-rose-800 rounded-t-lg" style={{ height: `${Math.min(100, (massO / 80) * 100)}%` }} />
-          <p className="text-[10px] font-bold text-slate-500">O: {massO}g</p>
-        </div>
-      </div>
+      <RatioMixer3DScene massH={massH} massO={massO} maxH={10} maxO={80} isMatch={isMatch} />
       <div className={`rounded-xl p-3 text-center text-sm font-bold ${isMatch ? 'bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
         Your ratio is {actualRatio.toFixed(1)} : 1 (need exactly 8 : 1) -- {isMatch ? 'Match! You\'ve made pure water (H2O) with nothing left over.' : `required Oxygen for ${massH}g Hydrogen is ${requiredO}g`}
       </div>
@@ -183,6 +190,7 @@ function OctetBuilderPlayground() {
         ))}
       </div>
       <p className="text-center text-sm text-slate-500">{el.name} normally has {neutralShells[neutralShells.length - 1]} electrons in its outer shell. Gain or lose electrons and see what happens.</p>
+      <OctetBuilder3DScene shellCounts={shells} />
       <div className="flex items-center justify-center gap-4">
         <button onClick={() => setDelta((d) => Math.max(d - 1, -(el.atomicNumber - 1)))} className="w-9 h-9 rounded-full border-2 border-slate-300 dark:border-slate-700 font-bold text-lg">-</button>
         <div className="text-center">
@@ -190,11 +198,6 @@ function OctetBuilderPlayground() {
           <p className="text-[10px] text-slate-400">outer shell (target: {targetCount})</p>
         </div>
         <button onClick={() => setDelta((d) => d + 1)} className="w-9 h-9 rounded-full border-2 border-slate-300 dark:border-slate-700 font-bold text-lg">+</button>
-      </div>
-      <div className="flex gap-1 justify-center flex-wrap max-w-xs mx-auto">
-        {Array.from({ length: targetCount }, (_, i) => (
-          <div key={i} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] ${i < outerShellCount ? 'bg-primary-500 border-primary-600 text-white' : 'border-dashed border-slate-300 dark:border-slate-700'}`}>e-</div>
-        ))}
       </div>
       <div className={`rounded-xl p-3 text-center text-sm font-bold ${isStable ? 'bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'}`}>
         {isStable ? `Stable! A full outer shell (${targetCount}) -- this is the noble-gas-like ion ${el.symbol}${delta > 0 ? `${Math.abs(delta)}-` : delta < 0 ? `${Math.abs(delta)}+` : ''} chemistry actually forms.` : `${outerShellCount < targetCount ? `${targetCount - outerShellCount} more electron(s) needed` : `${outerShellCount - targetCount} too many`} to complete the octet.`}
@@ -211,23 +214,11 @@ function PeriodicityExplorerPlayground() {
     const shells = bohrBuryShells(z);
     return { z, valence: shells[shells.length - 1] };
   }), []);
-  const maxV = 8;
 
   return (
     <div className="space-y-3">
       <Slider label="Reveal up to atomic number" unit="" value={maxZ} min={1} max={20} step={1} onChange={setMaxZ} />
-      <div className="flex items-end justify-center gap-[3px] h-32 bg-slate-50 dark:bg-slate-900/40 rounded-xl border-2 border-slate-200 dark:border-slate-800 p-2">
-        {points.map((p) => (
-          <div key={p.z} className="flex flex-col items-center gap-0.5 w-5">
-            {p.z <= maxZ ? (
-              <>
-                <div className={`w-full rounded-t ${[2, 10, 18].includes(p.z) ? 'bg-accent-500' : 'bg-primary-400 dark:bg-primary-700'}`} style={{ height: `${(p.valence / maxV) * 90}px` }} />
-                <p className="text-[8px] text-slate-400">{p.z}</p>
-              </>
-            ) : <div className="w-full h-full" />}
-          </div>
-        ))}
-      </div>
+      <Periodicity3DScene points={points} maxZ={maxZ} />
       <p className="text-center text-xs text-slate-500">
         Notice the pattern climbs 1&rarr;{maxZ >= 2 ? '2' : '...'} then resets and climbs 1&rarr;8 twice more (the highlighted bars are the noble gases He, Ne, Ar) -- this repeating rise-and-reset IS periodicity, and it's why elements below one another share properties.
       </p>
@@ -365,15 +356,10 @@ function DiffusionRacePlayground() {
       <button onClick={() => { setRacing(false); requestAnimationFrame(() => setRacing(true)); }} className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary-600 text-white font-bold py-2 text-sm">
         <Wind className="w-4 h-4" /> Race!
       </button>
-      <div className="space-y-3">
-        {[{ gas: gas1, rate: rate1 }, { gas: gas2, rate: rate2 }].map(({ gas, rate }) => (
-          <div key={gas.label} className="space-y-1">
-            <p className="text-[11px] font-bold text-slate-500">{gas.label} (M={gas.molarMass})</p>
-            <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-              <div className="h-full bg-primary-500 rounded-full transition-all duration-[1500ms] ease-out" style={{ width: racing ? `${(rate / maxRate) * 100}%` : '0%' }} />
-            </div>
-          </div>
-        ))}
+      <DiffusionRace3DScene rate1={rate1} rate2={rate2} maxRate={maxRate} label1={gas1.label} label2={gas2.label} racing={racing} />
+      <div className="flex justify-center gap-6 text-[11px] font-bold text-slate-500">
+        <span>{gas1.label} (M={gas1.molarMass})</span>
+        <span>{gas2.label} (M={gas2.molarMass})</span>
       </div>
       <p className="text-center text-sm font-bold text-slate-600 dark:text-slate-300">Diffusion rate ratio = {ratio.toFixed(2)} : 1 -- the lighter gas travels {ratio.toFixed(2)}x farther in the same time.</p>
     </div>

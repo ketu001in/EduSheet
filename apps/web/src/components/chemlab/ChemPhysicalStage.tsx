@@ -1,11 +1,29 @@
 'use client';
 import { useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { PhysicalChemSimType } from '@edusheets/content';
 import {
   moleConversion, solveCombinedGasLaw, celsiusToKelvin, pHFromHydrogenIonConcentration,
   hydrogenIonConcentrationFromPH, pOHFromPH, ammoniaEquilibriumConstant, predictEquilibriumShift,
   EquilibriumStress, firstOrderConcentration, zeroOrderConcentration, cellEMF, STANDARD_REDUCTION_POTENTIALS,
 } from '@/lib/chemEngine';
+
+const GasPiston3DScene = dynamic(() => import('./GasPiston3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[230px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const PHBeaker3DScene = dynamic(() => import('./PHBeaker3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[210px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const MassBalance3DScene = dynamic(() => import('./MassBalance3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const GalvanicCell3DScene = dynamic(() => import('./GalvanicCell3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[230px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
 
 // Renders whichever Physical Chemistry Calculator matches the current
 // simType -- one bespoke scene per type, same "one Scene per simType"
@@ -68,22 +86,14 @@ function GasLawsScene({ params }: { params: Record<string, number> }) {
   const result = useMemo(() => solveCombinedGasLaw(p1, v1, t1, { pressure2: p2, temperature2: t2 }), [p1, v1, t1, p2, t2]);
 
   const maxV = Math.max(v1, result.volume2, 1);
-  const barHeight = (v: number) => Math.max(6, (v / maxV) * 100);
 
   return (
     <StageCard>
       <p className="text-center text-sm text-slate-500">P1V1/T1 = P2V2/T2</p>
-      <div className="flex items-end justify-center gap-8 h-32">
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-16 bg-primary-300 dark:bg-primary-800 rounded-t-lg" style={{ height: `${barHeight(v1)}%` }} />
-          <p className="text-[10px] font-bold text-slate-500">Before</p>
-          <p className="text-xs">{p1}atm, {v1.toFixed(1)}L, {t1C}°C</p>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-16 bg-accent-400 dark:bg-accent-700 rounded-t-lg transition-all" style={{ height: `${barHeight(result.volume2)}%` }} />
-          <p className="text-[10px] font-bold text-slate-500">After</p>
-          <p className="text-xs">{p2}atm, {result.volume2.toFixed(2)}L, {t2C}°C</p>
-        </div>
+      <GasPiston3DScene v1={v1} v2={result.volume2} maxV={maxV} />
+      <div className="flex items-center justify-center gap-8 text-xs">
+        <p><span className="font-bold text-slate-500">Before:</span> {p1}atm, {v1.toFixed(1)}L, {t1C}&deg;C</p>
+        <p><span className="font-bold text-slate-500">After:</span> {p2}atm, {result.volume2.toFixed(2)}L, {t2C}&deg;C</p>
       </div>
       <p className="text-center font-display text-lg font-semibold">New Volume = <span className="text-accent-600">{result.volume2.toFixed(2)} L</span></p>
     </StageCard>
@@ -102,6 +112,7 @@ function PHCalculatorScene({ params }: { params: Record<string, number> }) {
       <div className="h-8 rounded-full overflow-hidden relative bg-slate-100 dark:bg-slate-800 max-w-md mx-auto" style={{ background: 'linear-gradient(to right, #dc2626, #f59e0b, #22c55e, #3b82f6, #7c3aed)' }}>
         <div className="absolute top-0 bottom-0 w-1.5 bg-slate-900 dark:bg-white" style={{ left: `${(pH / 14) * 100}%` }} />
       </div>
+      <PHBeaker3DScene color={color} />
       <p className="text-center font-display text-2xl font-bold" style={{ color }}>pH {pH.toFixed(1)} -- {label}</p>
       <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
         <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3 text-center">
@@ -140,6 +151,7 @@ function EquilibriumScene({ params }: { params: Record<string, number> }) {
   return (
     <StageCard>
       <p className="text-center font-mono text-sm">N2(g) + 3H2(g) &#8652; 2NH3(g)</p>
+      <MassBalance3DScene reactantMass={n2 + h2} productMass={nh3 * 2} maxScale={Math.max(n2 + h2, nh3 * 2, 1)} />
       <div className="grid grid-cols-3 gap-3 max-w-md mx-auto text-center">
         <div className="rounded-xl bg-primary-50 dark:bg-primary-900/20 p-3"><p className="text-[10px] font-bold text-primary-600">[N2]</p><p className="font-bold">{n2.toFixed(1)}</p></div>
         <div className="rounded-xl bg-primary-50 dark:bg-primary-900/20 p-3"><p className="text-[10px] font-bold text-primary-600">[H2]</p><p className="font-bold">{h2.toFixed(1)}</p></div>
@@ -195,6 +207,7 @@ function ElectrochemistryScene({ params }: { params: Record<string, number> }) {
 
   return (
     <StageCard>
+      <GalvanicCell3DScene emf={result.emf} />
       <div className="flex items-center justify-center gap-6">
         <div className="text-center">
           <p className="text-[10px] font-bold text-slate-400 uppercase">Anode (oxidised)</p>

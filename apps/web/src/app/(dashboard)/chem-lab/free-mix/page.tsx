@@ -34,7 +34,7 @@ export default function FreeMixPage() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16 space-y-6">
-      <div className="sticky top-0 z-30 isolate px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
+      <div className="px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
         <Link href="/chem-lab" className="text-sm font-medium text-slate-500 hover:text-primary-600 flex items-center gap-1.5">
           <ChevronLeft className="w-4 h-4" /> Back to Chem Lab
         </Link>
