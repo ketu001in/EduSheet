@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
-import { Text, OrbitControls } from '@react-three/drei';
+import { Text, OrbitControls, OrthographicCamera } from '@react-three/drei';
 import { ThreeEvent, useFrame } from '@react-three/fiber';
 import { PeriodicElement } from '@edusheets/content';
 import SafeR3FCanvas from '@/components/techlab/SafeR3FCanvas';
@@ -24,8 +24,16 @@ const TILE_SPACING = 1.05;
 const TILE_W = 0.78;
 const TILE_D = 0.78;
 const TILE_H = 0.62;
-const LANTHANIDE_ROW = 8.6;
-const ACTINIDE_ROW = 9.7;
+// Period 7 sits at z = (7-4)*SPACING = 3.15 -- the lanthanide/actinide
+// rows go clearly below that with a real gap, not interleaved into the
+// main block. (An earlier version's z formula for these two rows landed
+// between periods 4 and 5 by mistake -- caught live from a screenshot
+// showing La-Lu rendering inside the main table instead of below it.)
+const LANTHANIDE_Z = 4.6;
+const ACTINIDE_Z = 5.65;
+// Real convention: the f-block row starts directly under group 3 (where
+// La/Ac sit as placeholders in the main table) and runs right.
+const FBLOCK_X_START = (3 - 9.5) * TILE_SPACING;
 
 const CATEGORY_HEX: Record<string, string> = {
   'alkali metal': '#f87171',
@@ -56,12 +64,12 @@ export default function PeriodicTable3DScene({ elements, matches, isFiltering, o
     let x: number, z: number;
     if (el.category === 'lanthanide') {
       const idx = elements.filter((e) => e.category === 'lanthanide').findIndex((e) => e.atomicNumber === el.atomicNumber);
-      x = (idx - 7) * TILE_SPACING;
-      z = LANTHANIDE_ROW * TILE_SPACING - 8 * TILE_SPACING;
+      x = FBLOCK_X_START + idx * TILE_SPACING;
+      z = LANTHANIDE_Z;
     } else if (el.category === 'actinide') {
       const idx = elements.filter((e) => e.category === 'actinide').findIndex((e) => e.atomicNumber === el.atomicNumber);
-      x = (idx - 7) * TILE_SPACING;
-      z = ACTINIDE_ROW * TILE_SPACING - 8 * TILE_SPACING;
+      x = FBLOCK_X_START + idx * TILE_SPACING;
+      z = ACTINIDE_Z;
     } else {
       x = ((el.group ?? 1) - 9.5) * TILE_SPACING;
       z = (el.period - 4) * TILE_SPACING;
@@ -71,13 +79,20 @@ export default function PeriodicTable3DScene({ elements, matches, isFiltering, o
 
   return (
     <div className="space-y-1.5">
-      <SafeR3FCanvas height={560} shadows camera={{ position: [0, 8.5, 15.5], fov: 42 }}>
+      <SafeR3FCanvas height={560} shadows>
+        {/* Orthographic, not perspective -- a wide, flat table viewed with
+            perspective projection genuinely bows/warps at the edges (caught
+            live: rows near the far left/right edge visibly curved away from
+            straight). Orthographic keeps every row and column truly
+            straight and uniformly scaled, like looking down at a real
+            table, while OrbitControls still lets you rotate around it. */}
+        <OrthographicCamera makeDefault position={[0, 10, 15]} zoom={42} near={0.1} far={100} />
         <ambientLight intensity={0.9} />
         <directionalLight position={[4, 10, 6]} intensity={1.15} castShadow shadow-mapSize={[1024, 1024]} />
         <directionalLight position={[-4, 6, -4]} intensity={0.35} />
         {/* Dark table so the real gaps between tiles show up as visible
             seams, not the same flat color as the tiles' backdrop. */}
-        <mesh position={[0, -0.06, 0.3]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <mesh position={[0, -0.06, 1.25]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[24, 14]} />
           <meshStandardMaterial color="#1e293b" roughness={0.85} />
         </mesh>
@@ -91,7 +106,7 @@ export default function PeriodicTable3DScene({ elements, matches, isFiltering, o
             onSelect={onSelect}
           />
         ))}
-        <OrbitControls enablePan={false} enableZoom minDistance={6} maxDistance={26} makeDefault />
+        <OrbitControls enablePan={false} enableZoom minZoom={20} maxZoom={110} target={[0, 0, 1.25]} makeDefault />
       </SafeR3FCanvas>
       <p className="text-center text-[10px] text-slate-400">Drag to rotate &middot; scroll to zoom &middot; hover a brick, then click for the full story</p>
     </div>

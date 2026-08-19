@@ -110,16 +110,12 @@ export default function PeriodicTablePage() {
 
   return (
     <div className="max-w-6xl mx-auto pb-16 space-y-6">
-      {/* One combined sticky header -- the back link and the search bar are
-          both here so they stick together as a single unit instead of two
-          independent sticky elements fighting over the same space.
-          `isolate` forces a fresh stacking context so nothing in the grid
-          below (which has its own hover/scale transforms) can ever paint
-          in front of it regardless of z-index math; a solid (not blurred/
-          translucent) background avoids the GPU-compositing seam some
-          browsers show at a sticky element's edge when backdrop-blur is
-          combined with a horizontally-scrollable sibling. */}
-      <div className="sticky top-0 z-30 isolate space-y-3 pb-3 bg-bg-light dark:bg-bg-dark">
+      {/* Deliberately NOT sticky -- direct feedback that pinning this bar
+          over the tall 3D table felt cramped/"disturbing" rather than
+          helpful. The 3D scene is fully visible/rotatable within its own
+          fixed-height canvas, so there's no long list to keep search
+          pinned against the way there would be for a scrolling list. */}
+      <div className="space-y-3 pb-3">
         <Link href="/chem-lab" className="text-sm font-medium text-slate-500 hover:text-primary-600 flex items-center gap-1.5 w-fit pt-1">
           <ChevronLeft className="w-4 h-4" /> Back to Chem Lab
         </Link>
