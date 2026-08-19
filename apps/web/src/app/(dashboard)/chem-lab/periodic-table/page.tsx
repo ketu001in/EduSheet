@@ -5,10 +5,16 @@ import {
   ChevronLeft, ChevronRight, X, Search, Thermometer, Layers, Hash, Scale,
   Flame, Wind, History, Volume2, VolumeX,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { PERIODIC_TABLE, PeriodicElement } from '@edusheets/content';
 import { isSpeechSupported, speak, stopSpeaking } from '@/lib/speech';
 import { useDeepDives } from '@/lib/useDeepDives';
 import DeepDiveTrigger from '@/components/labshared/DeepDiveTrigger';
+
+const PeriodicTable3DScene = dynamic(() => import('@/components/chemlab/PeriodicTable3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[560px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
 
 const CATEGORY_COLOR: Record<string, string> = {
   'alkali metal': 'bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-800 text-red-800 dark:text-red-300',
@@ -56,10 +62,6 @@ export default function PeriodicTablePage() {
   const deepDives = useDeepDives();
 
   useEffect(() => setSpeechReady(isSpeechSupported()), []);
-
-  const mainRows = PERIODIC_TABLE.filter((e) => e.group !== null);
-  const lanthanides = PERIODIC_TABLE.filter((e) => e.category === 'lanthanide');
-  const actinides = PERIODIC_TABLE.filter((e) => e.category === 'actinide');
 
   const normalizedQuery = query.trim().toLowerCase();
   const matches = (el: PeriodicElement) => {
@@ -164,71 +166,7 @@ export default function PeriodicTablePage() {
         ))}
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="grid gap-1 min-w-[900px]" style={{ gridTemplateColumns: 'repeat(18, minmax(46px, 1fr))' }}>
-          {mainRows.map((el) => {
-            const active = matches(el);
-            return (
-              <button
-                key={el.atomicNumber}
-                onClick={() => openElement(el)}
-                style={{ gridColumn: el.group as number, gridRow: el.period }}
-                className={`periodic-tile aspect-square rounded-md border text-left p-1 transition-all duration-200 ease-out ${colorFor(el.category)} ${
-                  active
-                    ? 'hover:shadow-lg hover:shadow-current/30 hover:-translate-y-0.5 opacity-100 cursor-pointer'
-                    : 'opacity-20 hover:opacity-40'
-                } ${isFiltering && active ? 'ring-2 ring-primary-500 z-10 scale-105' : ''}`}
-              >
-                <span className="block text-[8px] font-medium opacity-70">{el.atomicNumber}</span>
-                <span className="block text-sm font-bold leading-none">{el.symbol}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Lanthanides</p>
-        <div className="overflow-x-auto">
-          <div className="flex gap-1 min-w-[900px]">
-            {lanthanides.map((el) => {
-              const active = matches(el);
-              return (
-                <button
-                  key={el.atomicNumber}
-                  onClick={() => openElement(el)}
-                  className={`periodic-tile w-[46px] aspect-square rounded-md border text-left p-1 transition-all duration-200 ease-out ${colorFor(el.category)} ${
-                    active ? 'hover:shadow-lg hover:shadow-current/30 hover:-translate-y-0.5 opacity-100' : 'opacity-20 hover:opacity-40'
-                  } ${isFiltering && active ? 'ring-2 ring-primary-500 scale-105' : ''}`}
-                >
-                  <span className="block text-[8px] font-medium opacity-70">{el.atomicNumber}</span>
-                  <span className="block text-sm font-bold leading-none">{el.symbol}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-wide pt-2">Actinides</p>
-        <div className="overflow-x-auto">
-          <div className="flex gap-1 min-w-[900px]">
-            {actinides.map((el) => {
-              const active = matches(el);
-              return (
-                <button
-                  key={el.atomicNumber}
-                  onClick={() => openElement(el)}
-                  className={`periodic-tile w-[46px] aspect-square rounded-md border text-left p-1 transition-all duration-200 ease-out ${colorFor(el.category)} ${
-                    active ? 'hover:shadow-lg hover:shadow-current/30 hover:-translate-y-0.5 opacity-100' : 'opacity-20 hover:opacity-40'
-                  } ${isFiltering && active ? 'ring-2 ring-primary-500 scale-105' : ''}`}
-                >
-                  <span className="block text-[8px] font-medium opacity-70">{el.atomicNumber}</span>
-                  <span className="block text-sm font-bold leading-none">{el.symbol}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <PeriodicTable3DScene elements={PERIODIC_TABLE} matches={matches} isFiltering={isFiltering} onSelect={openElement} />
 
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

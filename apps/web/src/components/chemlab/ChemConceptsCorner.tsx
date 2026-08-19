@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { ChemConcept } from '@edusheets/content';
 import SpeakButton from '@/components/labshared/SpeakButton';
+import Tilt3DCard from '@/components/labshared/Tilt3DCard';
 import ChemConceptPlayground from './ChemConceptPlayground';
 
 // Chemistry Concepts Corner -- statement first, then a step-through
@@ -24,17 +25,18 @@ export default function ChemConceptsCorner({ concepts }: { concepts: ChemConcept
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4">
-      <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+      <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-3 md:pt-1 md:px-1">
         {concepts.map((c) => (
-          <button
+          <Tilt3DCard
             key={c.id}
+            active={activeId === c.id}
             onClick={() => selectConcept(c.id)}
-            className={`shrink-0 md:shrink text-left px-3.5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all whitespace-nowrap md:whitespace-normal ${
-              activeId === c.id ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]' : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+            className={`shrink-0 md:shrink text-left px-3.5 py-2.5 rounded-xl text-sm font-bold border-2 whitespace-nowrap md:whitespace-normal ${
+              activeId === c.id ? 'border-slate-900 bg-primary-600 text-white' : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark'
             }`}
           >
             {c.name}
-          </button>
+          </Tilt3DCard>
         ))}
       </div>
 

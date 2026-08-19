@@ -1,9 +1,15 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ChevronLeft, Beaker, FlaskConical, Info, ShieldAlert, TriangleAlert } from 'lucide-react';
 import { FREE_MIX_CHEMICALS, FREE_MIX_REACTIONS } from '@edusheets/content';
-import { ReactionStage } from '@/components/chemlab/ReactionStage';
+import Tilt3DCard from '@/components/labshared/Tilt3DCard';
+
+const FreeMixReactionScene = dynamic(() => import('@/components/chemlab/FreeMixReactionScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
 
 export default function FreeMixPage() {
   const [chemA, setChemA] = useState<string | null>(null);
@@ -46,25 +52,26 @@ export default function FreeMixPage() {
       <div className="glass-card rounded-3xl p-6 md:p-8 space-y-6">
         <div>
           <h2 className="font-bold text-sm mb-3">Pick two chemicals (tap to select/deselect)</h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 py-1">
             {FREE_MIX_CHEMICALS.map((c) => {
               const selected = chemA === c.id || chemB === c.id;
               return (
-                <button
+                <Tilt3DCard
                   key={c.id}
+                  active={selected}
                   onClick={() => pick(c.id)}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all flex items-center gap-1.5 ${
-                    c.hazardOnly && !selected
-                      ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 hover:shadow-[3px_3px_0_var(--color-ink)]'
-                      : selected
-                      ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]'
-                      : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
-                  }`}
                   title={c.description}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold border-2 flex items-center gap-1.5 ${
+                    c.hazardOnly && !selected
+                      ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400'
+                      : selected
+                      ? 'border-slate-900 bg-primary-600 text-white'
+                      : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark'
+                  }`}
                 >
                   {c.hazardOnly && <ShieldAlert className="w-3.5 h-3.5 shrink-0" />}
                   {c.name}
-                </button>
+                </Tilt3DCard>
               );
             })}
           </div>
@@ -94,7 +101,7 @@ export default function FreeMixPage() {
                   <TriangleAlert className="w-5 h-5" /> Real-Life Hazard -- Never Try This For Real
                 </p>
                 <div className="flex justify-center">
-                  <ReactionStage reaction={reaction.result} idle={false} />
+                  <FreeMixReactionScene reaction={reaction.result} idle={false} hazard />
                 </div>
                 <p className="text-center font-bold text-red-700 dark:text-red-400">{reaction.result.description}</p>
                 <p className="text-sm text-red-700/90 dark:text-red-300/90 max-w-md mx-auto text-center">{reaction.explanation}</p>
@@ -102,7 +109,7 @@ export default function FreeMixPage() {
             ) : (
               <>
                 <div className="flex justify-center">
-                  <ReactionStage reaction={reaction?.result} idle={!reaction} />
+                  <FreeMixReactionScene reaction={reaction?.result} idle={!reaction} />
                 </div>
                 {reaction ? (
                   <div className="text-center space-y-2">

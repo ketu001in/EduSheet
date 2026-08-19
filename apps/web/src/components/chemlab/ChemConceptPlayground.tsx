@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { Zap, Wind, Scale, FlaskConical } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Wind, FlaskConical } from 'lucide-react';
 import {
   ChemConceptPlaygroundType, CHEM_PHYSICAL_EXPERIMENTS, bohrBuryShells,
 } from '@edusheets/content';
@@ -8,6 +9,15 @@ import {
   electrolysisMassDeposited, grahamsLawRatio, FARADAY_CONSTANT,
 } from '@/lib/chemEngine';
 import ChemPhysicalStage from './ChemPhysicalStage';
+
+const MassBalance3DScene = dynamic(() => import('./MassBalance3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+const Electrolysis3DScene = dynamic(() => import('./Electrolysis3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
 
 // The "Try It Yourself" playground every Concepts Corner entry now carries --
 // direct response to user feedback that pure statement + step-through
@@ -100,22 +110,8 @@ function MassBalancePlayground() {
     <div className="space-y-3">
       <p className="text-center font-mono text-sm">2Mg + O2 &rarr; 2MgO</p>
       <Slider label="Mass of Magnesium burned" unit="g" value={massMg} min={2} max={96} step={1} onChange={setMassMg} />
-      <div className="flex items-end justify-center gap-2 h-28">
-        <div className="flex flex-col items-center gap-1 flex-1 max-w-[120px]">
-          <div className="w-full flex items-end gap-1" style={{ height: '90px' }}>
-            <div className="flex-1 bg-slate-300 dark:bg-slate-700 rounded-t-lg" style={{ height: `${(massMg / maxScale) * 100}%` }} title="Mg" />
-            <div className="flex-1 bg-sky-300 dark:bg-sky-800 rounded-t-lg" style={{ height: `${(result.massO2 / maxScale) * 100}%` }} title="O2" />
-          </div>
-          <p className="text-[10px] font-bold text-slate-500">Reactants: {massMg}g Mg + {result.massO2.toFixed(1)}g O2</p>
-        </div>
-        <Scale className="w-5 h-5 text-primary-600 shrink-0 mb-6" />
-        <div className="flex flex-col items-center gap-1 flex-1 max-w-[120px]">
-          <div className="w-full flex items-end" style={{ height: '90px' }}>
-            <div className="w-full bg-accent-300 dark:bg-accent-800 rounded-t-lg" style={{ height: `${(result.massMgO / maxScale) * 100}%` }} />
-          </div>
-          <p className="text-[10px] font-bold text-slate-500">Product: {result.massMgO.toFixed(1)}g MgO</p>
-        </div>
-      </div>
+      <MassBalance3DScene reactantMass={result.reactantTotal} productMass={result.massMgO} maxScale={maxScale} />
+      <p className="text-center text-[11px] text-slate-500">Reactants: {massMg}g Mg + {result.massO2.toFixed(1)}g O2 &nbsp;|&nbsp; Product: {result.massMgO.toFixed(1)}g MgO</p>
       <p className="text-center text-sm font-bold text-accent-700 dark:text-accent-300">
         {result.reactantTotal.toFixed(1)}g reactants = {result.massMgO.toFixed(1)}g product -- mass is always conserved, no matter how much Mg you burn.
       </p>
@@ -240,11 +236,14 @@ function PeriodicityExplorerPlayground() {
 }
 
 // -- Faraday's Laws: electroplating mass calculator -------------------------
+// Deposit colors are the real, familiar color of each metal -- copper's
+// reddish tone, silver's bright grey, aluminium's dull silver, zinc's
+// bluish-grey -- an honest visual cue, not an arbitrary palette choice.
 const ELECTROLYSIS_IONS = [
-  { label: 'Copper (Cu2+)', molarMass: 63.5, charge: 2 },
-  { label: 'Silver (Ag+)', molarMass: 108, charge: 1 },
-  { label: 'Aluminium (Al3+)', molarMass: 27, charge: 3 },
-  { label: 'Zinc (Zn2+)', molarMass: 65.4, charge: 2 },
+  { label: 'Copper (Cu2+)', molarMass: 63.5, charge: 2, color: '#c2703d' },
+  { label: 'Silver (Ag+)', molarMass: 108, charge: 1, color: '#e2e8f0' },
+  { label: 'Aluminium (Al3+)', molarMass: 27, charge: 3, color: '#cbd5e1' },
+  { label: 'Zinc (Zn2+)', molarMass: 65.4, charge: 2, color: '#94a3b8' },
 ];
 
 function ElectrolysisPlayground() {
@@ -266,12 +265,7 @@ function ElectrolysisPlayground() {
         <Slider label="Current" unit="A" value={current} min={0.5} max={10} step={0.5} onChange={setCurrent} />
         <Slider label="Time" unit=" min" value={timeMinutes} min={1} max={120} step={1} onChange={setTimeMinutes} />
       </div>
-      <div className="flex flex-col items-center gap-1">
-        <div className="w-16 h-24 rounded-b-lg border-2 border-slate-300 dark:border-slate-700 flex items-end overflow-hidden bg-white dark:bg-slate-900">
-          <div className="w-full bg-amber-400 dark:bg-amber-600 transition-all" style={{ height: `${Math.min(100, (mass / maxMass) * 100)}%` }} />
-        </div>
-        <Zap className="w-4 h-4 text-amber-500" />
-      </div>
+      <Electrolysis3DScene mass={mass} maxMass={maxMass} depositColor={ion.color} />
       <p className="text-center font-display text-lg font-bold">{mass.toFixed(3)} g of {ion.label.split(' ')[0]} deposited</p>
       <p className="text-center text-[11px] text-slate-400">mass = (current &times; time &times; molar mass) / (charge &times; {FARADAY_CONSTANT})</p>
     </div>
