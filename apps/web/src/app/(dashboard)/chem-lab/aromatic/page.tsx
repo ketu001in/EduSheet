@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { DndContext, useDraggable, useDroppable, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import {
   ChevronLeft, Atom, Info, ShieldAlert, Sparkles, FlaskConical, RefreshCw, Globe,
@@ -9,6 +10,12 @@ import {
 import {
   AROMATIC_MODULES, BENZENE_SUBSTITUENTS, BENZENE_DERIVATIVES, BenzeneDerivative,
 } from '@edusheets/content';
+import Tilt3DCard from '@/components/labshared/Tilt3DCard';
+
+const Benzene3DScene = dynamic(() => import('@/components/chemlab/Benzene3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
 
 // ---------------------------------------------------------------------------
 // Shared ring geometry -- six points around a hexagon, reused by every
@@ -54,45 +61,6 @@ function findBuilderMatch(placements: Record<number, string>): BenzeneDerivative
     }) || null;
   }
   return null;
-}
-
-// ---------------------------------------------------------------------------
-// Theory-toggle ring (Kekule vs delocalized) -- unchanged concept from the
-// original page, kept as its own small diagram since it's illustrating a
-// different idea (bond character) than the builder/explore rings below.
-// ---------------------------------------------------------------------------
-function TheoryRing({ delocalized }: { delocalized: boolean }) {
-  const pointsAttr = HEX_POINTS.map((p) => `${p.x},${p.y}`).join(' ');
-  return (
-    <svg viewBox="0 0 200 200" className="w-full max-w-xs mx-auto">
-      <polygon points={pointsAttr} fill="none" stroke="currentColor" strokeWidth={3} className="text-slate-900 dark:text-slate-100" />
-      {!delocalized && HEX_POINTS.map((p, i) => {
-        if (i % 2 !== 0) return null;
-        const next = HEX_POINTS[(i + 1) % 6];
-        const dx = next.y - p.y;
-        const dy = -(next.x - p.x);
-        const len = Math.hypot(dx, dy) || 1;
-        const offset = 6;
-        const ox = (dx / len) * offset;
-        const oy = (dy / len) * offset;
-        return (
-          <line
-            key={i}
-            x1={p.x + (next.x - p.x) * 0.15 + ox} y1={p.y + (next.y - p.y) * 0.15 + oy}
-            x2={p.x + (next.x - p.x) * 0.85 + ox} y2={p.y + (next.y - p.y) * 0.85 + oy}
-            stroke="currentColor" strokeWidth={3} className="text-primary-600"
-          />
-        );
-      })}
-      {delocalized && <circle cx={100} cy={100} r={42} fill="none" stroke="currentColor" strokeWidth={3} className="text-primary-600" strokeDasharray="4 3" />}
-      {HEX_POINTS.map((p, i) => (
-        <g key={i}>
-          <circle cx={p.x} cy={p.y} r={4} className="fill-slate-900 dark:fill-slate-100" />
-          <text x={p.x + (p.x > 100 ? 14 : p.x < 100 ? -14 : 0)} y={p.y + (p.y > 100 ? 16 : p.y < 100 ? -10 : 5)} textAnchor="middle" className="fill-slate-500 text-[10px] font-bold">H</text>
-        </g>
-      ))}
-    </svg>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -271,14 +239,14 @@ function ExploreGallery() {
       <p className="text-sm text-slate-500">Every one of these is a genuine, named benzene-ring compound -- tap any of them to see the diagram and the details.</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {BENZENE_DERIVATIVES.map((d) => (
-          <button
+          <Tilt3DCard
             key={d.id}
             onClick={() => setSelected(d)}
-            className="p-3 rounded-2xl text-left border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)] transition-all"
+            className="p-3 rounded-2xl text-left border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark block w-full"
           >
             <p className="font-bold text-xs mb-0.5">{d.name}</p>
             <p className="text-[10px] text-slate-500">{d.molecularFormula}</p>
-          </button>
+          </Tilt3DCard>
         ))}
       </div>
 
@@ -329,7 +297,7 @@ export default function AromaticChemistryPage() {
 
   return (
     <div className="max-w-4xl mx-auto pb-16 space-y-6">
-      <div className="sticky top-0 z-30 isolate px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
+      <div className="px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
         <Link href="/chem-lab" className="text-sm font-medium text-slate-500 hover:text-primary-600 flex items-center gap-1.5">
           <ChevronLeft className="w-4 h-4" /> Back to Chem Lab
         </Link>
@@ -355,7 +323,8 @@ export default function AromaticChemistryPage() {
         </div>
 
         <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-6 space-y-3">
-          <TheoryRing delocalized={delocalized} />
+          <Benzene3DScene delocalized={delocalized} />
+          <p className="text-center text-[10px] text-slate-400">Drag to rotate -- the ring genuinely stays flat from every angle, exactly like real benzene.</p>
           <div className="flex justify-center">
             <button
               onClick={() => setDelocalized((d) => !d)}

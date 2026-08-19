@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { DndContext, useDraggable, useDroppable, DragEndEvent } from '@dnd-kit/core';
 import {
   ChevronLeft, Atom, Info, Plus, Minus, Orbit, Zap, History, Layers, Users,
@@ -11,11 +12,34 @@ import {
   PERIODIC_TABLE, PeriodicElement, IONIC_BOND_PAIRS, COVALENT_MOLECULES,
   IonicBondPair, CovalentMolecule,
 } from '@edusheets/content';
+import Tilt3DCard from '@/components/labshared/Tilt3DCard';
+
+// Reused from Concepts Corner's Octet Builder -- the exact same real 3D
+// Bohr-model atom (nucleus + real orbiting electron shells). Used here
+// only where a single atom is shown at a time (Build an Atom, the
+// Element Deep-Dive modal); the Ionic/Covalent Bonding Lab deliberately
+// keeps the flat SVG version since it shows 2-4 atoms on screen at once
+// -- mounting that many simultaneous WebGL canvases is the exact
+// "hung Chem Lab" bug already fixed once this session, so it stays 2D
+// there on purpose, not as an oversight.
+const Bohr3DScene = dynamic(() => import('@/components/chemlab/OctetBuilder3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[260px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
 
 const SHELL_LABELS = ['K', 'L', 'M', 'N'];
 const SHELL_MAX = [2, 8, 8, 20]; // N shown uncapped in this builder -- Z<=20 never fills it past 2 anyway
 const SHELL_RADII = [30, 52, 74, 96];
 const SHELL_COLOR = ['text-red-500', 'text-amber-500', 'text-emerald-500', 'text-primary-600'];
+
+// Build an Atom's shell array is a fixed-length [K,L,M,N] tuple that can
+// have trailing empty shells (e.g. [2,4,0,0] while still filling L) --
+// trims those for the 3D view, which expects a real, currently-occupied
+// shell list the same shape bohrBuryShells() already returns elsewhere.
+function trimTrailingZeros(shells: number[]): number[] {
+  const lastFilled = shells.reduce((last, n, i) => (n > 0 ? i : last), -1);
+  return lastFilled >= 0 ? shells.slice(0, lastFilled + 1) : [0];
+}
 
 // ---------------------------------------------------------------------------
 // Pure visualization -- takes counts, draws the Bohr diagram. Reused by both
@@ -173,7 +197,8 @@ function BuildAnAtom() {
         <div className="space-y-3">
           <Stepper label="Protons (p+)" value={protons} onChange={setProtons} color="text-red-500" />
           <Stepper label="Neutrons (n0)" value={neutrons} onChange={setNeutrons} color="text-slate-500" />
-          <BohrDiagram protons={protons} neutrons={neutrons} shells={shellElectrons} />
+          <Bohr3DScene shellCounts={trimTrailingZeros(shellElectrons)} />
+          <p className="text-center text-xs font-bold text-slate-500">{protons}p+ &middot; {neutrons}n0</p>
         </div>
 
         <DndContext onDragEnd={handleDragEnd}>
@@ -506,14 +531,14 @@ function ElementDeepDive() {
       <p className="text-sm text-slate-500">The first 20 elements, shell by shell -- tap one for the full picture.</p>
       <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2">
         {ELEMENT_SHELL_CONFIGS.map((el) => (
-          <button
+          <Tilt3DCard
             key={el.atomicNumber}
             onClick={() => setSelected(el)}
-            className="aspect-square rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--color-ink)] transition-all flex flex-col items-center justify-center"
+            className="aspect-square rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark flex flex-col items-center justify-center"
           >
             <span className="text-[9px] text-slate-400">{el.atomicNumber}</span>
             <span className="text-sm font-bold text-primary-600">{el.symbol}</span>
-          </button>
+          </Tilt3DCard>
         ))}
       </div>
 
@@ -525,11 +550,8 @@ function ElementDeepDive() {
               <X className="w-5 h-5" />
             </button>
             <div className="text-center">
-              <BohrDiagram
-                protons={selected.atomicNumber}
-                neutrons={Math.round(parseFloat(periodicMatch?.atomicMass || '0')) - selected.atomicNumber}
-                shells={selected.shells}
-              />
+              <Bohr3DScene shellCounts={selected.shells} />
+              <p className="text-xs font-bold text-slate-500 mt-1">{selected.atomicNumber}p+ &middot; {Math.round(parseFloat(periodicMatch?.atomicMass || '0')) - selected.atomicNumber}n0</p>
               <h3 className="text-xl font-bold mt-2">{selected.name} ({selected.symbol})</h3>
               <p className="text-sm text-slate-500 capitalize">{periodicMatch?.category}</p>
             </div>
@@ -562,7 +584,7 @@ function ElementDeepDive() {
 export default function AtomicChemistryPage() {
   return (
     <div className="max-w-4xl mx-auto pb-16 space-y-6">
-      <div className="sticky top-0 z-30 isolate px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
+      <div className="px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
         <Link href="/chem-lab" className="text-sm font-medium text-slate-500 hover:text-primary-600 flex items-center gap-1.5">
           <ChevronLeft className="w-4 h-4" /> Back to Chem Lab
         </Link>
