@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { PHYSICS_EXPERIMENTS, PhysicsExperiment, PhysicsBranch, physicsGradeBandForClass } from '@edusheets/content';
 import PhysicsStage from '@/components/physicslab/PhysicsStage';
+import Tilt3DCard from '@/components/labshared/Tilt3DCard';
+import ModernSlider from '@/components/labshared/ModernSlider';
 import { submitPhysicsAttempt, downloadPhysicsAttemptPdf } from '@/lib/physicsLab';
 import { fetchBoards, fetchClasses, Board, ClassLevel } from '@/lib/curriculum';
 
@@ -32,7 +34,7 @@ function isNumericGradeBoard(code: string) {
 
 function BackBar() {
   return (
-    <div className="sticky top-0 z-30 isolate px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
+    <div className="px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
       <Link href="/physics-lab" className="text-sm font-medium text-slate-500 hover:text-primary-600 flex items-center gap-1.5">
         <ChevronLeft className="w-4 h-4" /> Back to Physics Lab
       </Link>
@@ -198,7 +200,7 @@ export default function NewPhysicsExperimentPage() {
                   <button
                     key={b.id}
                     onClick={() => { setSelectedBoardId(b.id); setSelectedClassId(null); setSelectedGradeNumber(null); setSelectedBranch(null); }}
-                    className={`p-4 border-2 border-slate-900 dark:border-slate-700 rounded-2xl text-center transition-all ${
+                    className={`p-4 border-2 border-slate-900 dark:border-slate-700 rounded-2xl text-center transition-all hover:-translate-y-0.5 ${
                       selectedBoardId === b.id ? 'bg-primary-600 text-white shadow-[4px_4px_0_var(--color-ink)]' : 'bg-surface-light dark:bg-surface-dark hover:shadow-[4px_4px_0_var(--color-ink)]'
                     }`}
                   >
@@ -215,7 +217,7 @@ export default function NewPhysicsExperimentPage() {
                   <button
                     key={cls.id}
                     onClick={() => pickClass(cls)}
-                    className={`p-3 rounded-xl text-center transition-all border-2 ${
+                    className={`p-3 rounded-xl text-center transition-all border-2 hover:-translate-y-0.5 ${
                       selectedClassId === cls.id
                         ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)] font-bold'
                         : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
@@ -260,10 +262,11 @@ export default function NewPhysicsExperimentPage() {
                   {experimentsToShow.map((exp) => {
                     const Icon = BRANCH_ICON[exp.branch];
                     return (
-                      <button
+                      <Tilt3DCard
                         key={exp.id}
                         onClick={() => pickExperiment(exp)}
-                        className="p-4 rounded-2xl text-left border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)] transition-all"
+                        title={exp.title}
+                        className="p-4 rounded-2xl text-left border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark w-full"
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <Icon className="w-4 h-4 text-primary-600" />
@@ -271,7 +274,7 @@ export default function NewPhysicsExperimentPage() {
                         </div>
                         <p className="font-bold text-sm mb-1">{exp.title}</p>
                         <p className="text-xs text-slate-500 line-clamp-2">{exp.purpose}</p>
-                      </button>
+                      </Tilt3DCard>
                     );
                   })}
                   {experimentsToShow.length === 0 && (
@@ -351,20 +354,18 @@ export default function NewPhysicsExperimentPage() {
             <p className="text-xs font-mono text-slate-400">{experiment.formula} &nbsp;|&nbsp; {formulaReadout}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 glass-card rounded-2xl p-4">
             {experiment.paramConfig.map((pc) => (
-              <label key={pc.key} className="text-xs font-bold text-slate-500 space-y-1 block">
-                {pc.label} ({params[pc.key] ?? experiment.defaultParams[pc.key]}{pc.unit})
-                <input
-                  type="range"
-                  min={pc.min}
-                  max={pc.max}
-                  step={pc.step}
-                  value={params[pc.key] ?? experiment.defaultParams[pc.key]}
-                  onChange={(e) => setParams((prev) => ({ ...prev, [pc.key]: parseFloat(e.target.value) }))}
-                  className="w-full accent-primary-600"
-                />
-              </label>
+              <ModernSlider
+                key={pc.key}
+                label={pc.label}
+                unit={pc.unit}
+                min={pc.min}
+                max={pc.max}
+                step={pc.step}
+                value={params[pc.key] ?? experiment.defaultParams[pc.key]}
+                onChange={(v) => setParams((prev) => ({ ...prev, [pc.key]: v }))}
+              />
             ))}
           </div>
 

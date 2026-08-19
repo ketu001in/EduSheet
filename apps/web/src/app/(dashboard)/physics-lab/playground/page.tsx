@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { ChevronLeft, Waves, Play, Pause, RotateCcw, Lightbulb } from 'lucide-react';
 import { PHYSICS_EXPERIMENTS, PhysicsSimType } from '@edusheets/content';
 import PhysicsStage from '@/components/physicslab/PhysicsStage';
+import Tilt3DCard from '@/components/labshared/Tilt3DCard';
+import ModernSlider from '@/components/labshared/ModernSlider';
 
 const SIM_TABS: { simType: PhysicsSimType; label: string }[] = [
   { simType: 'pendulum', label: 'Pendulum' },
@@ -94,7 +96,7 @@ export default function PhysicsPlaygroundPage() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16 space-y-6">
-      <div className="sticky top-0 z-30 isolate px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
+      <div className="px-3 py-2 rounded-xl bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-slate-800 shadow-sm w-fit">
         <Link href="/physics-lab" className="text-sm font-medium text-slate-500 hover:text-primary-600 flex items-center gap-1.5">
           <ChevronLeft className="w-4 h-4" /> Back to Physics Lab
         </Link>
@@ -105,15 +107,16 @@ export default function PhysicsPlaygroundPage() {
         <p className="text-slate-500 text-sm">No script, no grading -- just drag every slider and watch real physics respond, live.</p>
       </div>
 
-      <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-2.5">
         {SIM_TABS.map((tab) => (
-          <button
+          <Tilt3DCard
             key={tab.simType}
+            active={simType === tab.simType}
             onClick={() => setSimType(tab.simType)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${simType === tab.simType ? 'bg-white dark:bg-slate-900 shadow-sm text-primary-600' : 'text-slate-500'}`}
+            className={`px-4 py-2.5 rounded-xl text-sm font-bold ${simType === tab.simType ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}
           >
             {tab.label}
-          </button>
+          </Tilt3DCard>
         ))}
       </div>
 
@@ -147,20 +150,18 @@ export default function PhysicsPlaygroundPage() {
         <p className="text-xs font-mono text-slate-400">{activeExperiment.formula} &nbsp;|&nbsp; {formulaReadout}</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 glass-card rounded-2xl p-4">
         {activeExperiment.paramConfig.map((pc) => (
-          <label key={pc.key} className="text-xs font-bold text-slate-500 space-y-1 block">
-            {pc.label} ({params[pc.key] ?? activeExperiment.defaultParams[pc.key]}{pc.unit})
-            <input
-              type="range"
-              min={pc.min}
-              max={pc.max}
-              step={pc.step}
-              value={params[pc.key] ?? activeExperiment.defaultParams[pc.key]}
-              onChange={(e) => setParams((prev) => ({ ...prev, [pc.key]: parseFloat(e.target.value) }))}
-              className="w-full accent-primary-600"
-            />
-          </label>
+          <ModernSlider
+            key={pc.key}
+            label={pc.label}
+            unit={pc.unit}
+            min={pc.min}
+            max={pc.max}
+            step={pc.step}
+            value={params[pc.key] ?? activeExperiment.defaultParams[pc.key]}
+            onChange={(v) => setParams((prev) => ({ ...prev, [pc.key]: v }))}
+          />
         ))}
       </div>
 
