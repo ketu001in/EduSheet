@@ -13,10 +13,17 @@ import { playHoverTick, playSelectChime } from '@/lib/uiSoundEngine';
 // grid of colored buttons "opens simply a 2D box with information".
 // Search/filter state is computed the same way as before (unchanged
 // logic); only the rendering became spatial.
+// Tile size is deliberately well short of the spacing (0.78 vs 1.05) and
+// noticeably tall (0.62) -- caught live that a near-flush, thin tile
+// grid viewed from a steep near-top-down angle reads as one continuous
+// tilted photo, not individual bricks. A visible gap (so the dark table
+// shows through as real seams between tiles) plus real height plus a
+// more oblique camera angle are what actually make each element read as
+// its own standing 3D object.
 const TILE_SPACING = 1.05;
-const TILE_W = 0.92;
-const TILE_D = 0.92;
-const TILE_H = 0.32;
+const TILE_W = 0.78;
+const TILE_D = 0.78;
+const TILE_H = 0.62;
 const LANTHANIDE_ROW = 8.6;
 const ACTINIDE_ROW = 9.7;
 
@@ -64,13 +71,15 @@ export default function PeriodicTable3DScene({ elements, matches, isFiltering, o
 
   return (
     <div className="space-y-1.5">
-      <SafeR3FCanvas height={560} shadows camera={{ position: [0.5, 13, 12], fov: 45 }}>
+      <SafeR3FCanvas height={560} shadows camera={{ position: [0, 8.5, 15.5], fov: 42 }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[4, 10, 6]} intensity={1.15} castShadow shadow-mapSize={[1024, 1024]} />
         <directionalLight position={[-4, 6, -4]} intensity={0.35} />
-        <mesh position={[0, -0.05, 0.3]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        {/* Dark table so the real gaps between tiles show up as visible
+            seams, not the same flat color as the tiles' backdrop. */}
+        <mesh position={[0, -0.06, 0.3]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[24, 14]} />
-          <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
+          <meshStandardMaterial color="#1e293b" roughness={0.85} />
         </mesh>
         {laid.map(({ el, x, z }) => (
           <ElementBrick
@@ -145,9 +154,9 @@ function ElementBrick({
           />
         </mesh>
         <Text
-          position={[0, TILE_H / 2 + 0.005, -0.12]}
+          position={[0, TILE_H / 2 + 0.005, -0.09]}
           rotation={[-Math.PI / 2, 0, 0]}
-          fontSize={0.34}
+          fontSize={0.3}
           color="#0f172a"
           anchorX="center"
           anchorY="middle"
@@ -156,9 +165,9 @@ function ElementBrick({
           {el.symbol}
         </Text>
         <Text
-          position={[0, TILE_H / 2 + 0.005, 0.28]}
+          position={[0, TILE_H / 2 + 0.005, 0.23]}
           rotation={[-Math.PI / 2, 0, 0]}
-          fontSize={0.14}
+          fontSize={0.12}
           color="#334155"
           anchorX="center"
           anchorY="middle"
