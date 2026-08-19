@@ -5,7 +5,13 @@ import { OpenAICompatibleProvider } from './openai-compatible';
 export function createAIProvider(config: AIConfig): AIProvider {
   switch (config.provider) {
     case 'groq':
-      return new GroqProvider({ ...config, model: config.model || 'llama-3.3-70b-versatile' });
+      // llama-3.3-70b-versatile was retired from Groq's production model
+      // lineup (confirmed live: requests started failing with a real
+      // "model_not_found" 404). openai/gpt-oss-120b is Groq's current
+      // flagship production text model -- verified against Groq's docs to
+      // support response_format: json_object, which every prompt in this
+      // codebase relies on.
+      return new GroqProvider({ ...config, model: config.model || 'openai/gpt-oss-120b' });
     case 'openai':
       return new OpenAICompatibleProvider({ ...config, model: config.model || 'gpt-4o-mini', baseURL: 'https://api.openai.com/v1' });
     case 'gemini':

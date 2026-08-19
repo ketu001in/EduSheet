@@ -16,7 +16,10 @@ export class GroqProvider extends AIProvider {
   constructor(config: AIConfig) {
     super();
     this.client = new Groq({ apiKey: config.apiKey });
-    this.model = config.model || 'llama-3.3-70b-versatile';
+    // llama-3.3-70b-versatile was retired from Groq's production lineup;
+    // openai/gpt-oss-120b is the current flagship (see providers/index.ts
+    // for the fuller writeup).
+    this.model = config.model || 'openai/gpt-oss-120b';
   }
 
   async generateWorksheet(config: WorksheetPromptConfig): Promise<GeneratedWorksheet> {
