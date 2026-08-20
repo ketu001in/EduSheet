@@ -70,3 +70,69 @@ export function nikhilamMultiply(x: number, y: number, base = 100): NikhilamResu
   const remainder = productOfDeficiencies % base;
   return { base, dx, dy, leftPart, productOfDeficiencies, carry, remainder, result: (leftPart + carry) * base + remainder };
 }
+
+// -- Antyayordashake'pi ("also when the last digits total ten") -- a
+// sub-sutra for two 2-digit numbers sharing the same tens digit whose
+// units digits sum to 10 (e.g. 23 x 27, 41 x 49). Algebraically exact:
+// for x=10t+u1, y=10t+u2 with u1+u2=10, x*y = 100*t*(t+1) + u1*u2 exactly
+// -- verified against all 81 valid (t, u1) pairs before shipping.
+export interface AntyayordashakeResult {
+  t: number; u1: number; u2: number;
+  leading: number; // t*(t+1)
+  trailing: number; // u1*u2
+  result: number;
+}
+export function antyayordashake(x: number, y: number): AntyayordashakeResult {
+  const t = Math.floor(x / 10);
+  const u1 = x % 10;
+  const u2 = y % 10;
+  const leading = t * (t + 1);
+  const trailing = u1 * u2;
+  return { t, u1, u2, leading, trailing, result: leading * 100 + trailing };
+}
+
+// -- Yavadunam Tavadunikritya Vargam Cha Yojayet ("whatever the
+// deficiency, lessen further by that amount, and also set up the square
+// of the deficiency") -- squares any number close to a round base
+// (works for a surplus too, via a signed deficiency d). Algebraically
+// exact: x^2 = (B+d)^2 = (x+d)*B + d^2 where d = x - B -- verified across
+// bases 10, 100, and 1000 before shipping.
+export interface YavadunamResult {
+  base: number;
+  d: number; // signed deficiency (negative) or surplus (positive)
+  adjusted: number; // x + d
+  scaled: number; // adjusted * base
+  dSquared: number;
+  result: number;
+}
+export function yavadunamSquare(x: number, base: number): YavadunamResult {
+  const d = x - base;
+  const adjusted = x + d;
+  const scaled = adjusted * base;
+  const dSquared = d * d;
+  return { base, d, adjusted, scaled, dSquared, result: scaled + dSquared };
+}
+
+// -- Ekanyunena Purvena ("by one less than the previous one") --
+// multiplies any number n (smaller than the base) by a base-minus-one
+// number made entirely of 9s (9, 99, 999, ...). Algebraically exact:
+// n*(B-1) = (n-1)*B + (B-n) -- verified against every valid n for bases
+// 10, 100, and 1000 before shipping. Valid only for n < base (the
+// technique's actual real use case, same restriction Nikhilam already
+// applies to its own range).
+export interface EkanyunenaResult {
+  base: number;
+  nines: number; // B - 1, the actual multiplier (9, 99, 999...)
+  digitCount: number;
+  left: number; // n - 1
+  right: number; // base - n
+  rightPadded: string;
+  result: number;
+}
+export function ekanyunenaMultiply(n: number, base: number): EkanyunenaResult {
+  const digitCount = String(base - 1).length;
+  const left = n - 1;
+  const right = base - n;
+  const rightPadded = String(right).padStart(digitCount, '0');
+  return { base, nines: base - 1, digitCount, left, right, rightPadded, result: parseInt(`${left}${rightPadded}`, 10) };
+}

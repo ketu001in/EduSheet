@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { ChevronDown, Info } from 'lucide-react';
 import { MATH_HISTORY_FIGURES } from '@edusheets/content';
 import SpeakButton from '@/components/labshared/SpeakButton';
+import Tilt3DCard from '@/components/labshared/Tilt3DCard';
 import { useContent } from '@/lib/useContent';
+import AncientMathExperiment from './AncientMathExperiments';
 
 // Mirrors Biology Lab's Anatomy Explorer format: real, license-verified
 // images with click-to-explore content and voice narration. Differs in one
@@ -31,15 +33,16 @@ export default function AncientMathExplorer() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-2.5">
         {figures.map((f) => (
-          <button
+          <Tilt3DCard
             key={f.id}
+            active={figureId === f.id}
             onClick={() => changeFigure(f.id)}
-            className={`px-3.5 py-2 rounded-lg text-sm font-bold transition-all ${figureId === f.id ? 'bg-white dark:bg-slate-900 shadow-sm text-primary-600' : 'text-slate-500'}`}
+            className={`px-4 py-2.5 rounded-xl text-sm font-bold ${figureId === f.id ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}
           >
             {f.name}
-          </button>
+          </Tilt3DCard>
         ))}
       </div>
 
@@ -88,6 +91,8 @@ export default function AncientMathExplorer() {
           ))}
         </div>
       </div>
+
+      <AncientMathExperiment figureId={figure.id} />
 
       <p className="text-center text-[10px] text-slate-400">
         Image: {figure.credit.author} &middot; {figure.credit.license} &middot;{' '}
