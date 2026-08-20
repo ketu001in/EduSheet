@@ -141,6 +141,25 @@ export function projectOntoSegment(p: Point, a: Point, b: Point): number {
   return Math.min(1, Math.max(0, t));
 }
 
+// Real trial-division prime factorization -- used by Theorem Corner's
+// Fundamental Theorem of Arithmetic visual (a live-computed factor tree,
+// not a pre-baked example image). Returns the prime factors in
+// non-decreasing order, e.g. primeFactorize(60) -> [2, 2, 3, 5].
+export function primeFactorize(n: number): number[] {
+  let x = Math.max(2, Math.round(Math.abs(n)));
+  const factors: number[] = [];
+  let divisor = 2;
+  while (divisor * divisor <= x) {
+    while (x % divisor === 0) {
+      factors.push(divisor);
+      x /= divisor;
+    }
+    divisor++;
+  }
+  if (x > 1) factors.push(x);
+  return factors;
+}
+
 export function keepAngleOutsideRange(angleDeg: number, start: number, end: number, buffer = 4): number {
   // Strict < / > (not <=/>=) so landing EXACTLY on `start` or `end` still
   // counts as forbidden and gets pushed out too -- otherwise a point could

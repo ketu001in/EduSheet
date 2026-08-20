@@ -118,6 +118,18 @@ export interface MathExperiment {
 }
 
 // -- Theorem Corner --
+// A small closed vocabulary of the bespoke interactive proof visuals built
+// for Theorem Corner (Phase 2) -- same "closed vocabulary dispatches to a
+// bespoke Scene" pattern as MathSimType/PhysicsSimType. A theorem with no
+// visualProofId (or one not yet built) still gets the full step-through
+// text walkthrough -- not every theorem needs (or honestly benefits from)
+// a bespoke diagram; a symbolic algebraic derivation is often clearer as
+// clean text than a forced animation.
+export type MathTheoremVisualId =
+  | 'angle-sum' | 'exterior-angle' | 'pythagoras' | 'midpoint' | 'bpt'
+  | 'circle-angle' | 'tangent-radius' | 'ap-pairing' | 'binomial-pascal'
+  | 'unit-circle' | 'prime-factor-tree' | 'euler-polyhedron' | 'cone-cylinder-ratio';
+
 export interface MathTheorem {
   id: string;
   name: string;
@@ -130,6 +142,12 @@ export interface MathTheorem {
   // Plain-English steps a visual proof sketch walks through, one at a time.
   proofSteps: string[];
   realLifeNote: string;
+  // Which bespoke interactive component (if any) renders alongside the
+  // step-through text -- see TheoremVisualProof.tsx.
+  visualProofId?: MathTheoremVisualId;
+  // Multiple real, concrete applications (not just one note) -- same
+  // "realWorldApplications" depth precedent as Physics Lab's experiments.
+  realWorldApplications: string[];
 }
 
 // -- Formula Reference --

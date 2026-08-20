@@ -1,11 +1,15 @@
 import { MathTheorem } from './mathTypes';
 
-// Theorem Corner -- Phase 1 of Math Lab. Every statement below is a standard
-// CBSE/ICSE textbook result, hand-verified against the real chapter names
-// pulled from this app's own curriculum database (see each `chapterTags`).
-// `proofSteps` are plain-English walk-through steps for a visual sketch to
-// animate one at a time -- not a full formal proof, the same "show the
-// real idea, not just the label" spirit as every other lab's `explanation`.
+// Theorem Corner -- Phase 1 shipped 8 theorems as text statement + text
+// proof-step walkthrough. Phase 2 (this file) grows the set to 20,
+// hand-verified the same way as before against real CBSE/ICSE chapter
+// names (see each `chapterTags`), and adds two new fields to every entry:
+// `realWorldApplications` (several concrete real uses, not just one note)
+// and `visualProofId` (13 of the 20 now drive a bespoke interactive proof
+// diagram in TheoremVisualProof.tsx -- the remaining 7 are symbolic
+// algebraic derivations where clean step-through TEXT is the honest
+// medium, not a forced animation; see that file's header for the
+// reasoning behind which theorems got which treatment).
 export const MATH_THEOREMS: MathTheorem[] = [
   {
     id: 'angle-sum-triangle',
@@ -24,6 +28,12 @@ export const MATH_THEOREMS: MathTheorem[] = [
       'So the triangle\'s three original angles must also add up to 180 degrees.',
     ],
     realLifeNote: 'Carpenters and drafters use this constantly -- if you know two angles of a triangular brace or roof truss, the third is automatically fixed, no measuring needed.',
+    visualProofId: 'angle-sum',
+    realWorldApplications: [
+      'Carpenters and drafters fix a triangular brace or roof truss\'s third angle automatically, no measuring needed.',
+      'Surveyors cross-check a triangulated survey plot -- if three measured angles don\'t sum to 180°, there\'s a measurement error.',
+      'Ship and aircraft bearing calculations solve navigation triangles using this exact rule.',
+    ],
   },
   {
     id: 'exterior-angle-triangle',
@@ -41,6 +51,12 @@ export const MATH_THEOREMS: MathTheorem[] = [
       'Since both facts equal 180 degrees and share the same interior angle at that vertex, the exterior angle must equal the sum of the other two interior angles.',
     ],
     realLifeNote: 'This shows up in navigation and surveying -- turning angles measured "outside" a path relate directly to the interior angles of the triangle the path traces out.',
+    visualProofId: 'exterior-angle',
+    realWorldApplications: [
+      'Navigation and surveying -- "turning angles" measured outside a path relate directly to a triangle\'s interior angles.',
+      'Roof truss design -- a rafter\'s slope angle relates directly to the two angles it doesn\'t touch.',
+      'Mechanical design uses it in gear and pulley-system angle calculations.',
+    ],
   },
   {
     id: 'pythagoras-theorem',
@@ -58,6 +74,12 @@ export const MATH_THEOREMS: MathTheorem[] = [
       'Expanding (a + b) squared and cancelling the matching triangle-area terms on both sides leaves exactly a squared plus b squared equals c squared.',
     ],
     realLifeNote: 'This is literally named after the Indian mathematician Baudhayana in the CBSE Class 8 curriculum -- his Sulba Sutra stated this same rule centuries before Pythagoras, using it to build perfectly square altars.',
+    visualProofId: 'pythagoras',
+    realWorldApplications: [
+      'Baudhayana\'s Sulba Sutra used this exact rule to build perfectly square altars, centuries before Pythagoras.',
+      'TV and monitor sizes (the diagonal) are computed from width and height using this theorem.',
+      'Construction crews check a foundation is truly square using the 3-4-5 rule, a direct application.',
+    ],
   },
   {
     id: 'midpoint-theorem',
@@ -75,6 +97,12 @@ export const MATH_THEOREMS: MathTheorem[] = [
       'Comparing the two triangles shows the midpoint segment must run parallel to the third side, and matching up the equal sides shows it\'s exactly half that side\'s length.',
     ],
     realLifeNote: 'Structural engineers use this to find the centerline of triangular trusses and bridge supports without needing to measure the full span directly.',
+    visualProofId: 'midpoint',
+    realWorldApplications: [
+      'Structural engineers find the centerline of triangular trusses and bridge supports without measuring the full span.',
+      'Used to prove a triangle\'s three medians always meet at one single point (the centroid).',
+      'Cartographers interpolate points on a map using midpoint relationships instead of direct measurement.',
+    ],
   },
   {
     id: 'basic-proportionality-theorem',
@@ -92,6 +120,12 @@ export const MATH_THEOREMS: MathTheorem[] = [
       'That shared ratio is exactly the ratio in which the parallel line divided the two original sides.',
     ],
     realLifeNote: 'This is credited to the ancient Greek mathematician Thales, who is said to have used it to measure the height of the Great Pyramid of Giza from the length of its shadow.',
+    visualProofId: 'bpt',
+    realWorldApplications: [
+      'Thales is said to have measured the Great Pyramid of Giza\'s height from its shadow using this exact rule.',
+      'Map scaling -- enlarging or shrinking a shape while keeping every internal ratio identical.',
+      'Camera and projector lens optics relate object distance, image distance, and size using similar-triangle ratios.',
+    ],
   },
   {
     id: 'angle-in-semicircle',
@@ -109,6 +143,12 @@ export const MATH_THEOREMS: MathTheorem[] = [
       'The triangle\'s three angles are x, y, and (x + y), and by the Angle Sum Property they total 180 degrees, giving 2x + 2y = 180, so x + y = 90 degrees -- exactly the angle at the third point.',
     ],
     realLifeNote: 'This rule is why a semicircular carpenter\'s square (or a "Thales square") can reliably mark a perfect right angle just by resting its ends on a circle\'s diameter.',
+    visualProofId: 'circle-angle',
+    realWorldApplications: [
+      'A carpenter\'s "Thales square" marks a perfect right angle just by resting its ends on a circle\'s diameter.',
+      'Engineering drawing constructs a perfect right angle using only a compass and straightedge via this rule.',
+      'Sports court markings (like the "D" arc on a basketball or football pitch) use related circle-geometry constructions.',
+    ],
   },
   {
     id: 'sum-of-ap',
@@ -126,6 +166,12 @@ export const MATH_THEOREMS: MathTheorem[] = [
       'There are n such pairs, so 2S = n times (first term + last term), which rearranges into the formula Sn = n/2 times (2a + (n-1)d).',
     ],
     realLifeNote: 'Legend has it a young Carl Friedrich Gauss discovered this exact pairing trick as a schoolboy, instantly summing 1 to 100 by pairing 1+100, 2+99, and so on, instead of adding all 100 numbers one by one.',
+    visualProofId: 'ap-pairing',
+    realWorldApplications: [
+      'A young Gauss instantly summed 1 to 100 with this exact pairing trick instead of adding one by one.',
+      'Loan/EMI schedules where a fixed amount decreases (or increases) each period sum via this formula.',
+      'Stacking problems -- total bricks or cans in a triangular stack, each row one more than the last.',
+    ],
   },
   {
     id: 'binomial-theorem',
@@ -143,5 +189,283 @@ export const MATH_THEOREMS: MathTheorem[] = [
       'Collecting all these equal terms together for each value of k from 0 to n gives the full binomial expansion.',
     ],
     realLifeNote: 'The same "n choose k" coefficients form Pascal\'s Triangle -- a pattern that shows up far beyond algebra, including in probability calculations and even in genetics when predicting trait combinations across generations.',
+    visualProofId: 'binomial-pascal',
+    realWorldApplications: [
+      'Pascal\'s Triangle coefficients predict trait combinations across generations in genetics.',
+      'Probability calculations for binomial-distribution outcomes (like coin-flip counts) use these exact coefficients.',
+      'Compound-interest approximations and error-propagation formulas in physics/engineering use binomial expansions.',
+    ],
+  },
+
+  // -- New in Phase 2 --------------------------------------------------------
+  {
+    id: 'angle-sum-polygon',
+    name: 'Angle Sum of a Polygon',
+    branch: 'geometry',
+    gradeBand: 'middle',
+    board: 'both',
+    chapterTags: ['Understanding Quadrilaterals', 'Rectilinear Figures'],
+    statement: 'The sum of the interior angles of a polygon with n sides is (n minus 2) times 180 degrees.',
+    whyItMatters: 'It generalizes the Angle Sum Property of a Triangle to any polygon -- once you know how many sides a shape has, this instantly tells you what all its interior angles must add up to.',
+    proofSteps: [
+      'Pick any vertex of the polygon and draw diagonals from it to every other non-adjacent vertex.',
+      'This splits the polygon into a number of non-overlapping triangles -- for an n-sided polygon, this always gives exactly (n - 2) triangles.',
+      'Each triangle\'s angles sum to 180 degrees (Angle Sum Property), and together the triangles\' angles exactly cover every interior angle of the polygon.',
+      'So the polygon\'s total interior angle sum is (n - 2) triangles times 180 degrees each, giving (n - 2) times 180 degrees.',
+    ],
+    realLifeNote: 'A regular hexagon\'s interior angle works out to exactly 120 degrees -- which is exactly why hexagonal tiles (and honeycomb cells) fit together with no gaps at all.',
+    realWorldApplications: [
+      'Architects design regular polygon floor plans (like a hexagonal gazebo) where every interior angle must be identical and known in advance.',
+      'Honeycomb and tiling patterns rely on knowing a hexagon\'s interior angle (120°) fits perfectly with no gaps.',
+      'Robotics path-planning around polygonal obstacles computes turning angles from interior angle sums.',
+    ],
+  },
+  {
+    id: 'congruence-sas',
+    name: 'Triangle Congruence -- SAS Criterion',
+    branch: 'geometry',
+    gradeBand: 'middle',
+    board: 'both',
+    chapterTags: ['Congruence of Triangles', 'Congruency: Similarity'],
+    statement: 'If two sides and the included angle of one triangle are equal to two sides and the included angle of another triangle, the two triangles are congruent (SAS: Side-Angle-Side).',
+    whyItMatters: 'It\'s one of the fastest ways to prove two triangles are exactly identical in shape and size without measuring every single side and angle.',
+    proofSteps: [
+      'Take two triangles where two sides and the angle between them are already known to match exactly.',
+      'Imagine picking up the first triangle and placing it on top of the second, matching the two equal sides and the equal angle between them exactly.',
+      'Because two sides and the angle between them are fixed, there is only one possible position for the third vertex -- it is completely determined.',
+      'Since every vertex now lines up exactly, the two triangles must be identical in every side and angle -- they are congruent.',
+    ],
+    realLifeNote: 'Manufacturing relies on this: if a machine cuts two sides and the angle between them to the same specification every time, every part produced is guaranteed identical.',
+    realWorldApplications: [
+      'Manufacturing and CNC machining guarantee identical parts from the same two-side-and-angle specification.',
+      'Bridge truss fabrication -- congruent triangular sections make a truss symmetric and load-predictable.',
+      'Used as a building block to prove other results, like the Isosceles Triangle base-angles theorem.',
+    ],
+  },
+  {
+    id: 'similarity-aa',
+    name: 'Similarity of Triangles -- AA Criterion',
+    branch: 'geometry',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Triangles', 'Similarity'],
+    statement: 'If two angles of one triangle are equal to two angles of another triangle, the two triangles are similar (AA: Angle-Angle) -- their corresponding sides are all in the same ratio.',
+    whyItMatters: 'Since a triangle\'s three angles always sum to 180 degrees, matching just two angles automatically forces the third to match too -- so AA is really the minimum possible information needed to guarantee the same shape.',
+    proofSteps: [
+      'Take two triangles where two pairs of corresponding angles are already known to be equal.',
+      'By the Angle Sum Property, the third angle in each triangle is 180 degrees minus the other two -- so if two angles match, the third automatically matches too.',
+      'With all three angles equal, one triangle is just a scaled-up or scaled-down copy of the other -- same shape, possibly different size.',
+      'A scaled copy means every pair of corresponding sides shares the exact same ratio -- that shared ratio is the similarity (scale) factor.',
+    ],
+    realLifeNote: 'Shadow-based height measurement (a stick and its shadow vs. a tree and its shadow) works because the sun\'s rays create two similar right triangles at the same instant.',
+    realWorldApplications: [
+      'Measuring a tall tree or building\'s height via shadows -- the classic Thales-style technique.',
+      'Map and blueprint scaling -- a map is a similar, much smaller copy of the real terrain.',
+      'Photography and optics -- a camera\'s image on the sensor is similar to the real scene.',
+    ],
+  },
+  {
+    id: 'tangent-radius-perpendicular',
+    name: 'Tangent-Radius Theorem',
+    branch: 'geometry',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Circles', 'Tangent and Secant Properties', 'Tangent Properties'],
+    statement: 'A tangent to a circle is always perpendicular to the radius drawn to the point of contact.',
+    whyItMatters: 'It\'s the key fact that turns "draw a line touching the circle at exactly one point" into an exact, constructible 90-degree relationship.',
+    proofSteps: [
+      'Draw a circle with center O, and a tangent line touching it at point P.',
+      'Pick any other point Q on the tangent line, and draw the segment OQ.',
+      'Because the tangent only touches the circle at P, every other point on the tangent line -- including Q -- must lie outside the circle, so OQ is always longer than the radius OP.',
+      'Since OP is shorter than every other segment from O to the tangent line, OP must be the shortest distance from O to that line -- and the shortest distance from a point to a line is always the perpendicular distance.',
+      'So OP (the radius) is perpendicular to the tangent line at P.',
+    ],
+    realLifeNote: 'Gear design relies on this constantly -- the line where two gear teeth touch is tangent to both gears\' pitch circles, and engineers use the perpendicular-radius relationship to compute contact forces.',
+    visualProofId: 'tangent-radius',
+    realWorldApplications: [
+      'Gear-tooth contact-force engineering uses the radius-perpendicular relationship at the contact point.',
+      'Satellite dish and antenna reflector curves use tangent-radius geometry to focus signals.',
+      'Vehicle wheel geometry -- the tangent line at the road-contact point is exactly perpendicular to the wheel\'s radius there.',
+    ],
+  },
+  {
+    id: 'quadratic-formula-derivation',
+    name: 'The Quadratic Formula',
+    branch: 'algebra',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Quadratic Equations'],
+    statement: 'For any quadratic equation ax squared + bx + c = 0 (with a not zero), the solutions are x = (negative b plus-or-minus the square root of (b squared minus 4ac)) divided by 2a.',
+    whyItMatters: 'It solves ANY quadratic equation directly, without needing to factorize -- which is essential since many quadratics (with irrational or complex roots) can\'t be factorized neatly at all.',
+    proofSteps: [
+      'Start with ax² + bx + c = 0, and divide every term by a (allowed since a is not zero), giving x² + (b/a)x + (c/a) = 0.',
+      'Move the constant term to the other side: x² + (b/a)x = -(c/a).',
+      'Complete the square by adding (b/2a)² to both sides, turning the left side into a perfect square: (x + b/2a)² = (b/2a)² - c/a.',
+      'Simplify the right side over a common denominator: (x + b/2a)² = (b² - 4ac) / 4a².',
+      'Take the square root of both sides (keeping both the plus and minus root) and subtract b/2a, giving the quadratic formula.',
+    ],
+    realLifeNote: 'This formula is built directly into calculators and computer programs -- any software that needs to solve a quadratic (physics simulations, financial models, computer graphics) usually calls this exact formula internally.',
+    realWorldApplications: [
+      'Projectile motion -- solving for when a thrown object hits the ground (a quadratic in time).',
+      'Computer graphics -- ray-sphere intersection tests solve a quadratic for where a ray hits a curved surface.',
+      'Financial modeling -- some break-even and profit-maximization problems reduce to a quadratic equation.',
+    ],
+  },
+  {
+    id: 'remainder-theorem',
+    name: 'Remainder Theorem',
+    branch: 'algebra',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Polynomials', 'Remainder and Factor Theorems'],
+    statement: 'If a polynomial p(x) is divided by (x minus a), the remainder is exactly p(a) -- the polynomial\'s value when x is replaced by a.',
+    whyItMatters: 'It lets you find a division remainder instantly by plugging in one number, without doing the actual long division of polynomials.',
+    proofSteps: [
+      'Dividing p(x) by (x - a) always gives p(x) = (x - a) times q(x) + r, where q(x) is the quotient and r is some constant remainder (since dividing by a degree-1 polynomial always leaves a constant remainder).',
+      'This equation is true for every value of x, so it must also be true when x = a specifically.',
+      'Substituting x = a makes the first term (x - a) equal zero, so p(a) = 0 times q(a) + r = r.',
+      'So the remainder r is exactly p(a) -- the original polynomial evaluated at x = a.',
+    ],
+    realLifeNote: 'Example: dividing p(x) = x cubed minus 2x plus 5 by (x - 2) gives a remainder of p(2) = 8 - 4 + 5 = 9, instantly -- no long division needed.',
+    realWorldApplications: [
+      'Shortcuts polynomial division constantly in competitive-exam algebra.',
+      'Error-correcting codes (like CRC checksums used in networking and storage) are built on polynomial remainder arithmetic.',
+      'Computer algebra systems use this to evaluate and simplify polynomial expressions efficiently.',
+    ],
+  },
+  {
+    id: 'factor-theorem',
+    name: 'Factor Theorem',
+    branch: 'algebra',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Polynomials', 'Remainder and Factor Theorems'],
+    statement: '(x minus a) is a factor of a polynomial p(x) if and only if p(a) equals zero.',
+    whyItMatters: 'It turns "find a factor" into "find a root" -- test a candidate number, and if it makes the polynomial zero, you\'ve found an exact factor.',
+    proofSteps: [
+      'By the Remainder Theorem, dividing p(x) by (x - a) always leaves a remainder of exactly p(a).',
+      '(x - a) is a factor of p(x) exactly when that division leaves no remainder, i.e. when the remainder is 0.',
+      'Combining those two facts: (x - a) is a factor of p(x) if and only if p(a) = 0.',
+    ],
+    realLifeNote: 'Example: for p(x) = x squared minus 5x plus 6, testing x = 2 gives p(2) = 4 - 10 + 6 = 0, so (x - 2) is a factor -- and dividing confirms p(x) = (x - 2)(x - 3).',
+    realWorldApplications: [
+      'The standard technique for factorizing cubic and higher-degree polynomials in CBSE/ICSE algebra.',
+      'Engineering control systems find the roots (poles) of a system\'s characteristic polynomial this way.',
+      'Cryptography and coding theory use polynomial factorization over finite fields, built on this same principle.',
+    ],
+  },
+  {
+    id: 'sum-of-gp',
+    name: 'Sum of the First n Terms of a Geometric Progression',
+    branch: 'algebra',
+    gradeBand: 'plusTwo',
+    board: 'both',
+    chapterTags: ['Arithmetic and Geometric Progression', 'Sequences and Series'],
+    statement: 'The sum of the first n terms of a geometric progression (first term a, common ratio r, r not 1) is: Sn = a(r to the n minus 1) divided by (r minus 1).',
+    whyItMatters: 'It turns "add up n terms that are each a fixed multiple of the last" into one direct calculation -- essential since GP terms can grow (or shrink) far too fast to add by hand.',
+    proofSteps: [
+      'Write the sum S = a + ar + ar² + ... + ar^(n-1).',
+      'Multiply the entire sum by r: rS = ar + ar² + ar³ + ... + ar^n.',
+      'Subtract the first equation from the second: rS - S = ar^n - a (every middle term cancels out, since the two sums share every term except the very first and very last).',
+      'Factor both sides: S(r - 1) = a(r^n - 1), so S = a(r^n - 1) / (r - 1).',
+    ],
+    realLifeNote: 'Compound interest is a geometric progression -- each year\'s balance is the previous year\'s multiplied by (1 + rate) -- so this exact formula is what banks use to compute total value over time.',
+    realWorldApplications: [
+      'Compound interest and investment growth calculations.',
+      'Population growth/decay models (bacteria doubling, radioactive decay) over discrete time steps.',
+      'Analyzing total work across all levels of a divide-and-conquer algorithm (like merge sort) sums a geometric series.',
+    ],
+  },
+  {
+    id: 'pythagorean-trig-identity',
+    name: 'Pythagorean Trigonometric Identity',
+    branch: 'trigonometry',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Introduction to Trigonometry', 'Trigonometrical Ratios', 'Trigonometric Identities'],
+    statement: 'For any angle theta, sin squared theta plus cos squared theta always equals 1.',
+    whyItMatters: 'It\'s the single most-used trigonometric identity -- nearly every other trig identity in the CBSE/ICSE syllabus is derived from this one.',
+    proofSteps: [
+      'Draw a right triangle with angle theta, hypotenuse of length 1 (a "unit" right triangle), the side opposite theta of length sin theta, and the side adjacent to theta of length cos theta.',
+      'By definition, sin theta = opposite / hypotenuse = opposite / 1, and cos theta = adjacent / hypotenuse = adjacent / 1.',
+      'Apply the Pythagoras Theorem to this right triangle: (opposite)² + (adjacent)² = (hypotenuse)².',
+      'Substituting: (sin theta)² + (cos theta)² = 1² = 1.',
+    ],
+    realLifeNote: 'This is exactly why a point at angle theta on a unit circle always has coordinates (cos theta, sin theta) -- both trig ratios and circle geometry describe the exact same fact.',
+    visualProofId: 'unit-circle',
+    realWorldApplications: [
+      'Computer graphics and game engines use it constantly to keep rotation calculations numerically stable.',
+      'Audio and radio signal processing analyzes and combines waveforms using sin/cos identities built on this.',
+      'GPS and navigation systems convert between coordinate systems using trigonometric identities derived from this.',
+    ],
+  },
+  {
+    id: 'fundamental-theorem-arithmetic',
+    name: 'Fundamental Theorem of Arithmetic',
+    branch: 'number-systems',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Real Numbers', 'Fundamental Theorem of Arithmetic'],
+    statement: 'Every whole number greater than 1 can be written as a product of prime numbers in exactly one way, ignoring the order of the factors.',
+    whyItMatters: 'It guarantees prime numbers are the true, unique "building blocks" of every whole number -- there is never more than one possible prime breakdown for any given number.',
+    proofSteps: [
+      'Take any whole number greater than 1. If it\'s already prime, it is its own one-factor prime factorization -- done.',
+      'If it\'s not prime, it can be split into two smaller factors, each greater than 1.',
+      'Repeat this splitting process on each new factor -- since the factors keep getting smaller, this process must eventually stop, at which point every remaining factor is prime.',
+      'The harder remaining part (which this sketch only summarizes) is proving this prime breakdown is always UNIQUE -- no matter which splitting order you choose, you always end up with the exact same set of prime factors.',
+    ],
+    realLifeNote: 'This is exactly why HCF and LCM can always be computed reliably from prime factorizations -- and it\'s the deep reason modern encryption (RSA) is secure: factoring a huge number into its unique primes is computationally very hard.',
+    visualProofId: 'prime-factor-tree',
+    realWorldApplications: [
+      'HCF and LCM computation via prime factorization.',
+      'RSA encryption (used to secure most of the internet) relies on large numbers being hard to factor into their unique primes.',
+      'Proves numbers like the square root of 2 are irrational, a classic proof-by-contradiction application.',
+    ],
+  },
+  {
+    id: 'euler-formula-polyhedra',
+    name: "Euler's Formula for Polyhedra",
+    branch: 'mensuration',
+    gradeBand: 'middle',
+    board: 'both',
+    chapterTags: ['Visualising Solid Shapes'],
+    statement: 'For any convex polyhedron, the number of vertices minus the number of edges plus the number of faces always equals 2: V minus E plus F equals 2.',
+    whyItMatters: 'It\'s a genuinely surprising fact -- however you stretch, rotate, or resize a convex solid (cube, pyramid, prism...), this exact relationship between its corners, edges, and faces never changes.',
+    proofSteps: [
+      'Count the vertices (corners), edges, and faces of a simple polyhedron -- for example, a cube has 8 vertices, 12 edges, and 6 faces.',
+      'Check: V - E + F = 8 - 12 + 6 = 2.',
+      'Now try a triangular pyramid (tetrahedron): 4 vertices, 6 edges, 4 faces -- V - E + F = 4 - 6 + 4 = 2, the same result.',
+      'This holds for every convex polyhedron -- adding a new face always adds enough new edges and vertices together to keep V - E + F fixed at exactly 2.',
+    ],
+    realLifeNote: "Euler's formula is the starting point for topology (the branch of math studying shapes that stretch and bend) -- the same reasoning shows a soccer ball's 12 pentagons and 20 hexagons can only ever be arranged one consistent way.",
+    visualProofId: 'euler-polyhedron',
+    realWorldApplications: [
+      "Geodesic dome architecture (like Buckminster Fuller's domes) plans exactly how many struts and joints a design needs.",
+      '3D computer graphics and game engines validate a mesh is a properly "closed" (watertight) solid using this.',
+      'Soccer ball panel layouts and virus-capsid structures (both roughly polyhedral) follow this exact relationship.',
+    ],
+  },
+  {
+    id: 'cone-cylinder-volume-ratio',
+    name: 'Volume of a Cone is One-Third the Volume of a Cylinder',
+    branch: 'mensuration',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Surface Areas and Volumes', 'Mensuration'],
+    statement: 'A cone and a cylinder with the same base radius and the same height always have this exact relationship: the cone\'s volume is exactly one-third the cylinder\'s volume.',
+    whyItMatters: 'It\'s the reason the cone volume formula has that "1/3" in it -- not an arbitrary constant, but a direct, provable relationship to the simpler cylinder formula.',
+    proofSteps: [
+      'Take a cylinder and a cone that share the exact same base radius r and the exact same height h.',
+      'The cylinder\'s volume is the well-established formula: pi times r squared times h.',
+      'A classic hands-on demonstration (fill an empty cone-shaped container with water or sand, and pour it into an empty same-base-same-height cylinder) always takes exactly 3 full cone-fulls to fill the cylinder.',
+      'So the cone\'s volume must be exactly one-third of the cylinder\'s: (1/3) times pi times r squared times h -- exactly the standard cone volume formula.',
+    ],
+    realLifeNote: 'This 1:3 ratio is why cone-shaped paper cups and ice cream cones feel like they hold "surprisingly little" compared to a cylindrical cup of the same width and height -- they genuinely hold exactly one-third as much.',
+    visualProofId: 'cone-cylinder-ratio',
+    realWorldApplications: [
+      'Packaging design compares how much a cone-shaped versus cylinder-shaped container actually holds.',
+      'Civil engineering calculates the volume of conical stockpiles (sand, gravel) versus cylindrical silos.',
+      'Derives the volume of a pyramid too -- a pyramid is also exactly 1/3 of the prism that contains it.',
+    ],
   },
 ];
