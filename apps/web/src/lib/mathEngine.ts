@@ -112,6 +112,35 @@ export const DICE_SUM_WAYS: Record<number, number> = {
   2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 5, 9: 4, 10: 3, 11: 2, 12: 1,
 };
 
+// -- Helpers for Geometry Explorer's new constructions (Basic
+// Proportionality Theorem, Parallelogram diagonals, Coordinate Geometry) --
+
+export function midpoint(a: Point, b: Point): Point {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+// The point dividing segment A->B in the ratio t : (1-t), i.e. the Section
+// Formula's internal-division point for m:n = t:(1-t). t=0 gives A, t=1
+// gives B, t=0.5 gives the midpoint -- the standard parametric form of the
+// section formula used throughout CBSE/ICSE coordinate geometry.
+export function sectionPoint(a: Point, b: Point, t: number): Point {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+// Projects point `p` onto the segment A->B and returns the parameter t in
+// [0,1] of the closest point on that segment -- used to let a student "drag
+// a point along a side" (e.g. the Basic Proportionality Theorem's point D
+// on side AB) while keeping it constrained to the segment, the same
+// dynamic-geometry-software convention GeoGebra uses for a point-on-object.
+export function projectOntoSegment(p: Point, a: Point, b: Point): number {
+  const abx = b.x - a.x;
+  const aby = b.y - a.y;
+  const lenSq = abx * abx + aby * aby;
+  if (lenSq === 0) return 0;
+  const t = ((p.x - a.x) * abx + (p.y - a.y) * aby) / lenSq;
+  return Math.min(1, Math.max(0, t));
+}
+
 export function keepAngleOutsideRange(angleDeg: number, start: number, end: number, buffer = 4): number {
   // Strict < / > (not <=/>=) so landing EXACTLY on `start` or `end` still
   // counts as forbidden and gets pushed out too -- otherwise a point could
