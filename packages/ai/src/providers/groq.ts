@@ -1,4 +1,4 @@
-import { Groq } from 'groq-sdk';
+import { Groq, APIError } from 'groq-sdk';
 import { AIProvider, AIConfig, WorksheetPromptConfig, GeneratedWorksheet, ProjectPromptConfig, GeneratedProject, StudyMaterialPromptConfig, GeneratedStudyMaterial, ActivitySheetPromptConfig, GeneratedActivitySheet, TechProjectPromptConfig, GeneratedTechProject } from './base';
 import { buildSystemPrompt, buildProjectSystemPrompt, buildStudyMaterialSystemPrompt, buildActivitySheetSystemPrompt, buildTechProjectSystemPrompt } from '../prompts/systemPrompt';
 import { buildWorksheetPrompt } from '../prompts/worksheetPrompt';
@@ -7,6 +7,14 @@ import { buildStudyMaterialPrompt } from '../prompts/studyMaterialPrompt';
 import { buildActivitySheetPrompt } from '../prompts/activitySheetPrompt';
 import { buildTechProjectPrompt } from '../prompts/techProjectPrompt';
 import { parseAIResponse, parseProjectAIResponse, parseStudyMaterialAIResponse, parseActivitySheetAIResponse, parseTechProjectAIResponse } from '../utils/parser';
+
+interface CompletionParams {
+  model: string;
+  messages: { role: 'system' | 'user'; content: string }[];
+  temperature: number;
+  max_tokens: number;
+  response_format: { type: 'json_object' };
+}
 
 export class GroqProvider extends AIProvider {
   name = 'groq';
@@ -22,12 +30,35 @@ export class GroqProvider extends AIProvider {
     this.model = config.model || 'openai/gpt-oss-120b';
   }
 
+  // Groq's tokens-per-minute limiter reserves the FULL `max_tokens` you
+  // request toward the account's per-minute cap before generation even
+  // starts -- not the tokens actually used -- so a request can get a real
+  // 413 "rate_limit_exceeded" purely because prompt + max_tokens together
+  // exceed the cap, even when the prompt itself is small and the actual
+  // completion would have fit easily. Permanently shrinking max_tokens for
+  // every request would risk truncated JSON on genuinely large worksheets
+  // that WOULD have fit -- so instead, only fall back to a smaller
+  // max_tokens on the one specific request that actually hit the ceiling.
+  private async createCompletion(params: CompletionParams, fallbackMaxTokens: number) {
+    try {
+      return await this.client.chat.completions.create(params);
+    } catch (error) {
+      const isTokenLimitError = error instanceof APIError
+        && (error.status === 413 || String(error.message || '').includes('rate_limit_exceeded'));
+      if (!isTokenLimitError || params.max_tokens <= fallbackMaxTokens) {
+        throw error;
+      }
+      console.warn(`GroqProvider: request exceeded the account's tokens-per-minute limit at max_tokens=${params.max_tokens}; retrying once with max_tokens=${fallbackMaxTokens}.`);
+      return await this.client.chat.completions.create({ ...params, max_tokens: fallbackMaxTokens });
+    }
+  }
+
   async generateWorksheet(config: WorksheetPromptConfig): Promise<GeneratedWorksheet> {
     const systemPrompt = buildSystemPrompt(config.board);
     const userPrompt = buildWorksheetPrompt(config);
 
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await this.createCompletion({
         model: this.model,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -36,7 +67,7 @@ export class GroqProvider extends AIProvider {
         temperature: 0.7,
         max_tokens: 8500,
         response_format: { type: 'json_object' }
-      });
+      }, 4500);
 
       const choice = response.choices[0];
       const content = choice?.message?.content;
@@ -56,7 +87,7 @@ export class GroqProvider extends AIProvider {
     const userPrompt = buildProjectPrompt(config);
 
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await this.createCompletion({
         model: this.model,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -65,7 +96,7 @@ export class GroqProvider extends AIProvider {
         temperature: 0.7,
         max_tokens: 8500,
         response_format: { type: 'json_object' }
-      });
+      }, 4500);
 
       const choice = response.choices[0];
       const content = choice?.message?.content;
@@ -85,7 +116,7 @@ export class GroqProvider extends AIProvider {
     const userPrompt = buildStudyMaterialPrompt(config);
 
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await this.createCompletion({
         model: this.model,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -94,7 +125,7 @@ export class GroqProvider extends AIProvider {
         temperature: 0.7,
         max_tokens: 8500,
         response_format: { type: 'json_object' }
-      });
+      }, 4500);
 
       const choice = response.choices[0];
       const content = choice?.message?.content;
@@ -114,7 +145,7 @@ export class GroqProvider extends AIProvider {
     const userPrompt = buildActivitySheetPrompt(config);
 
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await this.createCompletion({
         model: this.model,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -123,7 +154,7 @@ export class GroqProvider extends AIProvider {
         temperature: 0.7,
         max_tokens: 4000,
         response_format: { type: 'json_object' }
-      });
+      }, 2500);
 
       const choice = response.choices[0];
       const content = choice?.message?.content;
@@ -143,7 +174,7 @@ export class GroqProvider extends AIProvider {
     const userPrompt = buildTechProjectPrompt(config);
 
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await this.createCompletion({
         model: this.model,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -152,7 +183,7 @@ export class GroqProvider extends AIProvider {
         temperature: 0.7,
         max_tokens: 8500,
         response_format: { type: 'json_object' }
-      });
+      }, 4500);
 
       const choice = response.choices[0];
       const content = choice?.message?.content;
