@@ -44,3 +44,6 @@ export * from './aiExperimentTypes';
 export * from './aiExperiments';
 export * from './codingExperimentTypes';
 export * from './codingExperiments';
+export * from './electronicsTypes';
+export * from './electronicsComponents';
+export * from './electronicsProjects';

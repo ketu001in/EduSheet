@@ -1,0 +1,165 @@
+'use client';
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { Zap, Wrench, FolderOpen, Sparkles, CheckCircle2, ShieldAlert, Lightbulb } from 'lucide-react';
+import { ELECTRONICS_COMPONENTS, ELECTRONICS_PROJECTS } from '@edusheets/content';
+import Tilt3DCard from '@/components/labshared/Tilt3DCard';
+import { EquipmentModal } from '@/components/labshared/LabHotspot';
+import SpeakButton from '@/components/labshared/SpeakButton';
+import { playSelectChime } from '@/lib/uiSoundEngine';
+import { astable555 } from '@/lib/circuitEngine';
+
+const ElectronicsCupboard3DScene = dynamic(() => import('@/components/electronicslab/ElectronicsCupboard3DScene'), {
+  ssr: false,
+  loading: () => <div className="w-full h-[360px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+});
+
+type Tab = 'cupboard' | 'projects';
+
+// Electronics Lab -- Phase 1. The Component Cupboard (real 3D, clickable,
+// sound) is fully live. The Projects tab shows the LED Blinker's complete,
+// hand-verified content (circuit, steps, real formula-driven timing,
+// Force section, real-world use) -- the actual drag-and-drop breadboard
+// workbench (wiring components together yourself) is the next build step,
+// clearly flagged below rather than silently missing.
+export default function ElectronicsLabPage() {
+  const [tab, setTab] = useState<Tab>('cupboard');
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [openComponentId, setOpenComponentId] = useState<string | null>(null);
+  const [activeProjectId, setActiveProjectId] = useState(ELECTRONICS_PROJECTS[0]?.id);
+
+  const activeProject = ELECTRONICS_PROJECTS.find((p) => p.id === activeProjectId) || ELECTRONICS_PROJECTS[0];
+  const switchTab = (t: Tab) => { setTab(t); playSelectChime(); };
+
+  return (
+    <div className="max-w-5xl mx-auto pb-16 space-y-6">
+      <div>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <h1 className="font-display text-3xl font-semibold mb-2 flex items-center gap-2"><Zap className="w-7 h-7 text-primary-600" /> Electronics Lab</h1>
+          <SpeakButton text="Welcome to Electronics Lab! Browse the component cupboard to learn about every real part, then step through hands-on circuit projects with real, verified electronics -- real Ohm's Law, real component thresholds, and real timer formulas." />
+        </div>
+        <p className="text-slate-500 text-sm">A real component cupboard and hands-on circuit-building projects -- every formula and every component threshold here is real and verified, the same standard as every other lab.</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2.5">
+        <Tilt3DCard active={tab === 'cupboard'} onClick={() => switchTab('cupboard')} className={`px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 ${tab === 'cupboard' ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}>
+          <Wrench className="w-4 h-4" /> Component Cupboard
+        </Tilt3DCard>
+        <Tilt3DCard active={tab === 'projects'} onClick={() => switchTab('projects')} className={`px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 ${tab === 'projects' ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}>
+          <FolderOpen className="w-4 h-4" /> Projects
+        </Tilt3DCard>
+      </div>
+
+      {tab === 'cupboard' && (
+        <div className="space-y-3">
+          <p className="text-sm text-slate-500">Click any component to learn what it really does. Drag to rotate the cupboard.</p>
+          <ElectronicsCupboard3DScene
+            components={ELECTRONICS_COMPONENTS}
+            hoveredId={hoveredId}
+            onHover={setHoveredId}
+            onUnhover={() => setHoveredId(null)}
+            onClick={setOpenComponentId}
+          />
+          {openComponentId && (
+            <EquipmentModal equipmentId={openComponentId} equipment={ELECTRONICS_COMPONENTS} onClose={() => setOpenComponentId(null)} />
+          )}
+        </div>
+      )}
+
+      {tab === 'projects' && activeProject && (
+        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4">
+          <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+            {ELECTRONICS_PROJECTS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => { setActiveProjectId(p.id); playSelectChime(); }}
+                className={`shrink-0 md:shrink text-left px-3.5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all whitespace-nowrap md:whitespace-normal ${
+                  activeProjectId === p.id ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]' : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                }`}
+              >
+                {p.title}
+              </button>
+            ))}
+          </div>
+
+          <div className="glass-card rounded-3xl p-5 md:p-7 space-y-5">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <h3 className="font-display text-xl font-semibold">{activeProject.title}</h3>
+              <span className="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-[11px] font-bold">Interactive workbench coming next</span>
+            </div>
+
+            <p className="text-sm text-slate-600 dark:text-slate-300">{activeProject.purpose}</p>
+
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4">
+              <p className="text-xs font-bold text-primary-600 uppercase tracking-wide mb-1.5">Working Model</p>
+              <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">{activeProject.workingModelDescription}</p>
+            </div>
+
+            <div className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <Sparkles className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
+              <p><strong className="text-slate-900 dark:text-white">Force at work:</strong> {activeProject.forceSection}</p>
+            </div>
+
+            {activeProject.id === 'led-blinker-555' && (() => {
+              const r1 = activeProject.referenceCircuit.placements.find((p) => p.instanceId === 'r1')?.valueOverride?.resistanceOhms ?? 1000;
+              const r2 = activeProject.referenceCircuit.placements.find((p) => p.instanceId === 'r2')?.valueOverride?.resistanceOhms ?? 100000;
+              const cap = activeProject.referenceCircuit.placements.find((p) => p.instanceId === 'cap1')?.valueOverride?.capacitanceFarads ?? 10e-6;
+              const timing = astable555(r1, r2, cap);
+              return (
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="rounded-xl bg-primary-50 dark:bg-primary-900/20 p-3">
+                    <p className="text-[10px] font-bold text-primary-600 uppercase">Blink Rate</p>
+                    <p className="font-mono font-bold">{timing.frequencyHz.toFixed(2)} Hz</p>
+                  </div>
+                  <div className="rounded-xl bg-accent-50 dark:bg-accent-900/20 p-3">
+                    <p className="text-[10px] font-bold text-accent-600 uppercase">On Time</p>
+                    <p className="font-mono font-bold">{timing.highTimeSeconds.toFixed(2)}s</p>
+                  </div>
+                  <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3">
+                    <p className="text-[10px] font-bold text-amber-600 uppercase">Off Time</p>
+                    <p className="font-mono font-bold">{timing.lowTimeSeconds.toFixed(2)}s</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="space-y-2">
+              <h4 className="font-bold text-sm">Build Steps</h4>
+              <ol className="space-y-2">
+                {activeProject.buildSteps.map((s) => (
+                  <li key={s.number} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-900/30 rounded-xl p-3">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-primary-600 text-white text-[11px] font-bold flex items-center justify-center mt-0.5">{s.number}</span>
+                    <span>{s.instruction}{s.hint && <span className="block text-xs text-slate-400 mt-1">Hint: {s.hint}</span>}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-sm mb-1.5 flex items-center gap-1.5"><Lightbulb className="w-4 h-4 text-amber-500" /> Real-World Use</h4>
+              <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+                {activeProject.realWorldUse.map((u, i) => <li key={i}>{u}</li>)}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-sm mb-1.5 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-accent-600" /> Extensions</h4>
+              <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+                {activeProject.extensions.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            </div>
+
+            {activeProject.safetyNotes.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl p-4">
+                <p className="text-xs font-bold text-red-700 dark:text-red-400 uppercase mb-1 flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5" /> Safety Notes</p>
+                <ul className="text-sm text-red-700 dark:text-red-300 space-y-1 list-disc list-inside">
+                  {activeProject.safetyNotes.map((n, i) => <li key={i}>{n}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

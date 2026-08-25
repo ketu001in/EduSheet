@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, BookOpen, ClipboardList,
   Cpu, FlaskConical, Atom, Leaf, Library, Calculator, ShieldCheck, Home, Star, Award,
-  Settings, Users, LineChart, Gamepad2, BookOpenCheck, Ruler, Scroll, Landmark,
+  Settings, Users, LineChart, Gamepad2, BookOpenCheck, Ruler, Scroll, Landmark, Zap,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ import {
 export const ICON_REGISTRY: Record<string, LucideIcon> = {
   LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, BookOpen, ClipboardList,
   Cpu, FlaskConical, Atom, Leaf, Library, Calculator, ShieldCheck, Home, Star, Award,
-  Settings, Users, LineChart, Gamepad2, BookOpenCheck, Ruler, Scroll, Landmark,
+  Settings, Users, LineChart, Gamepad2, BookOpenCheck, Ruler, Scroll, Landmark, Zap,
 };
 
 export const ICON_NAMES = Object.keys(ICON_REGISTRY);

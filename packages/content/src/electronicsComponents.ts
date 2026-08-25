@@ -1,0 +1,102 @@
+import { ComponentSpec } from './electronicsTypes';
+
+// The Electronics Lab's component cupboard -- Phase 1's catalog (the set
+// needed for the LED Blinker flagship project). Every electrical value is
+// a real, standard part spec: the NE555's pin names and numbers match its
+// real datasheet exactly (pin 1 GND, 2 TRIG, 3 OUT, 4 RESET, 5 CTRL,
+// 6 THRES, 7 DISCH, 8 VCC), a standard 5mm red LED's forward voltage
+// (~2V) and safe maximum current (20mA) are real commonly-published
+// figures, and a PP3 9V battery is a real, standard part.
+export const ELECTRONICS_COMPONENTS: ComponentSpec[] = [
+  {
+    id: 'battery-9v',
+    kind: 'battery-9v',
+    name: '9V Battery (PP3)',
+    category: 'power',
+    pins: [
+      { id: 'pos', label: 'Positive (+)' },
+      { id: 'neg', label: 'Negative (-)' },
+    ],
+    description: 'A standard 9-volt PP3 battery -- the power source for the circuit.',
+    deepDive: "A 9V PP3 battery is actually six 1.5V cells stacked internally, connected in series -- 6 x 1.5V = 9V, the same series-voltage-adds-up rule taught in the Electric Circuits chapter, just already assembled inside one case.",
+    electrical: { voltage: 9 },
+    modelHint: 'box',
+    colorHex: '#1a1a1a',
+  },
+  {
+    id: 'resistor',
+    kind: 'resistor',
+    name: 'Resistor',
+    category: 'passive',
+    pins: [{ id: 'a', label: 'Lead A' }, { id: 'b', label: 'Lead B' }],
+    description: 'Limits current flow -- its resistance value (in ohms) is set per project.',
+    deepDive: 'A resistor\'s color bands encode its resistance value in a real, readable code (same digit-and-multiplier system for every resistor ever made) -- an engineer can read a resistor\'s exact value at a glance from the stripe colors alone, no label needed.',
+    modelHint: 'cylinder',
+    colorHex: '#D2B48C',
+  },
+  {
+    id: 'capacitor-electrolytic',
+    kind: 'capacitor',
+    name: 'Electrolytic Capacitor',
+    category: 'passive',
+    pins: [{ id: 'a', label: 'Positive lead' }, { id: 'b', label: 'Negative lead' }],
+    description: 'Stores electrical charge and releases it over time -- the real component behind every timing circuit.',
+    deepDive: "An electrolytic capacitor is polarized -- its positive and negative leads are NOT interchangeable like a resistor's, and wiring one backwards can genuinely damage it. Real ones are marked with a stripe (usually along the negative lead) for exactly this reason.",
+    modelHint: 'cylinder',
+    colorHex: '#2563eb',
+  },
+  {
+    id: 'led-red',
+    kind: 'led',
+    name: 'Red LED',
+    category: 'semiconductor',
+    pins: [{ id: 'anode', label: 'Anode (+, longer lead)' }, { id: 'cathode', label: 'Cathode (-, shorter lead, flat edge)' }],
+    description: 'Lights up only when current flows the right way through it, and only above its real forward-voltage threshold (~2V).',
+    deepDive: "An LED is a diode -- current only flows one direction through it (anode to cathode), and it only conducts (and lights up) once the voltage across it exceeds its real forward voltage (~2V for a standard red LED). Below that threshold, no current flows and no light appears -- exactly like this lab's circuit engine models it, not just 'wire touches wire'.",
+    electrical: { forwardVoltage: 2, maxCurrentAmps: 0.02 },
+    modelHint: 'led-dome',
+    colorHex: '#dc2626',
+  },
+  {
+    id: 'timer-555',
+    kind: 'timer-555',
+    name: '555 Timer IC',
+    category: 'ic',
+    pins: [
+      { id: 'pin1-gnd', label: 'Pin 1 -- GND' },
+      { id: 'pin2-trig', label: 'Pin 2 -- Trigger' },
+      { id: 'pin3-out', label: 'Pin 3 -- Output' },
+      { id: 'pin4-reset', label: 'Pin 4 -- Reset' },
+      { id: 'pin5-ctrl', label: 'Pin 5 -- Control Voltage' },
+      { id: 'pin6-thres', label: 'Pin 6 -- Threshold' },
+      { id: 'pin7-disch', label: 'Pin 7 -- Discharge' },
+      { id: 'pin8-vcc', label: 'Pin 8 -- VCC (+)' },
+    ],
+    description: 'One of the most-produced ICs in history -- generates precise timing signals from just a resistor-capacitor network.',
+    deepDive: 'Wired as an "astable multivibrator" (RESET tied high, THRESHOLD and TRIGGER tied together, a resistor from VCC to DISCHARGE and a second resistor from DISCHARGE to the THRESHOLD/TRIGGER node, a capacitor from that same node to GND), the 555 repeatedly charges and discharges the capacitor through the two resistors, flipping its output HIGH and LOW at a real, calculable rate: f = 1.44 / ((R1 + 2xR2) x C). First released in 1971, it is still manufactured and used today, over 50 years later.',
+    modelHint: 'ic-dip8',
+    colorHex: '#1e293b',
+  },
+  {
+    id: 'switch-spst',
+    kind: 'switch-spst',
+    name: 'SPST Toggle Switch',
+    category: 'input',
+    pins: [{ id: 'a', label: 'Terminal A' }, { id: 'b', label: 'Terminal B' }],
+    description: 'A single-pole single-throw switch -- either fully connects its two terminals, or fully breaks the connection.',
+    deepDive: '"SPST" describes exactly what it does: Single Pole (one circuit path), Single Throw (one on/off position) -- the simplest possible switch, as opposed to an SPDT switch which can route power to one of two different paths.',
+    modelHint: 'switch-toggle',
+    colorHex: '#dc2626',
+  },
+  {
+    id: 'breadboard-half',
+    kind: 'breadboard',
+    name: 'Half-Size Breadboard',
+    category: 'wiring',
+    pins: [],
+    description: 'A solderless prototyping board -- 30 rows of 5-hole strips (split by a center gutter) plus two power rails, wired internally exactly like a real breadboard.',
+    deepDive: "Inside a real breadboard, metal spring clips run beneath each 5-hole strip, physically connecting every hole in that strip -- which is exactly why plugging a component's two leads into the SAME strip electrically joins them, and why the center gutter (deliberately wide enough for a DIP IC to straddle) keeps the two sides of a row from ever touching.",
+    modelHint: 'breadboard',
+    colorHex: '#e5e7eb',
+  },
+];

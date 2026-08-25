@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, BookOpen, ClipboardList, Cpu, FlaskConical, Atom, Leaf, Library, Calculator } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileText, FileStack, Heart, User, BookOpen, ClipboardList, Cpu, FlaskConical, Atom, Leaf, Library, Calculator, Zap } from 'lucide-react';
 import { useWizardStore } from '@/store/useWizardStore';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
 import { fetchNavConfig, NavConfigEntry } from '@/lib/navConfig';
@@ -60,6 +60,7 @@ function buildStaticFallback(isTeacherOrParent: boolean, resetWizard: () => void
         { href: '/physics-lab', label: 'Physics Lab', icon: Atom },
         { href: '/biology-lab', label: 'Biology Lab', icon: Leaf },
         { href: '/math-lab', label: 'Math Lab', icon: Calculator },
+        { href: '/electronics-lab', label: 'Electronics Lab', icon: Zap },
       ],
     },
     { href: '/favorites', label: 'Favorites', icon: Heart },
