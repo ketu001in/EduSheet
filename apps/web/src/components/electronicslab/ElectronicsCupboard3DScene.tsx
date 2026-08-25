@@ -1,6 +1,5 @@
 'use client';
-import * as THREE from 'three';
-import { OrbitControls, Text } from '@react-three/drei';
+import { OrbitControls, OrthographicCamera } from '@react-three/drei';
 import SafeR3FCanvas from '@/components/techlab/SafeR3FCanvas';
 import { Hotspot3D } from '@/components/physicslab/Hotspot3D';
 import type { ComponentSpec } from '@edusheets/content';
@@ -10,7 +9,19 @@ import type { ComponentSpec } from '@edusheets/content';
 // and real color, clickable for the same hover-lift/click-sound/info-
 // popup pattern already proven across Physics/Math Lab (Hotspot3D,
 // reused here unmodified, cross-imported the same way SafeR3FCanvas
-// already is across every lab).
+// already is across every lab -- its own built-in hover tooltip is the
+// ONLY label shown; an earlier version also drew a permanent floating
+// <Text> per item, which is exactly what caused the overlapping-label
+// bug reported live.
+//
+// A PERSPECTIVE camera on a wide flat layout like this genuinely warps/
+// bows straight rows near the edges (the same real optical effect that
+// broke the Periodic Table's brick grid earlier) -- fixed the same way:
+// an orthographic camera, real spacing between rows so depth differences
+// don't visually collapse into each other, and no oversized decorative
+// plane fighting the actual shelf items for attention (the previous
+// "back wall" box was mis-scaled and mis-angled badly enough to read as
+// a broken ramp instead of a wall, so it's removed rather than patched).
 export default function ElectronicsCupboard3DScene({
   components, hoveredId, onHover, onUnhover, onClick,
 }: {
@@ -21,26 +32,34 @@ export default function ElectronicsCupboard3DScene({
   onClick: (id: string) => void;
 }) {
   const cols = 4;
-  const spacing = 1.5;
+  const spacingX = 1.9;
+  const spacingZ = 2.3;
+  const rows = Math.ceil(components.length / cols);
+
   return (
-    <SafeR3FCanvas height={360} shadows camera={{ position: [3.4, 3.6, 5.4], fov: 42 }}>
-      <ambientLight intensity={0.85} />
-      <directionalLight position={[4, 6, 3]} intensity={1.15} castShadow />
-      <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[10, 8]} />
-        <meshStandardMaterial color="#c8bfa8" roughness={0.9} />
+    <SafeR3FCanvas height={380} shadows>
+      <ambientLight intensity={0.9} />
+      <directionalLight position={[5, 7, 4]} intensity={1.2} castShadow />
+      <OrthographicCamera makeDefault position={[6, 6.5, 8.5]} zoom={78} near={0.1} far={100} />
+
+      <mesh position={[0, -0.02, -spacingZ * (rows - 1) * 0.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[cols * spacingX + 2, rows * spacingZ + 2]} />
+        <meshStandardMaterial color="#e7ded0" roughness={0.9} />
       </mesh>
-      {/* Cupboard back wall, purely decorative */}
-      <mesh position={[0, 1.6, -1.6]} receiveShadow>
-        <boxGeometry args={[9, 3.2, 0.15]} />
-        <meshStandardMaterial color="#8b5e3c" roughness={0.85} />
-      </mesh>
+
+      {Array.from({ length: rows }, (_, r) => (
+        <mesh key={`shelf-${r}`} position={[0, -0.005, -r * spacingZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[cols * spacingX - 0.4, spacingZ - 0.5]} />
+          <meshStandardMaterial color="#8b5e3c" roughness={0.85} />
+        </mesh>
+      ))}
 
       {components.map((c, i) => {
         const col = i % cols;
         const row = Math.floor(i / cols);
-        const x = (col - (cols - 1) / 2) * spacing;
-        const z = -row * spacing * 0.9;
+        const itemsInThisRow = Math.min(cols, components.length - row * cols);
+        const x = (col - (itemsInThisRow - 1) / 2) * spacingX;
+        const z = -row * spacingZ;
         return (
           <Hotspot3D
             key={c.id}
@@ -53,14 +72,11 @@ export default function ElectronicsCupboard3DScene({
             onClick={onClick}
           >
             <ComponentModel spec={c} />
-            <Text position={[0, -0.45, 0.5]} fontSize={0.13} color="#1e293b" outlineWidth={0.008} outlineColor="white" anchorX="center" anchorY="middle">
-              {c.name}
-            </Text>
           </Hotspot3D>
         );
       })}
 
-      <OrbitControls enablePan={false} minDistance={3} maxDistance={11} target={[0, 0.3, 0]} makeDefault />
+      <OrbitControls enablePan={false} minZoom={45} maxZoom={140} target={[0, 0.2, -spacingZ * (rows - 1) * 0.5]} makeDefault />
     </SafeR3FCanvas>
   );
 }
