@@ -251,6 +251,7 @@ export interface Breadboard3DSceneProps {
   onComponentClick: (instanceId: string, kind: string) => void;
   onWireClick: (wireId: string) => void;
   deleteMode: boolean;
+  height?: number;
 }
 
 function ContinuousInvalidate({ active }: { active: boolean }) {
@@ -267,14 +268,14 @@ function ContinuousInvalidate({ active }: { active: boolean }) {
 
 export default function Breadboard3DScene({
   placements, wires, pendingPos, switchStates, evaluation, timing,
-  onPositionClick, onComponentClick, onWireClick, deleteMode,
+  onPositionClick, onComponentClick, onWireClick, deleteMode, height = 480,
 }: Breadboard3DSceneProps) {
   const [hoveredHole, setHoveredHole] = useState<string | null>(null);
   const [hoveredComp, setHoveredComp] = useState<string | null>(null);
   const needsContinuousAnimation = !!timing || evaluation.loads.some((l) => l.active);
 
   return (
-    <SafeR3FCanvas height={420} shadows>
+    <SafeR3FCanvas height={height} shadows>
       <ContinuousInvalidate active={needsContinuousAnimation} />
       {/* A local, network-free studio light rig -- key + fill + rim, the
           same recipe Model3DViewer.tsx uses instead of drei's Environment

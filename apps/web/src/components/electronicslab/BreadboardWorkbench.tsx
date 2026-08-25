@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Cable, Trash2, RotateCcw, FileText, Zap, Move3d } from 'lucide-react';
+import { Cable, Trash2, RotateCcw, FileText, Zap, Move3d, Maximize2, Minimize2 } from 'lucide-react';
 import {
   ELECTRONICS_COMPONENTS,
   type ElectronicsProject,
@@ -64,11 +64,27 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
   const [pendingPos, setPendingPos] = useState<BreadboardPosition | null>(null);
   const [instanceSeq, setInstanceSeq] = useState(1);
   const [hint, setHint] = useState<string | null>(null);
+  const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
     setPlacements([]); setWires([]); setSwitchStates({}); setMode('interact');
     setPlacingCatalogId(null); setPendingPos(null); setInstanceSeq(1); setHint(null);
   }, [project.id]);
+
+  // A real, roomier maximized view -- the fixed-size board was flagged as
+  // cramped and hard to work in. This is a lightweight in-page overlay
+  // (not the browser Fullscreen API, which needs its own permission
+  // dance and isn't always available embedded) that gives the board and
+  // its controls the whole viewport, with Escape and a visible button to
+  // exit, and locks page scroll while open so the overlay doesn't jump.
+  useEffect(() => {
+    if (!maximized) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMaximized(false); };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prevOverflow; };
+  }, [maximized]);
 
   const partsBin = useMemo(
     () => project.componentIds.map((id) => ELECTRONICS_COMPONENTS.find((c) => c.id === id)).filter((c): c is NonNullable<typeof c> => !!c),
@@ -201,7 +217,7 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
   const litCount = evaluation.leds.filter((l) => l.lit).length;
   const activeLoadCount = evaluation.loads.filter((l) => l.active).length;
 
-  return (
+  const content = (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -222,6 +238,13 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
         <button onClick={clearBoard} className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900">
           <RotateCcw className="w-3.5 h-3.5" /> Clear Board
         </button>
+        <button
+          onClick={() => setMaximized((m) => !m)}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900"
+          title={maximized ? 'Exit fullscreen (Esc)' : 'Maximize the board'}
+        >
+          {maximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />} {maximized ? 'Exit Fullscreen' : 'Maximize'}
+        </button>
         <span className="ml-auto text-[11px] text-slate-400 flex items-center gap-1"><Move3d className="w-3.5 h-3.5" /> Drag to orbit &middot; scroll to zoom</span>
       </div>
 
@@ -234,7 +257,7 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
         {mode === 'interact' && !placingCatalogId && (hint || 'Pick a part below to place it, or click a switch/button already on the board to flip it.')}
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_260px] gap-4 items-start">
+      <div className={`grid grid-cols-1 gap-4 items-start ${maximized ? 'md:grid-cols-[minmax(0,1fr)_300px] h-[calc(100%-4.5rem)]' : 'md:grid-cols-[minmax(0,1fr)_260px]'}`}>
         <Breadboard3DScene
           placements={placements}
           wires={wires}
@@ -246,6 +269,7 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
           onComponentClick={handleComponentClick}
           onWireClick={handleWireClick}
           deleteMode={mode === 'delete'}
+          height={maximized ? Math.max(560, typeof window !== 'undefined' ? window.innerHeight - 220 : 560) : 480}
         />
 
         <div className="space-y-3 min-w-0">
@@ -285,4 +309,13 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
       </div>
     </div>
   );
+
+  if (maximized) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white dark:bg-slate-950 p-4 md:p-6 overflow-auto">
+        {content}
+      </div>
+    );
+  }
+  return content;
 }
