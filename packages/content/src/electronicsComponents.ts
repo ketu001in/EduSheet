@@ -93,6 +93,18 @@ export const ELECTRONICS_COMPONENTS: ComponentSpec[] = [
     modelHint: 'box',
     colorHex: '#1a1a1a',
   },
+  {
+    id: 'battery-6v',
+    kind: 'battery-6v',
+    name: '6V Battery Pack (4×AA)',
+    category: 'power',
+    pins: [{ id: 'pos', label: 'Positive (+)' }, { id: 'neg', label: 'Negative (-)' }],
+    description: 'Four AA cells in series inside one holder -- 4 x 1.5V = 6V, a common real supply for small hobby motors.',
+    deepDive: "Matching a motor's rated voltage matters: too little and it won't spin with useful torque, too much and it can overheat or wear out early -- a 6V pack is the standard real choice for a motor rated at 6V, for exactly this reason.",
+    electrical: { voltage: 6 },
+    modelHint: 'box',
+    colorHex: '#374151',
+  },
 
   // -- Resistors: the real E12-derived decade spread found in a standard
   // beginner resistor kit --------------------------------------------------
@@ -206,6 +218,18 @@ export const ELECTRONICS_COMPONENTS: ComponentSpec[] = [
     colorHex: '#475569',
   },
   {
+    id: 'buzzer-piezo',
+    kind: 'buzzer',
+    name: 'Piezo Buzzer',
+    category: 'electromechanical',
+    pins: [{ id: 'pos', label: 'Positive (+)' }, { id: 'neg', label: 'Negative (-)' }],
+    description: 'A small piezoelectric buzzer -- converts electrical current directly into an audible tone the instant current flows through it.',
+    deepDive: 'A piezo buzzer works by applying voltage across a piezoelectric ceramic disc, which physically flexes and vibrates a diaphragm to produce sound -- no moving coil or magnet needed, unlike a real speaker, which is exactly why piezo buzzers are so compact, cheap, and durable.',
+    electrical: { voltage: 5 },
+    modelHint: 'buzzer',
+    colorHex: '#0f766e',
+  },
+  {
     id: 'motor-servo',
     kind: 'motor-servo',
     name: 'Servo Motor (SG90-style)',
@@ -297,7 +321,7 @@ export const ELECTRONICS_CATEGORY_LABELS: Record<string, string> = {
   semiconductor: 'LEDs & Diodes',
   ic: 'Integrated Circuits',
   input: 'Switches & Buttons',
-  electromechanical: 'Motors',
+  electromechanical: 'Motors & Buzzers',
   wiring: 'Boards & Wiring',
   tools: 'Soldering Tools',
 };

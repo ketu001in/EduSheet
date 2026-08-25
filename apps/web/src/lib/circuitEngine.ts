@@ -11,7 +11,7 @@
 // breaks tH+tL from exactly equalling the period computed from f. This
 // engine derives everything from the single precise Math.LN2 constant
 // instead, so that identity always holds exactly).
-import type { BreadboardPosition } from '@edusheets/content';
+import type { BreadboardPosition, ComponentKind } from '@edusheets/content';
 
 // ---------------------------------------------------------------------
 // Breadboard connectivity -- the real physical rules of a standard
@@ -218,5 +218,225 @@ export function detect555AstableTopology(
   return {
     vccNode, gndNode, dischNode, thresTrigNode: thresNode, outNode,
     r1Ohms: r1.ohms, r2Ohms: r2.ohms, capacitanceFarads: capacitor.farads,
+  };
+}
+
+// ---------------------------------------------------------------------
+// Generic circuit evaluator -- the real, hands-on workbench's "does it
+// actually work" engine. Deliberately scoped the same way as the rest of
+// this file: DC steady-state only, simple-loop path-finding (not a full
+// nodal/matrix SPICE solver), which is genuinely sufficient for the
+// basic loop, series, and parallel circuits this lab teaches. A
+// capacitor is intentionally NOT a traversable edge here -- in real DC
+// steady state a charged capacitor blocks continuous current, so an
+// oscillator like the 555 astable is handled by its own specialized
+// topology recognizer above, not by this generic loop-finder.
+// ---------------------------------------------------------------------
+
+export interface EvalComponentInput {
+  instanceId: string;
+  kind: ComponentKind;
+  pinPositions: Record<string, BreadboardPosition>;
+  resistanceOhms?: number;
+  forwardVoltage?: number;
+  maxCurrentAmps?: number;
+  sourceVoltage?: number;
+  // SPST/push-button: true = the student has toggled/is pressing it closed.
+  switchClosed?: boolean;
+  // SPDT: which throw is currently connected to the common terminal.
+  spdtThrow?: 1 | 2;
+}
+
+export interface VirtualSource {
+  posNode: string;
+  negNode: string;
+  voltage: number;
+}
+
+export type LedIssue = 'no-closed-path' | 'reversed' | 'short-circuit' | 'over-current' | null;
+
+export interface LedEvalResult {
+  instanceId: string;
+  lit: boolean;
+  currentAmps: number;
+  issue: LedIssue;
+}
+
+export interface LoadEvalResult {
+  instanceId: string;
+  active: boolean;
+}
+
+export interface CircuitEvaluation {
+  leds: LedEvalResult[];
+  loads: LoadEvalResult[]; // motors, buzzers -- anything that's simply "on" once powered
+  anyBatteryPlaced: boolean;
+}
+
+interface EngineEdge {
+  instanceId: string;
+  nodeFrom: string;
+  nodeTo: string;
+  directed: boolean; // true = only traversable nodeFrom -> nodeTo (an LED's real forward-bias direction)
+  resistanceOhms: number;
+  forwardVoltage: number;
+  isLoad: boolean;
+}
+
+function findSimplePaths(startNode: string, endNode: string, edges: EngineEdge[]): EngineEdge[][] {
+  const results: EngineEdge[][] = [];
+  const visited = new Set<string>([startNode]);
+  const path: EngineEdge[] = [];
+  function dfs(node: string) {
+    if (node === endNode) {
+      if (path.length > 0) results.push([...path]);
+      return;
+    }
+    // Bound the search the same real way a student's own wiring would be
+    // bounded -- a handful of components, never an unbounded graph.
+    if (path.length > 12) return;
+    for (const e of edges) {
+      let next: string | null = null;
+      if (e.nodeFrom === node && !visited.has(e.nodeTo)) next = e.nodeTo;
+      else if (!e.directed && e.nodeTo === node && !visited.has(e.nodeFrom)) next = e.nodeFrom;
+      if (next == null) continue;
+      visited.add(next);
+      path.push(e);
+      dfs(next);
+      path.pop();
+      visited.delete(next);
+    }
+  }
+  dfs(startNode);
+  return results;
+}
+
+export function evaluateCircuit(
+  components: EvalComponentInput[],
+  wires: WireEdge[],
+  extraSources: VirtualSource[] = [],
+): CircuitEvaluation {
+  const uf = new UnionFind();
+  for (const w of wires) uf.union(nodeKeyForPosition(w.from), nodeKeyForPosition(w.to));
+  const nodeOf = (pos: BreadboardPosition) => uf.find(nodeKeyForPosition(pos));
+
+  const edges: EngineEdge[] = [];
+  const sources: VirtualSource[] = [...extraSources];
+  const ledComponents = new Map<string, EvalComponentInput>();
+  const loadComponents = new Map<string, EvalComponentInput>();
+
+  const addEdge = (c: EvalComponentInput, pinA: string, pinB: string, opts: Partial<EngineEdge> = {}) => {
+    const posA = c.pinPositions[pinA];
+    const posB = c.pinPositions[pinB];
+    if (!posA || !posB) return;
+    edges.push({
+      instanceId: c.instanceId,
+      nodeFrom: nodeOf(posA),
+      nodeTo: nodeOf(posB),
+      directed: opts.directed ?? false,
+      resistanceOhms: opts.resistanceOhms ?? 0,
+      forwardVoltage: opts.forwardVoltage ?? 0,
+      isLoad: opts.isLoad ?? false,
+    });
+  };
+
+  for (const c of components) {
+    switch (c.kind) {
+      case 'battery-9v':
+      case 'battery-6v': {
+        const pos = c.pinPositions.pos;
+        const neg = c.pinPositions.neg;
+        if (pos && neg) sources.push({ posNode: nodeOf(pos), negNode: nodeOf(neg), voltage: c.sourceVoltage ?? 9 });
+        break;
+      }
+      case 'resistor':
+        addEdge(c, 'a', 'b', { resistanceOhms: c.resistanceOhms ?? 0 });
+        break;
+      case 'led':
+        addEdge(c, 'anode', 'cathode', { directed: true, forwardVoltage: c.forwardVoltage ?? 2 });
+        if (c.pinPositions.anode && c.pinPositions.cathode) ledComponents.set(c.instanceId, c);
+        break;
+      case 'switch-spst':
+      case 'push-button':
+        if (c.switchClosed) addEdge(c, 'a', 'b');
+        break;
+      case 'switch-spdt': {
+        const throwPin = c.spdtThrow === 2 ? 'throw2' : 'throw1';
+        addEdge(c, 'common', throwPin);
+        break;
+      }
+      case 'dc-motor':
+      case 'buzzer':
+        addEdge(c, 'pos', 'neg', { isLoad: true });
+        if (c.pinPositions.pos && c.pinPositions.neg) loadComponents.set(c.instanceId, c);
+        break;
+      default:
+        break; // 555, capacitors, breadboards/tools/etc. -- not part of this generic loop model
+    }
+  }
+
+  const ledResults = new Map<string, LedEvalResult>(
+    [...ledComponents.keys()].map((id) => [id, { instanceId: id, lit: false, currentAmps: 0, issue: 'no-closed-path' as LedIssue }]),
+  );
+  const loadResults = new Map<string, LoadEvalResult>(
+    [...loadComponents.keys()].map((id) => [id, { instanceId: id, active: false }]),
+  );
+
+  const setIssueIfNotLit = (id: string, issue: LedIssue) => {
+    const cur = ledResults.get(id);
+    if (cur && !cur.lit) ledResults.set(id, { ...cur, issue });
+  };
+
+  for (const source of sources) {
+    if (source.posNode === source.negNode) continue;
+    const paths = findSimplePaths(source.posNode, source.negNode, edges);
+    for (const path of paths) {
+      const ledEdges = path.filter((e) => e.forwardVoltage > 0);
+      const loadEdges = path.filter((e) => e.isLoad);
+      const totalR = path.reduce((s, e) => s + e.resistanceOhms, 0);
+      const totalVf = ledEdges.reduce((s, e) => s + e.forwardVoltage, 0);
+
+      if (ledEdges.length > 0) {
+        if (totalR <= 0) {
+          for (const e of ledEdges) setIssueIfNotLit(e.instanceId, 'short-circuit');
+        } else {
+          const current = Math.max(0, (source.voltage - totalVf) / totalR);
+          const overCurrent = ledEdges.some((e) => {
+            const comp = ledComponents.get(e.instanceId);
+            return comp?.maxCurrentAmps != null && current > comp.maxCurrentAmps;
+          });
+          if (overCurrent) {
+            for (const e of ledEdges) setIssueIfNotLit(e.instanceId, 'over-current');
+          } else if (current <= 0) {
+            for (const e of ledEdges) setIssueIfNotLit(e.instanceId, 'no-closed-path');
+          } else {
+            for (const e of ledEdges) ledResults.set(e.instanceId, { instanceId: e.instanceId, lit: true, currentAmps: current, issue: null });
+          }
+        }
+      }
+      for (const e of loadEdges) loadResults.set(e.instanceId, { instanceId: e.instanceId, active: true });
+    }
+  }
+
+  // Helpful diagnosis, not just a dead end: for any LED still dark for lack
+  // of a path, check whether flipping ITS direction alone would have
+  // closed a loop -- if so, the real, honest reason is "wired backwards",
+  // not "no path at all", and the student gets a genuinely useful hint.
+  for (const [id, comp] of ledComponents) {
+    const result = ledResults.get(id);
+    if (result && !result.lit && result.issue === 'no-closed-path') {
+      const flippedEdges = edges.map((e) =>
+        e.instanceId === id ? { ...e, nodeFrom: e.nodeTo, nodeTo: e.nodeFrom } : e,
+      );
+      const reversed = sources.some((s) => s.posNode !== s.negNode && findSimplePaths(s.posNode, s.negNode, flippedEdges).some((p) => p.some((e) => e.instanceId === id)));
+      if (reversed) ledResults.set(id, { ...result, issue: 'reversed' });
+    }
+    void comp;
+  }
+
+  return {
+    leds: [...ledResults.values()],
+    loads: [...loadResults.values()],
+    anyBatteryPlaced: sources.length > 0,
   };
 }

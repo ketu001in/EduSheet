@@ -74,3 +74,37 @@ export function playFizz() {
 export function playThud() {
   tone(90, 0, 0.2, 0.09, 'sine');
 }
+
+// A real, SUSTAINED tone -- unlike every effect above (which is a fixed
+// short envelope), this one keeps playing until explicitly stopped, for
+// Electronics Lab's buzzer: a real piezo buzzer sounds continuously for
+// exactly as long as current flows through it, not for a fixed duration.
+let buzzerOsc: OscillatorNode | null = null;
+let buzzerGain: GainNode | null = null;
+export function startBuzzerTone() {
+  if (buzzerOsc) return; // already sounding
+  const audio = getContext();
+  if (!audio) return;
+  const osc = audio.createOscillator();
+  const gain = audio.createGain();
+  osc.type = 'square'; // a real piezo buzzer's tone is close to a square wave, not a pure sine
+  osc.frequency.value = 2400;
+  gain.gain.setValueAtTime(0.0001, audio.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.05, audio.currentTime + 0.02);
+  osc.connect(gain);
+  gain.connect(audio.destination);
+  osc.start();
+  buzzerOsc = osc;
+  buzzerGain = gain;
+}
+export function stopBuzzerTone() {
+  if (!buzzerOsc || !buzzerGain) return;
+  const audio = getContext();
+  const osc = buzzerOsc;
+  const gain = buzzerGain;
+  buzzerOsc = null;
+  buzzerGain = null;
+  if (!audio) return;
+  gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.05);
+  osc.stop(audio.currentTime + 0.08);
+}

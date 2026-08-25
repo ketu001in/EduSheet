@@ -136,6 +136,28 @@ export default function ComponentModel({ spec }: { spec: ComponentSpec }) {
           </mesh>
         </group>
       );
+    case 'buzzer':
+      return (
+        <group>
+          <mesh castShadow position={[0, 0.16, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.24, 0.24, 0.16, 24]} />
+            <meshStandardMaterial color={color} roughness={0.5} />
+          </mesh>
+          {/* The real sound-hole grille on top of a piezo buzzer */}
+          <mesh position={[0, 0.245, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.12, 0.12, 0.01, 16]} />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.8} />
+          </mesh>
+          <mesh position={[-0.06, 0.05, 0.2]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.14, 6]} />
+            <meshStandardMaterial color="#dc2626" metalness={0.5} />
+          </mesh>
+          <mesh position={[0.06, 0.05, 0.2]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.14, 6]} />
+            <meshStandardMaterial color="#1a1a1a" metalness={0.5} />
+          </mesh>
+        </group>
+      );
     case 'motor':
       return (
         <group>

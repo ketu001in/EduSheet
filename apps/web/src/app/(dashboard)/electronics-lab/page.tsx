@@ -9,6 +9,7 @@ import { playSelectChime } from '@/lib/uiSoundEngine';
 import { astable555 } from '@/lib/circuitEngine';
 import { formatOhms, formatFarads } from '@/lib/componentFormat';
 import ElectronicsComponentModal from '@/components/electronicslab/ElectronicsComponentModal';
+import BreadboardWorkbench from '@/components/electronicslab/BreadboardWorkbench';
 import type { DrawerCategory } from '@/components/electronicslab/ElectronicsCupboard3DScene';
 
 const ElectronicsCupboard3DScene = dynamic(() => import('@/components/electronicslab/ElectronicsCupboard3DScene'), {
@@ -155,7 +156,7 @@ export default function ElectronicsLabPage() {
           <div className="glass-card rounded-3xl p-5 md:p-7 space-y-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <h3 className="font-display text-xl font-semibold">{activeProject.title}</h3>
-              <span className="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-[11px] font-bold">Interactive workbench coming next</span>
+              <span className="px-2.5 py-1 rounded-full bg-accent-50 dark:bg-accent-950/30 text-accent-700 dark:text-accent-400 text-[11px] font-bold">Live workbench -- wire it yourself</span>
             </div>
 
             <p className="text-sm text-slate-600 dark:text-slate-300">{activeProject.purpose}</p>
@@ -168,6 +169,11 @@ export default function ElectronicsLabPage() {
             <div className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
               <Sparkles className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
               <p><strong className="text-slate-900 dark:text-white">Force at work:</strong> {activeProject.forceSection}</p>
+            </div>
+
+            <div className="glass-card rounded-2xl p-4 border-2 border-slate-900 dark:border-slate-700">
+              <h4 className="font-bold text-sm mb-2 flex items-center gap-1.5"><Wrench className="w-4 h-4 text-primary-600" /> Breadboard Workbench</h4>
+              <BreadboardWorkbench project={activeProject} />
             </div>
 
             {activeProject.id === 'led-blinker-555' && (() => {
