@@ -2,25 +2,35 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, OrthographicCamera, Html } from '@react-three/drei';
+import { OrbitControls, OrthographicCamera, RoundedBox, ContactShadows } from '@react-three/drei';
 import SafeR3FCanvas from '@/components/techlab/SafeR3FCanvas';
 import { Hotspot3D } from '@/components/physicslab/Hotspot3D';
-import { ELECTRONICS_COMPONENTS, type ComponentPlacement, type WireConnection, type BreadboardPosition } from '@edusheets/content';
-import { resistorColorBands, BAND_HEX, type CircuitEvaluation } from '@/lib/circuitEngine';
+import ComponentModel from './ComponentModel3D';
+import { ELECTRONICS_COMPONENTS, type ComponentPlacement, type WireConnection, type BreadboardPosition, type ComponentSpec } from '@edusheets/content';
+import { type CircuitEvaluation } from '@/lib/circuitEngine';
 
-// The real, hands-on breadboard, rendered as a genuine 3D scene -- a
-// physical board the student can orbit, zoom, and click into, not a flat
-// schematic. Every click still resolves through the exact same real
-// BreadboardPosition/instanceId model BreadboardWorkbench.tsx already
-// uses (this component owns NO circuit logic of its own -- placements,
-// wires, and evaluation all come in as props and every interaction is
-// reported back up via the same onPositionClick/onComponentClick/
-// onWireClick handlers the SVG version used) -- only the RENDERING
-// target changed, so the verified evaluateCircuit() pipeline underneath
-// is untouched. Same orthographic-camera + OrbitControls recipe already
-// proven on this app's other wide, flat grids (Periodic Table, the
-// Cupboard shelf and drawers) -- a perspective camera genuinely bows a
-// layout this wide and flat.
+// The real, hands-on breadboard, rendered as a genuine, modern 3D scene --
+// a physical board the student can orbit, zoom, and click into. Placed
+// components reuse the SAME real geometry the Component Cupboard's
+// preview already uses (ComponentModel3D -- real resistor color bands,
+// a real battery body, a real 555 DIP-8 chip) instead of flat
+// placeholder boxes, for static parts; parts that need LIVE state (an
+// LED that must actually blink, a switch that must actually change
+// color when toggled, a buzzer/motor that must actually animate) get
+// their own richer multi-part geometry here, since ComponentModel3D has
+// no live-state hooks and is shared with the Cupboard -- not modified.
+// Wires render as real jumper cables: a gently arched two-segment cord
+// with an actual connector "boot" plug at each end, not a bare line.
+//
+// This component owns NO circuit logic of its own -- placements, wires,
+// and evaluation all come in as props and every interaction is reported
+// back up via the same onPositionClick/onComponentClick/onWireClick
+// handlers the original SVG version used.
+//
+// Lighting is a local multi-light studio rig, not drei's <Environment>
+// -- Model3DViewer.tsx already established why: Environment fetches its
+// HDR map from a third-party CDN at runtime, and this app's 3D scenes
+// must never depend on an external service being up just to render.
 
 const COLS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'] as const;
 const ROWS = 20;
@@ -30,6 +40,10 @@ const BOARD_W = 9 * HOLE_GAP + GUTTER;
 const BOARD_D = (ROWS - 1) * HOLE_GAP;
 const CENTER_X = BOARD_W / 2;
 const CENTER_Z = BOARD_D / 2;
+
+const BODY_SCALE_BY_KIND: Record<string, number> = {
+  resistor: 0.34, capacitor: 0.4, 'battery-9v': 0.24, 'battery-6v': 0.24, 'timer-555': 0.42,
+};
 
 function colX(col: string): number {
   const idx = COLS.indexOf(col as (typeof COLS)[number]);
@@ -44,9 +58,6 @@ function railZ(rail: string): number {
   if (rail === 'bottom-pos') return CENTER_Z + 0.18;
   return CENTER_Z + 0.34;
 }
-function posKey(pos: BreadboardPosition): string {
-  return 'rail' in pos ? `rail:${pos.rail}` : `hole:${pos.row}:${pos.col}`;
-}
 function posToVec(pos: BreadboardPosition, y: number, anchorX?: number): THREE.Vector3 {
   if ('rail' in pos) return new THREE.Vector3(anchorX ?? 0, y, railZ(pos.rail));
   return new THREE.Vector3(colX(pos.col), y, rowZ(pos.row));
@@ -59,44 +70,59 @@ function resolvePairVecs(a: BreadboardPosition, b: BreadboardPosition, y: number
   return [aIsRail ? posToVec(a, y, bV?.x) : aV!, bIsRail ? posToVec(b, y, aV?.x) : bV!];
 }
 
-// A colored rod between two points that also reports clicks/hover --
-// Rod (physicslab/Hotspot3D.tsx) already does the quaternion alignment
-// but has no interaction props, so this is a local sibling rather than a
+// A colored rod between two points that also reports clicks -- Rod
+// (physicslab/Hotspot3D.tsx) already does the quaternion alignment but
+// has no interaction props, so this is a local sibling rather than a
 // modification of that shared helper.
-function InteractiveRod({ a, b, radius, color, onClick, title }: {
-  a: THREE.Vector3; b: THREE.Vector3; radius: number; color: string; onClick?: () => void; title?: string;
+function InteractiveRod({ a, b, radius, color, onClick, metalness = 0.1, roughness = 0.55 }: {
+  a: THREE.Vector3; b: THREE.Vector3; radius: number; color: string; onClick?: () => void; metalness?: number; roughness?: number;
 }) {
   const mid = useMemo(() => a.clone().add(b).multiplyScalar(0.5), [a, b]);
   const length = a.distanceTo(b);
   const quaternion = useMemo(() => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()), [a, b]);
   return (
-    <mesh position={mid} quaternion={quaternion} onClick={(e) => { e.stopPropagation(); onClick?.(); }}>
+    <mesh position={mid} quaternion={quaternion} onClick={(e) => { e.stopPropagation(); onClick?.(); }} castShadow>
       <cylinderGeometry args={[radius, radius, Math.max(length, 0.001), 10]} />
-      <meshStandardMaterial color={color} roughness={0.5} />
-      {title && <Html center distanceFactor={8} style={{ pointerEvents: 'none' }}><span style={{ display: 'none' }}>{title}</span></Html>}
+      <meshStandardMaterial color={color} roughness={roughness} metalness={metalness} />
     </mesh>
   );
 }
 
-// SafeR3FCanvas runs frameloop="demand" (renders only when explicitly
-// invalidated -- a real, deliberate perf choice for every other scene in
-// this app, most of which are static until hovered/clicked). A blinking
-// LED or a spinning motor needs a REAL continuous tick, which useFrame
-// alone won't provide in demand mode (nothing schedules a next frame on
-// its own). This drives that continuous tick from outside R3F's own
-// loop via a genuine requestAnimationFrame, calling the real invalidate()
-// R3F exposes for exactly this -- and stops it the instant nothing on
-// the board actually needs to animate, so an idle board stays cheap.
-function ContinuousInvalidate({ active }: { active: boolean }) {
-  const invalidate = useThree((s) => s.invalidate);
-  useEffect(() => {
-    if (!active) return;
-    let raf = 0;
-    const tick = () => { invalidate(); raf = requestAnimationFrame(tick); };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, invalidate]);
-  return null;
+// A real jumper-wire connector "boot" -- the small plastic plug housing
+// every real jumper wire has where it meets the pin, not a bare wire end.
+function ConnectorPlug({ pos, color }: { pos: THREE.Vector3; color: string }) {
+  return (
+    <group position={pos}>
+      <mesh position={[0, 0.011, 0]} castShadow>
+        <cylinderGeometry args={[0.014, 0.016, 0.02, 10]} />
+        <meshStandardMaterial color="#2a241c" roughness={0.6} metalness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.026, 0]} castShadow>
+        <boxGeometry args={[0.026, 0.016, 0.026]} />
+        <meshStandardMaterial color={color} roughness={0.35} metalness={0.1} />
+      </mesh>
+    </group>
+  );
+}
+
+// A real jumper cable: two rods meeting at a raised midpoint (a genuine
+// arch, the way a real wire drapes instead of cutting a straight line
+// through the board) with a connector plug at each end.
+function WireCable({ a, b, color, deleteMode, onClick }: { a: THREE.Vector3; b: THREE.Vector3; color: string; deleteMode: boolean; onClick: () => void }) {
+  const liftedA = a.clone().setY(a.y + 0.032);
+  const liftedB = b.clone().setY(b.y + 0.032);
+  const mid = liftedA.clone().add(liftedB).multiplyScalar(0.5);
+  const lift = Math.min(0.13, 0.05 + a.distanceTo(b) * 0.06);
+  const apex = mid.clone().setY(mid.y + lift);
+  const radius = deleteMode ? 0.012 : 0.009;
+  return (
+    <group>
+      <InteractiveRod a={liftedA} b={apex} radius={radius} color={color} onClick={onClick} roughness={0.35} />
+      <InteractiveRod a={apex} b={liftedB} radius={radius} color={color} onClick={onClick} roughness={0.35} />
+      <ConnectorPlug pos={a} color={color} />
+      <ConnectorPlug pos={b} color={color} />
+    </group>
+  );
 }
 
 function LedGlow({ colorHex, lit, blinkPeriodSeconds, blinkDuty }: { colorHex: string; lit: boolean; blinkPeriodSeconds: number | null; blinkDuty: number }) {
@@ -108,30 +134,109 @@ function LedGlow({ colorHex, lit, blinkPeriodSeconds, blinkDuty }: { colorHex: s
       const phase = (clock.getElapsedTime() % blinkPeriodSeconds) / blinkPeriodSeconds;
       on = phase < blinkDuty;
     }
-    matRef.current.emissiveIntensity = on ? 0.9 : 0;
-    matRef.current.opacity = on ? 1 : 0.55;
+    matRef.current.emissiveIntensity = on ? 1.1 : 0;
+    matRef.current.opacity = on ? 0.95 : 0.55;
   });
   return (
-    <mesh position={[0, 0.05, 0]} castShadow>
-      <sphereGeometry args={[0.045, 16, 16]} />
-      <meshStandardMaterial ref={matRef} color={lit ? colorHex : '#6b7280'} emissive={colorHex} transparent roughness={0.4} />
-    </mesh>
+    <group>
+      {/* Two real bent leads down to the board, like a real 5mm LED */}
+      <mesh position={[-0.014, 0.025, 0]} castShadow><cylinderGeometry args={[0.0035, 0.0035, 0.05, 6]} /><meshStandardMaterial color="#9ca3af" metalness={0.6} roughness={0.4} /></mesh>
+      <mesh position={[0.014, 0.021, 0]} castShadow><cylinderGeometry args={[0.0035, 0.0035, 0.042, 6]} /><meshStandardMaterial color="#9ca3af" metalness={0.6} roughness={0.4} /></mesh>
+      {/* Opaque base + translucent dome, matching a real 5mm LED's two-part body */}
+      <mesh position={[0, 0.05, 0]} castShadow>
+        <cylinderGeometry args={[0.024, 0.024, 0.012, 16]} />
+        <meshStandardMaterial color="#3f3f3f" roughness={0.6} />
+      </mesh>
+      <mesh position={[0, 0.068, 0]} castShadow>
+        <sphereGeometry args={[0.024, 20, 20, 0, Math.PI * 2, 0, Math.PI / 1.7]} />
+        <meshStandardMaterial ref={matRef} color={lit ? colorHex : '#6b7280'} emissive={colorHex} transparent roughness={0.25} />
+      </mesh>
+    </group>
   );
 }
 
-function PulsingBody({ active, color, shape, speed = 8 }: { active: boolean; color: string; shape: 'cylinder' | 'box'; speed?: number }) {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    if (!active) { ref.current.scale.setScalar(1); ref.current.rotation.y = 0; return; }
-    if (shape === 'cylinder') ref.current.rotation.y = clock.getElapsedTime() * speed; // motor: real spin
-    else { const s = 1 + Math.sin(clock.getElapsedTime() * 18) * 0.12; ref.current.scale.setScalar(s); } // buzzer: real pulse
+function SwitchBody({ closed, isButton }: { closed: boolean; isButton: boolean }) {
+  const leverRef = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (!leverRef.current) return;
+    const target = closed ? -0.35 : 0.35;
+    leverRef.current.rotation.z = THREE.MathUtils.lerp(leverRef.current.rotation.z, target, 0.25);
   });
   return (
-    <mesh ref={ref} position={[0, 0.045, 0]} castShadow>
-      {shape === 'cylinder' ? <cylinderGeometry args={[0.045, 0.045, 0.07, 16]} /> : <boxGeometry args={[0.08, 0.06, 0.08]} />}
-      <meshStandardMaterial color={color} roughness={0.5} />
-    </mesh>
+    <group>
+      <mesh position={[0, 0.018, 0]} castShadow>
+        <boxGeometry args={[0.055, 0.036, 0.05]} />
+        <meshStandardMaterial color="#1e293b" roughness={0.4} metalness={0.15} />
+      </mesh>
+      {isButton ? (
+        <mesh position={[0, 0.045, 0]} castShadow>
+          <cylinderGeometry args={[0.016, 0.018, 0.016, 16]} />
+          <meshStandardMaterial color={closed ? '#16a34a' : '#dc2626'} roughness={0.35} metalness={0.1} />
+        </mesh>
+      ) : (
+        <group ref={leverRef} position={[0, 0.038, 0]}>
+          <mesh castShadow position={[0, 0.016, 0]}>
+            <cylinderGeometry args={[0.005, 0.005, 0.032, 8]} />
+            <meshStandardMaterial color={closed ? '#16a34a' : '#dc2626'} metalness={0.5} roughness={0.3} />
+          </mesh>
+          <mesh castShadow position={[0, 0.034, 0]}>
+            <sphereGeometry args={[0.007, 10, 10]} />
+            <meshStandardMaterial color={closed ? '#16a34a' : '#dc2626'} metalness={0.5} roughness={0.3} />
+          </mesh>
+        </group>
+      )}
+    </group>
+  );
+}
+
+function BuzzerBody({ active }: { active: boolean }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const s = active ? 1 + Math.sin(clock.getElapsedTime() * 20) * 0.1 : 1;
+    ref.current.scale.setScalar(s);
+  });
+  return (
+    <group ref={ref}>
+      <mesh position={[0, 0.02, 0]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.038, 20]} />
+        <meshStandardMaterial color="#0f766e" roughness={0.45} metalness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.04, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.003, 16]} />
+        <meshStandardMaterial color="#0a2e2b" roughness={0.7} />
+      </mesh>
+      {[0, 1, 2, 3].map((i) => (
+        <mesh key={i} position={[Math.cos((i / 4) * Math.PI * 2) * 0.014, 0.042, Math.sin((i / 4) * Math.PI * 2) * 0.014]}>
+          <cylinderGeometry args={[0.003, 0.003, 0.002, 6]} />
+          <meshStandardMaterial color="#000" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function MotorBody({ active }: { active: boolean }) {
+  const shaftRef = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (!shaftRef.current) return;
+    if (active) shaftRef.current.rotation.x = clock.getElapsedTime() * 10;
+  });
+  return (
+    <group>
+      <mesh position={[0, 0.032, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.032, 0.032, 0.075, 20]} />
+        <meshStandardMaterial color="#475569" metalness={0.55} roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 0.032, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.033, 0.033, 0.01, 20]} />
+        <meshStandardMaterial color="#f59e0b" metalness={0.4} roughness={0.5} />
+      </mesh>
+      <mesh ref={shaftRef} position={[0, 0.032, 0.045]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.006, 0.006, 0.03, 10]} />
+        <meshStandardMaterial color="#d4d4d8" metalness={0.7} roughness={0.3} />
+      </mesh>
+    </group>
   );
 }
 
@@ -148,84 +253,108 @@ export interface Breadboard3DSceneProps {
   deleteMode: boolean;
 }
 
+function ContinuousInvalidate({ active }: { active: boolean }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    if (!active) return;
+    let raf = 0;
+    const tick = () => { invalidate(); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [active, invalidate]);
+  return null;
+}
+
 export default function Breadboard3DScene({
   placements, wires, pendingPos, switchStates, evaluation, timing,
   onPositionClick, onComponentClick, onWireClick, deleteMode,
 }: Breadboard3DSceneProps) {
   const [hoveredHole, setHoveredHole] = useState<string | null>(null);
   const [hoveredComp, setHoveredComp] = useState<string | null>(null);
-
   const needsContinuousAnimation = !!timing || evaluation.loads.some((l) => l.active);
 
   return (
-    <SafeR3FCanvas height={360} shadows>
+    <SafeR3FCanvas height={420} shadows>
       <ContinuousInvalidate active={needsContinuousAnimation} />
-      <ambientLight intensity={0.85} />
-      <directionalLight position={[2.5, 4, 2]} intensity={1.1} castShadow />
-      <OrthographicCamera makeDefault position={[3.2, 3.6, 3.2]} zoom={220} near={0.1} far={30} />
+      {/* A local, network-free studio light rig -- key + fill + rim, the
+          same recipe Model3DViewer.tsx uses instead of drei's Environment
+          (which needs an external HDR fetch this app deliberately avoids). */}
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[2.6, 4.6, 2.2]} intensity={1.25} castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[-3, 2.4, -2.2]} intensity={0.45} color="#cfe0ff" />
+      <directionalLight position={[0, -1.5, 3]} intensity={0.2} />
+      <OrthographicCamera makeDefault position={[3.4, 3.7, 3.4]} zoom={195} near={0.1} far={30} />
 
-      {/* Board body */}
-      <mesh position={[0, -0.035, 0]} receiveShadow>
-        <boxGeometry args={[BOARD_W + 0.2, 0.07, BOARD_D + 1.05]} />
-        <meshStandardMaterial color="#e8e4da" roughness={0.85} />
-      </mesh>
-      {/* Gutter marker */}
+      {/* Board -- rounded, two-tone, modern */}
+      <RoundedBox args={[BOARD_W + 0.24, 0.09, BOARD_D + 1.1]} radius={0.022} smoothness={4} position={[0, -0.05, 0]} receiveShadow castShadow>
+        <meshStandardMaterial color="#efeadd" roughness={0.55} metalness={0.04} />
+      </RoundedBox>
+      <RoundedBox args={[BOARD_W + 0.3, 0.028, BOARD_D + 1.16]} radius={0.018} smoothness={4} position={[0, -0.11, 0]} receiveShadow>
+        <meshStandardMaterial color="#b9b19c" roughness={0.7} metalness={0.05} />
+      </RoundedBox>
+      {/* Gutter channel */}
       <mesh position={[(colX('e') + colX('f')) / 2, 0.001, 0]}>
-        <boxGeometry args={[0.02, 0.001, BOARD_D + 0.05]} />
-        <meshStandardMaterial color="#00000022" />
+        <boxGeometry args={[0.028, 0.004, BOARD_D + 0.06]} />
+        <meshStandardMaterial color="#00000028" roughness={1} />
       </mesh>
 
-      {/* Power rails */}
-      {(['top-pos', 'top-neg', 'bottom-pos', 'bottom-neg'] as const).map((rail) => (
-        <mesh
-          key={rail}
-          position={[0, 0.002, railZ(rail)]}
-          onClick={(e) => { e.stopPropagation(); onPositionClick({ rail }); }}
-          onPointerOver={(e) => { e.stopPropagation(); setHoveredHole(`rail:${rail}`); document.body.style.cursor = 'pointer'; }}
-          onPointerOut={(e) => { e.stopPropagation(); setHoveredHole(null); document.body.style.cursor = 'auto'; }}
-        >
-          <boxGeometry args={[BOARD_W + 0.15, 0.008, 0.1]} />
-          <meshStandardMaterial
-            color={rail.includes('pos') ? '#dc2626' : '#1a1a1a'}
-            opacity={hoveredHole === `rail:${rail}` || (pendingPos && 'rail' in pendingPos && pendingPos.rail === rail) ? 0.65 : 0.28}
-            transparent
-          />
-        </mesh>
-      ))}
+      {/* Power rails -- modern bus-bar strips with a live glow accent */}
+      {(['top-pos', 'top-neg', 'bottom-pos', 'bottom-neg'] as const).map((rail) => {
+        const isHot = hoveredHole === `rail:${rail}` || (pendingPos != null && 'rail' in pendingPos && pendingPos.rail === rail);
+        const isPos = rail.includes('pos');
+        return (
+          <mesh
+            key={rail}
+            position={[0, 0.003, railZ(rail)]}
+            castShadow
+            onClick={(e) => { e.stopPropagation(); onPositionClick({ rail }); }}
+            onPointerOver={(e) => { e.stopPropagation(); setHoveredHole(`rail:${rail}`); document.body.style.cursor = 'pointer'; }}
+            onPointerOut={(e) => { e.stopPropagation(); setHoveredHole(null); document.body.style.cursor = 'auto'; }}
+          >
+            <boxGeometry args={[BOARD_W + 0.16, 0.014, 0.1]} />
+            <meshStandardMaterial
+              color={isPos ? '#7a2020' : '#20242c'}
+              metalness={0.5} roughness={0.3}
+              emissive={isPos ? '#dc2626' : '#475569'}
+              emissiveIntensity={isHot ? 0.85 : 0.16}
+            />
+          </mesh>
+        );
+      })}
 
-      {/* Hole grid */}
+      {/* Hole grid -- socket ring + real metal-look pin */}
       {Array.from({ length: ROWS }, (_, i) => i + 1).map((row) =>
         COLS.map((col) => {
           const key = `hole:${row}:${col}`;
-          const isPending = pendingPos && !('rail' in pendingPos) && pendingPos.row === row && pendingPos.col === col;
+          const isPending = pendingPos != null && !('rail' in pendingPos) && pendingPos.row === row && pendingPos.col === col;
           const isHovered = hoveredHole === key;
+          const x = colX(col);
+          const z = rowZ(row);
+          const dotR = isPending ? 0.032 : isHovered ? 0.027 : 0.017;
           return (
-            <mesh
-              key={key}
-              position={[colX(col), 0.002, rowZ(row)]}
-              onClick={(e) => { e.stopPropagation(); onPositionClick({ row, col }); }}
-              onPointerOver={(e) => { e.stopPropagation(); setHoveredHole(key); document.body.style.cursor = 'pointer'; }}
-              onPointerOut={(e) => { e.stopPropagation(); setHoveredHole(null); document.body.style.cursor = 'auto'; }}
-            >
-              <cylinderGeometry args={[isPending ? 0.026 : isHovered ? 0.022 : 0.014, isPending ? 0.026 : isHovered ? 0.022 : 0.014, 0.01, 10]} />
-              <meshStandardMaterial color={isPending ? '#f59e0b' : isHovered ? '#f59e0b' : '#78716c'} />
-            </mesh>
+            <group key={key} position={[x, 0, z]}>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.0025, 0]}>
+                <ringGeometry args={[0.026, 0.036, 20]} />
+                <meshStandardMaterial color="#8a8578" roughness={0.65} side={THREE.DoubleSide} />
+              </mesh>
+              <mesh
+                position={[0, 0.004, 0]}
+                onClick={(e) => { e.stopPropagation(); onPositionClick({ row, col }); }}
+                onPointerOver={(e) => { e.stopPropagation(); setHoveredHole(key); document.body.style.cursor = 'pointer'; }}
+                onPointerOut={(e) => { e.stopPropagation(); setHoveredHole(null); document.body.style.cursor = 'auto'; }}
+              >
+                <cylinderGeometry args={[dotR, dotR, 0.012, 12]} />
+                <meshStandardMaterial color={isPending || isHovered ? '#f59e0b' : '#4b4a45'} metalness={0.45} roughness={0.45} />
+              </mesh>
+            </group>
           );
         }),
       )}
 
-      {/* Wires -- real 3D leads arching slightly above the board */}
+      {/* Wires -- real arched jumper cables with connector boots */}
       {wires.map((w) => {
-        const [p1, p2] = resolvePairVecs(w.from, w.to, 0.028);
-        return (
-          <InteractiveRod
-            key={w.id}
-            a={p1} b={p2}
-            radius={deleteMode ? 0.011 : 0.008}
-            color={w.colorHex}
-            onClick={() => onWireClick(w.id)}
-          />
-        );
+        const [p1, p2] = resolvePairVecs(w.from, w.to, 0.014);
+        return <WireCable key={w.id} a={p1} b={p2} color={w.colorHex} deleteMode={deleteMode} onClick={() => onWireClick(w.id)} />;
       })}
 
       {/* Placed components */}
@@ -236,7 +365,7 @@ export default function Breadboard3DScene({
         if (pinIds.length < 2) return null;
         const posA = p.pinPositions[pinIds[0]];
         const posB = p.pinPositions[pinIds[1]];
-        const [pin1, pin2] = resolvePairVecs(posA, posB, 0.014);
+        const [pin1, pin2] = resolvePairVecs(posA, posB, 0.012);
         const mid = pin1.clone().add(pin2).multiplyScalar(0.5);
         const angleY = Math.atan2(pin2.z - pin1.z, pin2.x - pin1.x);
 
@@ -244,7 +373,9 @@ export default function Breadboard3DScene({
         const loadResult = evaluation.loads.find((l) => l.instanceId === p.instanceId);
         const isClosed = !!switchStates[p.instanceId];
         const ohms = p.valueOverride?.resistanceOhms ?? spec.electrical?.resistanceOhms;
-        const bands = spec.kind === 'resistor' && ohms ? resistorColorBands(ohms) : null;
+        const displaySpec: ComponentSpec = ohms != null && ohms !== spec.electrical?.resistanceOhms
+          ? { ...spec, electrical: { ...spec.electrical, resistanceOhms: ohms } }
+          : spec;
 
         let label = spec.name;
         if (ledResult) {
@@ -257,9 +388,11 @@ export default function Breadboard3DScene({
         } else if (loadResult) label = `${spec.name}: ${loadResult.active ? 'active' : 'off'}`;
         else if (spec.kind === 'switch-spst' || spec.kind === 'push-button') label = `${spec.name}: ${isClosed ? 'closed (on)' : 'open (off)'}`;
 
+        const bodyScale = BODY_SCALE_BY_KIND[spec.kind];
+
         return (
           <group key={p.instanceId}>
-            <InteractiveRod a={pin1} b={pin2} radius={0.006} color="#71717a" />
+            <InteractiveRod a={pin1} b={pin2} radius={0.005} color="#9ca3af" metalness={0.6} roughness={0.35} />
             <group position={mid} rotation={[0, -angleY, 0]}>
               <Hotspot3D
                 id={p.instanceId} label={label} position={[0, 0, 0]}
@@ -268,64 +401,35 @@ export default function Breadboard3DScene({
                 sound={false}
               >
                 {deleteMode && (
-                  <mesh position={[0, 0.045, 0]}>
-                    <ringGeometry args={[0.05, 0.062, 20]} />
+                  <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
+                    <ringGeometry args={[0.055, 0.068, 24]} />
                     <meshBasicMaterial color="#dc2626" side={THREE.DoubleSide} />
                   </mesh>
                 )}
 
-                {spec.kind === 'resistor' && (
-                  <group>
-                    <mesh position={[0, 0.03, 0]} castShadow>
-                      <boxGeometry args={[0.09, 0.045, 0.045]} />
-                      <meshStandardMaterial color="#D2B48C" roughness={0.6} />
-                    </mesh>
-                    {bands && [bands.band1, bands.band2, bands.multiplier].map((b, i) => (
-                      <mesh key={i} position={[-0.028 + i * 0.02, 0.03, 0.023]}>
-                        <boxGeometry args={[0.008, 0.047, 0.001]} />
-                        <meshStandardMaterial color={BAND_HEX[b]} />
-                      </mesh>
-                    ))}
+                {bodyScale != null ? (
+                  <group scale={bodyScale}>
+                    <ComponentModel spec={displaySpec} />
                   </group>
-                )}
-
-                {spec.kind === 'led' && <LedGlow colorHex={spec.colorHex || '#dc2626'} lit={!!ledResult?.lit} blinkPeriodSeconds={timing ? Math.max(0.05, Math.min(10, timing.periodSeconds)) : null} blinkDuty={timing?.dutyCycle ?? 1} />}
-
-                {(spec.kind === 'switch-spst' || spec.kind === 'push-button') && (
-                  <mesh position={[0, 0.025, 0]} castShadow>
-                    <boxGeometry args={[0.06, 0.05, 0.06]} />
-                    <meshStandardMaterial color={isClosed ? '#16a34a' : '#dc2626'} roughness={0.5} />
-                  </mesh>
-                )}
-
-                {spec.kind === 'buzzer' && <PulsingBody active={!!loadResult?.active} color="#0f766e" shape="box" />}
-                {(spec.kind === 'dc-motor' || spec.kind === 'motor-servo' || spec.kind === 'motor-stepper') && <PulsingBody active={!!loadResult?.active} color="#475569" shape="cylinder" />}
-
-                {(spec.kind === 'battery-9v' || spec.kind === 'battery-6v') && (
-                  <mesh position={[0, 0.035, 0]} castShadow>
-                    <boxGeometry args={[0.12, 0.07, 0.06]} />
-                    <meshStandardMaterial color="#1a1a1a" roughness={0.6} />
-                  </mesh>
-                )}
-                {spec.kind === 'timer-555' && (
-                  <mesh position={[0, 0.03, 0]} castShadow>
-                    <boxGeometry args={[0.07, 0.05, 0.07]} />
-                    <meshStandardMaterial color="#1e293b" roughness={0.5} />
-                  </mesh>
-                )}
-                {spec.kind === 'capacitor' && (
-                  <mesh position={[0, 0.035, 0]} castShadow>
-                    <boxGeometry args={[0.055, 0.07, 0.03]} />
-                    <meshStandardMaterial color="#2563eb" roughness={0.4} />
-                  </mesh>
-                )}
+                ) : spec.kind === 'led' ? (
+                  <LedGlow colorHex={spec.colorHex || '#dc2626'} lit={!!ledResult?.lit} blinkPeriodSeconds={timing ? Math.max(0.05, Math.min(10, timing.periodSeconds)) : null} blinkDuty={timing?.dutyCycle ?? 1} />
+                ) : spec.kind === 'switch-spst' ? (
+                  <SwitchBody closed={isClosed} isButton={false} />
+                ) : spec.kind === 'push-button' ? (
+                  <SwitchBody closed={isClosed} isButton />
+                ) : spec.kind === 'buzzer' ? (
+                  <BuzzerBody active={!!loadResult?.active} />
+                ) : (spec.kind === 'dc-motor' || spec.kind === 'motor-servo' || spec.kind === 'motor-stepper') ? (
+                  <MotorBody active={!!loadResult?.active} />
+                ) : null}
               </Hotspot3D>
             </group>
           </group>
         );
       })}
 
-      <OrbitControls enablePan={true} minZoom={90} maxZoom={420} target={[0, 0, 0]} makeDefault />
+      <ContactShadows position={[0, -0.145, 0]} opacity={0.4} scale={7} blur={2.4} far={0.6} resolution={512} />
+      <OrbitControls enableDamping dampingFactor={0.12} enablePan minZoom={80} maxZoom={380} target={[0, 0, 0]} makeDefault />
     </SafeR3FCanvas>
   );
 }
