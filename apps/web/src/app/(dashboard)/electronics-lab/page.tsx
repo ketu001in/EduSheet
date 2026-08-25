@@ -1,18 +1,40 @@
 'use client';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Zap, Wrench, FolderOpen, Sparkles, CheckCircle2, ShieldAlert, Lightbulb } from 'lucide-react';
-import { ELECTRONICS_COMPONENTS, ELECTRONICS_PROJECTS } from '@edusheets/content';
+import { Zap, Wrench, FolderOpen, Sparkles, CheckCircle2, ShieldAlert, Lightbulb, ArrowLeft } from 'lucide-react';
+import { ELECTRONICS_COMPONENTS, ELECTRONICS_PROJECTS, ELECTRONICS_CATEGORY_LABELS, type ComponentSpec } from '@edusheets/content';
 import Tilt3DCard from '@/components/labshared/Tilt3DCard';
-import { EquipmentModal } from '@/components/labshared/LabHotspot';
 import SpeakButton from '@/components/labshared/SpeakButton';
 import { playSelectChime } from '@/lib/uiSoundEngine';
 import { astable555 } from '@/lib/circuitEngine';
+import { formatOhms, formatFarads } from '@/lib/componentFormat';
+import ElectronicsComponentModal from '@/components/electronicslab/ElectronicsComponentModal';
+import type { DrawerCategory } from '@/components/electronicslab/ElectronicsCupboard3DScene';
 
 const ElectronicsCupboard3DScene = dynamic(() => import('@/components/electronicslab/ElectronicsCupboard3DScene'), {
   ssr: false,
-  loading: () => <div className="w-full h-[360px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
+  loading: () => <div className="w-full h-[330px] rounded-2xl bg-slate-50 dark:bg-slate-900/40 animate-pulse" />,
 });
+
+const CATEGORY_ACCENT: Record<string, string> = {
+  power: '#1a1a1a',
+  passive: '#d2b48c',
+  semiconductor: '#dc2626',
+  ic: '#1e293b',
+  input: '#2563eb',
+  electromechanical: '#475569',
+  wiring: '#94a3b8',
+};
+
+function componentSpecLine(c: ComponentSpec): string | null {
+  const e = c.electrical;
+  if (!e) return null;
+  if (e.resistanceOhms != null) return formatOhms(e.resistanceOhms);
+  if (e.capacitanceFarads != null) return formatFarads(e.capacitanceFarads);
+  if (e.forwardVoltage != null) return `Vf ≈ ${e.forwardVoltage}V`;
+  if (e.voltage != null) return `${e.voltage}V`;
+  return null;
+}
 
 type Tab = 'cupboard' | 'projects';
 
@@ -24,12 +46,25 @@ type Tab = 'cupboard' | 'projects';
 // clearly flagged below rather than silently missing.
 export default function ElectronicsLabPage() {
   const [tab, setTab] = useState<Tab>('cupboard');
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [hoveredDrawerId, setHoveredDrawerId] = useState<string | null>(null);
+  const [openDrawerId, setOpenDrawerId] = useState<string | null>(null);
   const [openComponentId, setOpenComponentId] = useState<string | null>(null);
   const [activeProjectId, setActiveProjectId] = useState(ELECTRONICS_PROJECTS[0]?.id);
 
   const activeProject = ELECTRONICS_PROJECTS.find((p) => p.id === activeProjectId) || ELECTRONICS_PROJECTS[0];
   const switchTab = (t: Tab) => { setTab(t); playSelectChime(); };
+
+  const categories: DrawerCategory[] = Object.entries(ELECTRONICS_CATEGORY_LABELS).map(([id, label]) => ({
+    id, label, accentHex: CATEGORY_ACCENT[id] || '#94a3b8',
+    count: ELECTRONICS_COMPONENTS.filter((c) => c.category === id).length,
+  }));
+  const openDrawerItems = openDrawerId ? ELECTRONICS_COMPONENTS.filter((c) => c.category === openDrawerId) : [];
+  const openComponent = openComponentId ? ELECTRONICS_COMPONENTS.find((c) => c.id === openComponentId) || null : null;
+
+  const clickDrawer = (id: string) => {
+    setOpenDrawerId((prev) => (prev === id ? null : id));
+    playSelectChime();
+  };
 
   return (
     <div className="max-w-5xl mx-auto pb-16 space-y-6">
@@ -52,16 +87,50 @@ export default function ElectronicsLabPage() {
 
       {tab === 'cupboard' && (
         <div className="space-y-3">
-          <p className="text-sm text-slate-500">Click any component to learn what it really does. Drag to rotate the cupboard.</p>
+          <p className="text-sm text-slate-500">
+            {openDrawerId ? `${ELECTRONICS_CATEGORY_LABELS[openDrawerId]} -- click any part to see it in 3D with full detail.` : 'Click a drawer to open it. Every real value is in there, not just one example part per category.'}
+          </p>
           <ElectronicsCupboard3DScene
-            components={ELECTRONICS_COMPONENTS}
-            hoveredId={hoveredId}
-            onHover={setHoveredId}
-            onUnhover={() => setHoveredId(null)}
-            onClick={setOpenComponentId}
+            categories={categories}
+            openId={openDrawerId}
+            hoveredId={hoveredDrawerId}
+            onHover={setHoveredDrawerId}
+            onUnhover={() => setHoveredDrawerId(null)}
+            onClick={clickDrawer}
           />
-          {openComponentId && (
-            <EquipmentModal equipmentId={openComponentId} equipment={ELECTRONICS_COMPONENTS} onClose={() => setOpenComponentId(null)} />
+
+          {openDrawerId && (
+            <div className="glass-card rounded-3xl p-5 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-display text-lg font-semibold flex items-center gap-2">
+                  <button onClick={() => { setOpenDrawerId(null); playSelectChime(); }} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  {ELECTRONICS_CATEGORY_LABELS[openDrawerId]}
+                </h3>
+                <span className="text-xs font-bold text-slate-400">{openDrawerItems.length} real parts</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                {openDrawerItems.map((c) => {
+                  const specLine = componentSpecLine(c);
+                  return (
+                    <Tilt3DCard
+                      key={c.id}
+                      onClick={() => { setOpenComponentId(c.id); playSelectChime(); }}
+                      title={c.name}
+                      className="p-3 rounded-xl text-left bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+                    >
+                      <p className="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">{c.name}</p>
+                      {specLine && <p className="text-[11px] font-mono text-primary-600 mt-0.5">{specLine}</p>}
+                    </Tilt3DCard>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {openComponent && (
+            <ElectronicsComponentModal component={openComponent} onClose={() => setOpenComponentId(null)} />
           )}
         </div>
       )}
@@ -101,9 +170,17 @@ export default function ElectronicsLabPage() {
             </div>
 
             {activeProject.id === 'led-blinker-555' && (() => {
-              const r1 = activeProject.referenceCircuit.placements.find((p) => p.instanceId === 'r1')?.valueOverride?.resistanceOhms ?? 1000;
-              const r2 = activeProject.referenceCircuit.placements.find((p) => p.instanceId === 'r2')?.valueOverride?.resistanceOhms ?? 100000;
-              const cap = activeProject.referenceCircuit.placements.find((p) => p.instanceId === 'cap1')?.valueOverride?.capacitanceFarads ?? 10e-6;
+              // Real values come from the actual referenced catalog parts
+              // (a project's placement just says WHICH real resistor/
+              // capacitor it uses, by id) -- never a magic fallback number
+              // that could silently drift out of sync with the catalog.
+              const valueOf = (instanceId: string) => {
+                const placement = activeProject.referenceCircuit.placements.find((p) => p.instanceId === instanceId);
+                return ELECTRONICS_COMPONENTS.find((c) => c.id === placement?.componentId)?.electrical;
+              };
+              const r1 = valueOf('r1')?.resistanceOhms ?? 0;
+              const r2 = valueOf('r2')?.resistanceOhms ?? 0;
+              const cap = valueOf('cap1')?.capacitanceFarads ?? 0;
               const timing = astable555(r1, r2, cap);
               return (
                 <div className="grid grid-cols-3 gap-3 text-center">

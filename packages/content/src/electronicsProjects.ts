@@ -16,7 +16,7 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'senior',
     board: 'both',
     chapterTags: ['Electricity', 'Electric Circuits', 'Current Electricity'],
-    componentIds: ['battery-9v', 'resistor', 'capacitor-electrolytic', 'led-red', 'timer-555', 'breadboard-half'],
+    componentIds: ['battery-9v', 'resistor-1000', 'resistor-100000', 'resistor-470', 'cap-electro-10uf', 'led-red', 'timer-555', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'timer-555', instanceId: 'ic555', pinPositions: {
@@ -29,19 +29,19 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
           'pin7-disch': { row: 11, col: 'f' },
           'pin8-vcc': { row: 10, col: 'f' },
         } },
-        { componentId: 'resistor', instanceId: 'r1', valueOverride: { resistanceOhms: 1000 }, pinPositions: {
+        { componentId: 'resistor-1000', instanceId: 'r1', pinPositions: {
           a: { rail: 'top-pos' },
           b: { row: 11, col: 'h' },
         } },
-        { componentId: 'resistor', instanceId: 'r2', valueOverride: { resistanceOhms: 100000 }, pinPositions: {
+        { componentId: 'resistor-100000', instanceId: 'r2', pinPositions: {
           a: { row: 11, col: 'g' },
           b: { row: 12, col: 'h' },
         } },
-        { componentId: 'capacitor-electrolytic', instanceId: 'cap1', valueOverride: { capacitanceFarads: 10e-6 }, pinPositions: {
+        { componentId: 'cap-electro-10uf', instanceId: 'cap1', pinPositions: {
           a: { row: 12, col: 'g' },
           b: { row: 15, col: 'a' },
         } },
-        { componentId: 'resistor', instanceId: 'ledResistor', valueOverride: { resistanceOhms: 470 }, pinPositions: {
+        { componentId: 'resistor-470', instanceId: 'ledResistor', pinPositions: {
           a: { row: 12, col: 'b' },
           b: { row: 17, col: 'a' },
         } },

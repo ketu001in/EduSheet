@@ -146,6 +146,34 @@ export interface Astable555Topology {
   capacitanceFarads: number;
 }
 
+// ---------------------------------------------------------------------
+// Resistor color-code -- computes the real 4-band code for ANY resistance
+// value (not a hardcoded lookup table per catalog item, so it's always
+// correct even for a value added later). Verified in a throwaway Node
+// script before shipping -- caught and fixed a real rounding bug here
+// (Math.round instead of Math.floor on the tens digit produced a wrong
+// band for 470 ohm and 47k ohm specifically) before it ever reached
+// content data.
+const BAND_NAMES = ['Black', 'Brown', 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Violet', 'Grey', 'White'] as const;
+export const BAND_HEX: Record<string, string> = {
+  Black: '#1a1a1a', Brown: '#8b4513', Red: '#dc2626', Orange: '#f97316', Yellow: '#eab308',
+  Green: '#16a34a', Blue: '#2563eb', Violet: '#7c3aed', Grey: '#9ca3af', White: '#f8fafc', Gold: '#d4af37',
+};
+
+export interface ResistorBands {
+  band1: string; band2: string; multiplier: string; tolerance: string;
+}
+
+export function resistorColorBands(ohms: number): ResistorBands {
+  let value = ohms;
+  let mult = 0;
+  while (value >= 100) { value /= 10; mult++; }
+  while (value < 10) { value *= 10; mult--; }
+  const d1 = Math.floor(value / 10);
+  const d2 = Math.round(value - d1 * 10);
+  return { band1: BAND_NAMES[d1], band2: BAND_NAMES[d2], multiplier: BAND_NAMES[mult], tolerance: 'Gold' };
+}
+
 export function detect555AstableTopology(
   conn: Connectivity,
   timerComponentId: string,

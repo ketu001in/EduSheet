@@ -48,8 +48,8 @@ export type ComponentKind =
   | 'resistor' | 'capacitor'
   | 'led' | 'diode'
   | 'timer-555'
-  | 'switch-spst' | 'push-button'
-  | 'buzzer' | 'dc-motor' | 'relay'
+  | 'switch-spst' | 'switch-spdt' | 'push-button'
+  | 'buzzer' | 'dc-motor' | 'motor-servo' | 'motor-stepper' | 'relay'
   | 'breadboard';
 
 // A pin/lead on a component, named the way a real datasheet names it
@@ -79,7 +79,7 @@ export interface ComponentSpec {
     forwardVoltage?: number; // LEDs/diodes, in volts
     maxCurrentAmps?: number; // LEDs -- the rated safe maximum
   };
-  modelHint?: 'box' | 'cylinder' | 'led-dome' | 'ic-dip8' | 'switch-toggle' | 'motor' | 'buzzer' | 'relay' | 'breadboard';
+  modelHint?: 'box' | 'cylinder' | 'led-dome' | 'ic-dip8' | 'switch-toggle' | 'push-button' | 'motor' | 'servo' | 'stepper' | 'buzzer' | 'relay' | 'breadboard';
   colorHex?: string; // real, typical color for this part (e.g. a red LED's real dome color)
 }
 
