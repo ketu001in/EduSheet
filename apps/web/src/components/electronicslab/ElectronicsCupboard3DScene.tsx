@@ -59,24 +59,34 @@ export default function ElectronicsCupboard3DScene({
         return (
           <group key={cat.id} position={[x, y, isOpen ? 0.35 : 0]}>
             <Hotspot3D id={cat.id} label={`${cat.label} (${cat.count})`} position={[0, 0, 0]} hoveredId={hoveredId} onHover={onHover} onUnhover={onUnhover} onClick={onClick}>
+              {/* Drawer body -- real wood-tone front */}
               <mesh castShadow>
                 <boxGeometry args={[1.85, 0.9, 0.6]} />
                 <meshStandardMaterial color={isOpen ? '#8b6a4a' : '#7a5638'} roughness={0.75} />
               </mesh>
-              <mesh position={[0, 0.28, 0.31]}>
-                <boxGeometry args={[1.6, 0.08, 0.02]} />
-                <meshStandardMaterial color={cat.accentHex} />
+              {/* Color-coded nameplate -- a real label panel, not a thin
+                  accent line, so each drawer's category reads at a glance */}
+              <mesh position={[0, 0.16, 0.305]} castShadow>
+                <boxGeometry args={[1.65, 0.42, 0.02]} />
+                <meshStandardMaterial color={cat.accentHex} roughness={0.5} />
               </mesh>
-              <mesh position={[0, -0.15, 0.32]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                <cylinderGeometry args={[0.025, 0.025, 0.35, 10]} />
-                <meshStandardMaterial color="#d4af37" metalness={0.7} roughness={0.3} />
-              </mesh>
-              <Text position={[0, -0.02, 0.33]} fontSize={0.13} color="white" outlineWidth={0.006} outlineColor="#1a1a1a" anchorX="center" anchorY="middle" maxWidth={1.6}>
+              <Text position={[0, 0.16, 0.32]} fontSize={0.115} color="white" outlineWidth={0.006} outlineColor="#1a1a1a" anchorX="center" anchorY="middle" maxWidth={1.5}>
                 {cat.label}
               </Text>
-              <Text position={[0, -0.32, 0.33]} fontSize={0.09} color="#fde68a" anchorX="center" anchorY="middle">
+              <Text position={[0, -0.14, 0.32]} fontSize={0.09} color="#fde68a" anchorX="center" anchorY="middle">
                 {cat.count} parts
               </Text>
+              {/* Flush drawer pull -- a real recessed handle shape instead
+                  of a floating rod (the earlier version read as a stray
+                  pen sitting on the drawer, not a handle). */}
+              <mesh position={[0, -0.32, 0.31]}>
+                <boxGeometry args={[0.5, 0.09, 0.05]} />
+                <meshStandardMaterial color="#2b2419" roughness={0.6} />
+              </mesh>
+              <mesh position={[0, -0.32, 0.335]}>
+                <boxGeometry args={[0.42, 0.045, 0.02]} />
+                <meshStandardMaterial color="#d4af37" metalness={0.65} roughness={0.35} />
+              </mesh>
             </Hotspot3D>
           </group>
         );

@@ -37,7 +37,7 @@ export function electronicsGradeBandForClass(gradeNumber: number): ElectronicsGr
 
 // -- Components ---------------------------------------------------------
 
-export type ComponentCategory = 'power' | 'passive' | 'semiconductor' | 'ic' | 'electromechanical' | 'input' | 'wiring';
+export type ComponentCategory = 'power' | 'passive' | 'semiconductor' | 'ic' | 'electromechanical' | 'input' | 'wiring' | 'tools';
 
 // The closed vocabulary of component *kinds* the circuit engine knows how
 // to model electrically -- a real, small, honestly-scoped set (DC
@@ -50,7 +50,8 @@ export type ComponentKind =
   | 'timer-555'
   | 'switch-spst' | 'switch-spdt' | 'push-button'
   | 'buzzer' | 'dc-motor' | 'motor-servo' | 'motor-stepper' | 'relay'
-  | 'breadboard';
+  | 'breadboard' | 'perfboard' | 'pcb-blank'
+  | 'soldering-iron' | 'solder-wire';
 
 // A pin/lead on a component, named the way a real datasheet names it
 // (e.g. the 555's 8 pins by their real names) -- the circuit engine's
@@ -79,7 +80,7 @@ export interface ComponentSpec {
     forwardVoltage?: number; // LEDs/diodes, in volts
     maxCurrentAmps?: number; // LEDs -- the rated safe maximum
   };
-  modelHint?: 'box' | 'cylinder' | 'led-dome' | 'ic-dip8' | 'switch-toggle' | 'push-button' | 'motor' | 'servo' | 'stepper' | 'buzzer' | 'relay' | 'breadboard';
+  modelHint?: 'box' | 'cylinder' | 'led-dome' | 'ic-dip8' | 'switch-toggle' | 'push-button' | 'motor' | 'servo' | 'stepper' | 'buzzer' | 'relay' | 'breadboard' | 'perfboard' | 'pcb-blank' | 'soldering-iron' | 'solder-spool';
   colorHex?: string; // real, typical color for this part (e.g. a red LED's real dome color)
 }
 

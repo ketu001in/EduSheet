@@ -18,12 +18,13 @@ const ElectronicsCupboard3DScene = dynamic(() => import('@/components/electronic
 
 const CATEGORY_ACCENT: Record<string, string> = {
   power: '#1a1a1a',
-  passive: '#d2b48c',
+  passive: '#d97706',
   semiconductor: '#dc2626',
   ic: '#1e293b',
   input: '#2563eb',
   electromechanical: '#475569',
   wiring: '#94a3b8',
+  tools: '#0d9488',
 };
 
 function componentSpecLine(c: ComponentSpec): string | null {

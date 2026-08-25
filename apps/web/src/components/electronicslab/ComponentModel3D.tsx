@@ -196,6 +196,74 @@ export default function ComponentModel({ spec }: { spec: ComponentSpec }) {
           </mesh>
         </group>
       );
+    case 'perfboard':
+      return (
+        <group>
+          <mesh castShadow position={[0, 0.06, 0]}>
+            <boxGeometry args={[0.85, 0.08, 0.55]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
+          </mesh>
+          {/* A real perfboard's grid of drilled holes, each with its own
+              copper pad -- rendered as a genuine grid, not a texture. */}
+          {Array.from({ length: 8 }, (_, row) =>
+            Array.from({ length: 12 }, (_, col) => (
+              <mesh key={`${row}-${col}`} position={[-0.36 + col * 0.065, 0.105, -0.2 + row * 0.058]}>
+                <cylinderGeometry args={[0.012, 0.012, 0.02, 8]} />
+                <meshStandardMaterial color="#d4af37" metalness={0.6} roughness={0.4} />
+              </mesh>
+            )),
+          )}
+        </group>
+      );
+    case 'pcb-blank':
+      return (
+        <group>
+          <mesh castShadow position={[0, 0.05, 0]}>
+            <boxGeometry args={[0.85, 0.06, 0.55]} />
+            <meshStandardMaterial color="#0f4c2c" roughness={0.6} />
+          </mesh>
+          {/* Bare copper cladding on top -- the real starting material
+              before any traces are etched or cut into it. */}
+          <mesh position={[0, 0.086, 0]}>
+            <boxGeometry args={[0.8, 0.01, 0.5]} />
+            <meshStandardMaterial color={color} metalness={0.85} roughness={0.3} />
+          </mesh>
+        </group>
+      );
+    case 'soldering-iron':
+      return (
+        <group>
+          {/* Handle */}
+          <mesh castShadow position={[-0.1, 0.18, 0]} rotation={[0, 0, Math.PI / 5]}>
+            <cylinderGeometry args={[0.055, 0.065, 0.5, 16]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.6} />
+          </mesh>
+          {/* Heating element barrel */}
+          <mesh castShadow position={[0.14, 0.36, 0]} rotation={[0, 0, Math.PI / 5]}>
+            <cylinderGeometry args={[0.028, 0.028, 0.28, 12]} />
+            <meshStandardMaterial color="#71717a" metalness={0.7} roughness={0.35} />
+          </mesh>
+          {/* Fine metal tip */}
+          <mesh castShadow position={[0.27, 0.47, 0]} rotation={[0, 0, Math.PI / 5]}>
+            <coneGeometry args={[0.016, 0.12, 10]} />
+            <meshStandardMaterial color={color} metalness={0.6} roughness={0.3} />
+          </mesh>
+        </group>
+      );
+    case 'solder-spool':
+      return (
+        <group>
+          <mesh castShadow position={[0, 0.28, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.28, 0.28, 0.1, 24]} />
+            <meshStandardMaterial color="#334155" roughness={0.6} />
+          </mesh>
+          {/* Wound solder wire, visible as a slightly narrower coil between the flanges */}
+          <mesh position={[0, 0.28, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.24, 0.24, 0.07, 24]} />
+            <meshStandardMaterial color={color} metalness={0.5} roughness={0.4} />
+          </mesh>
+        </group>
+      );
     default:
       return (
         <mesh castShadow position={[0, 0.3, 0]}>
