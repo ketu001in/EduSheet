@@ -1,11 +1,12 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { OrbitControls, OrthographicCamera, RoundedBox, ContactShadows } from '@react-three/drei';
 import SafeR3FCanvas from '@/components/techlab/SafeR3FCanvas';
 import { Hotspot3D } from '@/components/physicslab/Hotspot3D';
 import ComponentModel from './ComponentModel3D';
+import ContinuousInvalidate from './ContinuousInvalidate';
 import { ELECTRONICS_COMPONENTS, type ComponentPlacement, type WireConnection, type BreadboardPosition, type ComponentSpec } from '@edusheets/content';
 import { type CircuitEvaluation } from '@/lib/circuitEngine';
 
@@ -252,18 +253,6 @@ export interface Breadboard3DSceneProps {
   onWireClick: (wireId: string) => void;
   deleteMode: boolean;
   height?: number;
-}
-
-function ContinuousInvalidate({ active }: { active: boolean }) {
-  const invalidate = useThree((s) => s.invalidate);
-  useEffect(() => {
-    if (!active) return;
-    let raf = 0;
-    const tick = () => { invalidate(); raf = requestAnimationFrame(tick); };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, invalidate]);
-  return null;
 }
 
 export default function Breadboard3DScene({

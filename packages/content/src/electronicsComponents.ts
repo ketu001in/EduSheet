@@ -325,3 +325,18 @@ export const ELECTRONICS_CATEGORY_LABELS: Record<string, string> = {
   wiring: 'Boards & Wiring',
   tools: 'Soldering Tools',
 };
+
+// Shared drawer accent color per category -- lives here (not in a page
+// component) since it's now used in two places: the Cupboard tab's own
+// drawer browsing AND the same drawer scene re-embedded inside a
+// project's Breadboard Workbench as its real component picker.
+export const ELECTRONICS_CATEGORY_ACCENT: Record<string, string> = {
+  power: '#1a1a1a',
+  passive: '#d97706',
+  semiconductor: '#dc2626',
+  ic: '#1e293b',
+  input: '#2563eb',
+  electromechanical: '#475569',
+  wiring: '#94a3b8',
+  tools: '#0d9488',
+};
