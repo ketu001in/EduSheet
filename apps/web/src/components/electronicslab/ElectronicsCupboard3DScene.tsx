@@ -188,28 +188,31 @@ function DrawerUnit({
         </mesh>
       </Hotspot3D>
 
-      {/* Drawer interior -- the cavity revealed once it's pulled open, and
-          the real parts sitting inside it, each a genuine clickable 3D
-          object. Only mounted once meaningfully open, so a closed drawer
-          costs nothing. */}
+      {/* Drawer interior -- the real parts, laid out on a real tray that
+          slides out IN FRONT of the drawer face once it's pulled open,
+          each a genuine clickable 3D object. Positioned well clear of
+          the front panel's own box geometry (which spans local z -0.3
+          to +0.3) -- an earlier version placed items inside that same
+          depth range, which put them geometrically INSIDE the opaque
+          front panel, rendered but fully occluded (the real cause of
+          "no parts are listed" -- caught from live use, not visible in
+          this session's own non-visual verification). Only mounted
+          once meaningfully open, so a closed drawer costs nothing. */}
       {interiorVisible && (
-        <group position={[0, 0, -0.15]}>
-          <mesh position={[0, 0, 0.42]} receiveShadow>
-            <boxGeometry args={[1.9, 0.94, 0.05]} />
-            <meshStandardMaterial color="#4a3625" roughness={0.85} />
-          </mesh>
-          <mesh position={[0, -0.42, 0.2]} rotation={[-Math.PI / 2.3, 0, 0]} receiveShadow>
-            <boxGeometry args={[1.85, 0.5, 0.03]} />
-            <meshStandardMaterial color="#3a2a1c" roughness={0.9} />
+        <group position={[0, 0, 0.62]}>
+          {/* A real tray surface the parts visibly sit on */}
+          <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <boxGeometry args={[1.9, 0.85, 0.02]} />
+            <meshStandardMaterial color="#3a2a1c" roughness={0.85} />
           </mesh>
           {items.map((item, i) => {
             const col = i % cols;
             const row = Math.floor(i / cols);
             const ix = (col - (cols - 1) / 2) * cellW;
-            const iy = 0.28 - row * cellH;
+            const iz = 0.28 - row * cellH;
             const itemHovered = hoveredItemId === item.id;
             return (
-              <group key={item.id} position={[ix, iy, 0.3]}>
+              <group key={item.id} position={[ix, 0, iz]}>
                 <Hotspot3D
                   id={item.id} label={item.name} position={[0, 0, 0]}
                   hoveredId={hoveredItemId} onHover={(id) => onHoverItem(id)} onUnhover={() => onHoverItem(null)}
@@ -218,7 +221,7 @@ function DrawerUnit({
                 >
                   <MiniItemShape spec={item} />
                   {itemHovered && (
-                    <mesh position={[0, -0.05, 0]}>
+                    <mesh position={[0, -0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                       <ringGeometry args={[0.032, 0.04, 16]} />
                       <meshBasicMaterial color="#f59e0b" side={THREE.DoubleSide} />
                     </mesh>
