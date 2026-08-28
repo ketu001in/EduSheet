@@ -129,15 +129,26 @@ export default function OscilloscopeDisplay({ trace, wide = false }: { trace: Os
         </svg>
       </div>
 
+      {/* "What am I looking at?" -- a real, readable-prose explanation of
+          what this specific trace actually means, not just its
+          technical name. This is the direct fix for the scope reading
+          as "irrelevant" and "not understandable" in real use: the
+          numbers were always correct, but nothing explained them in
+          plain language. Genuinely readable text (not tiny green
+          monospace on black), on its own light panel so it reads as
+          real instructional content, not an instrument readout. */}
+      <div className="mx-3 mb-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3">
+        <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">{trace.label} -- what does this mean?</p>
+        <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">{trace.explanation}</p>
+      </div>
+
       {wide ? (
         <div className="px-3 pb-3 flex flex-wrap items-center gap-4">
-          <p className="text-[11px] font-mono text-emerald-400/90 leading-snug flex-1 min-w-[220px]">{trace.label}</p>
           <div className="w-64">{controls}</div>
           <div className="w-72">{readouts}</div>
         </div>
       ) : (
         <div className="px-3 pb-3 space-y-2">
-          <p className="text-[11px] font-mono text-emerald-400/90 leading-snug">{trace.label}</p>
           {controls}
           {readouts}
         </div>

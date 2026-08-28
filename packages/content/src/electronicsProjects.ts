@@ -10,6 +10,37 @@ import { ElectronicsProject } from './electronicsTypes';
 // node to GND -- the real, standard topology, not an approximation of it.
 export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
   {
+    id: 'free-play-sandbox',
+    title: 'Free Play Sandbox',
+    branch: 'basic-circuits',
+    gradeBand: 'middle',
+    board: 'general',
+    chapterTags: [],
+    // A real starter kit for Quick Pick -- one of each common real part,
+    // so the sandbox is immediately usable without hunting. "Browse Full
+    // Cupboard" already gives every real part in the whole catalog
+    // regardless of this list, on every project, not just this one.
+    componentIds: [
+      'battery-9v', 'battery-6v', 'resistor-470', 'resistor-1000', 'resistor-4700',
+      'cap-electro-10uf', 'led-red', 'led-green', 'led-blue', 'switch-spst', 'push-button',
+      'buzzer-piezo', 'motor-dc', 'timer-555', 'oscilloscope', 'breadboard-half',
+    ],
+    referenceCircuit: { placements: [], wires: [] },
+    buildSteps: [],
+    purpose: 'An open bench -- no fixed circuit, no guided steps. Pick any real part from Quick Pick or the full Cupboard, wire up whatever real circuit you want, and read its real, live behavior on the oscilloscope. This is the same real engine every guided project uses underneath, just with nothing pre-decided for you.',
+    workingModelDescription: 'Whatever you actually build. Every part behaves exactly as real as it does in every other project here -- a real LED only lights the right way round with a safe resistor, a real 555 only oscillates if it\'s genuinely wired as an astable multivibrator, a real oscilloscope only shows a signal once its leads are actually touching two real points in your circuit.',
+    forceSection: 'Whichever real force is actually at work in whatever you build -- Ohm\'s Law and current-limiting if you wire an LED circuit, the motor effect if you add a motor, electrostatic RC charge/discharge if you build a 555 timer. Nothing here is scripted to a single "Force" answer, because nothing about what you build is scripted either.',
+    realWorldUse: [
+      'This is genuinely how real prototyping works -- an engineer with a breadboard, a box of real parts, and an oscilloscope, trying an idea to see if it actually behaves the way the theory says it should.',
+      'Every guided project in this lab started exactly this way: someone wiring real parts together on a real board to test a real idea, before it became a fixed, named circuit.',
+    ],
+    extensions: [
+      'Try to build one of the other guided projects here entirely from memory, without opening its build steps, then compare your wiring to the real reference circuit.',
+      'Deliberately wire something wrong (an LED backwards, a resistor missing) and read what the engine and the oscilloscope each say about it -- the real, honest failure modes are as instructive as a working circuit.',
+    ],
+    safetyNotes: ['Same real rules as everywhere else in this lab: never connect an LED with no current-limiting resistor, and always wire the rest of a circuit before connecting the battery last.'],
+  },
+  {
     id: 'simple-led-circuit',
     title: 'Simple LED Circuit',
     branch: 'basic-circuits',
@@ -289,6 +320,57 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
       'Match the battery voltage to the motor\'s real rating -- too high a voltage can overheat or damage a small hobby motor over time.',
       'Always wire the switch before connecting the battery, so the circuit starts in a safe, stopped (off) state.',
     ],
+  },
+  {
+    id: 'led-traffic-signal',
+    title: 'LED Traffic Signal',
+    branch: 'digital-logic',
+    gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Electricity', 'Electric Circuits'],
+    componentIds: ['battery-9v', 'switch-spst', 'resistor-470', 'led-red', 'led-yellow', 'led-green', 'oscilloscope', 'breadboard-half'],
+    referenceCircuit: {
+      placements: [
+        { componentId: 'battery-9v', instanceId: 'battery1', pinPositions: { pos: { rail: 'top-pos' }, neg: { rail: 'top-neg' } } },
+        { componentId: 'switch-spst', instanceId: 'sw-red', pinPositions: { a: { row: 1, col: 'a' }, b: { row: 3, col: 'a' } } },
+        { componentId: 'resistor-470', instanceId: 'r-red', pinPositions: { a: { row: 3, col: 'c' }, b: { row: 5, col: 'a' } } },
+        { componentId: 'led-red', instanceId: 'led-red1', pinPositions: { anode: { row: 5, col: 'c' }, cathode: { row: 7, col: 'a' } } },
+        { componentId: 'switch-spst', instanceId: 'sw-yellow', pinPositions: { a: { row: 1, col: 'f' }, b: { row: 3, col: 'f' } } },
+        { componentId: 'resistor-470', instanceId: 'r-yellow', pinPositions: { a: { row: 3, col: 'h' }, b: { row: 5, col: 'f' } } },
+        { componentId: 'led-yellow', instanceId: 'led-yellow1', pinPositions: { anode: { row: 5, col: 'h' }, cathode: { row: 7, col: 'f' } } },
+        { componentId: 'switch-spst', instanceId: 'sw-green', pinPositions: { a: { row: 9, col: 'a' }, b: { row: 11, col: 'a' } } },
+        { componentId: 'resistor-470', instanceId: 'r-green', pinPositions: { a: { row: 11, col: 'c' }, b: { row: 13, col: 'a' } } },
+        { componentId: 'led-green', instanceId: 'led-green1', pinPositions: { anode: { row: 13, col: 'c' }, cathode: { row: 15, col: 'a' } } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: { probe: { rail: 'top-pos' }, ground: { rail: 'top-neg' } } },
+      ],
+      wires: [
+        { id: 'w-red-pos', from: { row: 1, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
+        { id: 'w-red-neg', from: { row: 7, col: 'e' }, to: { rail: 'top-neg' }, colorHex: '#1a1a1a' },
+        { id: 'w-yellow-pos', from: { row: 1, col: 'j' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
+        { id: 'w-yellow-neg', from: { row: 7, col: 'j' }, to: { rail: 'top-neg' }, colorHex: '#1a1a1a' },
+        { id: 'w-green-pos', from: { row: 9, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
+        { id: 'w-green-neg', from: { row: 15, col: 'e' }, to: { rail: 'top-neg' }, colorHex: '#1a1a1a' },
+      ],
+    },
+    buildSteps: [
+      { number: 1, instruction: 'Build the RED branch: a switch, then a 470 Ω resistor, then the red LED, each two rows after the last. Wire its first row to the positive rail and the LED\'s cathode row to the negative rail.', addsPlacementIds: ['sw-red', 'r-red', 'led-red1'], addsWireIds: ['w-red-pos', 'w-red-neg'] },
+      { number: 2, instruction: 'Build a completely separate YELLOW branch the same way, on different rows -- its own switch, resistor, and yellow LED, wired to the same two rails.', addsPlacementIds: ['sw-yellow', 'r-yellow', 'led-yellow1'], addsWireIds: ['w-yellow-pos', 'w-yellow-neg'] },
+      { number: 3, instruction: 'Build a third, separate GREEN branch the same way again.', addsPlacementIds: ['sw-green', 'r-green', 'led-green1'], addsWireIds: ['w-green-pos', 'w-green-neg'] },
+      { number: 4, instruction: 'Connect the battery. Each switch now independently controls its own light -- close only one at a time to run through a real red -> green -> yellow -> red sequence by hand.', addsPlacementIds: ['battery1'], hint: 'A real traffic light never shows two colors at once -- try to keep only one switch closed at a time, the same real safety rule a real signal controller enforces automatically.' },
+    ],
+    purpose: 'Three independent, parallel LED branches sharing one battery -- each with its own switch, so closing one switch at a time reproduces the real red / green / yellow sequence of a traffic signal, operated by hand instead of by an automatic timer.',
+    workingModelDescription: 'Each branch is electrically independent (exactly like the Two LEDs in Parallel circuit, just with three branches instead of two), so any combination of switches can be closed at once -- closing only one at a time is a real choice you make, the same discipline a real signal controller is built to enforce automatically.',
+    forceSection: 'The same real current-limiting principle as every LED circuit in this lab, three times over: each branch has its own resistor sized for its own LED\'s real forward voltage, and each branch draws its own independent current from the shared rails -- exactly Kirchhoff\'s Current Law again, just with three branches instead of two.',
+    realWorldUse: [
+      'This is genuinely the electrical core of a real traffic signal head -- three real LED circuits sharing a supply, switched on and off in sequence. A real signal just replaces your hand on the switches with an automatic timer/controller circuit.',
+      'The same "only one output active at a time" discipline shows up in real elevator floor-indicator lights, oven/stove burner indicator lights, and any real status-light panel with mutually-exclusive states.',
+    ],
+    simulationHonestyNote: 'A real traffic signal sequences itself automatically with a timer or microcontroller -- this circuit deliberately leaves that part manual (real switches you operate by hand) rather than faking an automatic sequence this DC-steady-state engine cannot genuinely drive. The 555 Timer project is the real, honest next step toward an automatically-timed circuit -- wiring THIS traffic signal\'s LEDs to a 555\'s real output is a genuine extension worth trying once you\'ve built that project.',
+    extensions: [
+      'Once you\'ve built the 555 LED Blinker project, predict what would happen if you replaced one of these switches with the 555\'s real output pin instead -- that\'s the real first step toward an automatically-timed signal.',
+      'Add a push-button "pedestrian crossing" request branch and decide, in your own words, which of the three lights it should logically be wired to work alongside.',
+    ],
+    safetyNotes: ['Each parallel branch needs its own correctly-sized resistor, the same real rule as the parallel LED circuit -- never share one resistor across more than one of these branches.'],
   },
   {
     id: 'led-blinker-555',

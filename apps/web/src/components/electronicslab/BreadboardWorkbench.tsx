@@ -343,9 +343,11 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
             >
               <Trash2 className="w-3.5 h-3.5" /> Delete Tool
             </button>
-            <button onClick={loadReference} className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900">
-              <FileText className="w-3.5 h-3.5" /> Load Reference Circuit
-            </button>
+            {project.referenceCircuit.placements.length > 0 && (
+              <button onClick={loadReference} className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900">
+                <FileText className="w-3.5 h-3.5" /> Load Reference Circuit
+              </button>
+            )}
             <button onClick={clearBoard} className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border-2 border-slate-900 dark:border-slate-700 bg-white dark:bg-slate-900">
               <RotateCcw className="w-3.5 h-3.5" /> Clear Board
             </button>
@@ -367,14 +369,40 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
         <span className="ml-auto text-[11px] text-slate-400 flex items-center gap-1"><Move3d className="w-3.5 h-3.5" /> Drag to orbit &middot; scroll to zoom</span>
       </div>
 
+      {/* A real, unmissable confirmation of what's about to be placed --
+          the small text-only status line below was too easy to miss
+          after coming back from the drawer, so picking a part felt
+          disconnected from actually placing it. This is a full, colored,
+          bordered banner naming the exact part (with its real color
+          swatch) and exactly what to click next, plus a visible Cancel. */}
+      {!browsingDrawers && placingCatalogId && (() => {
+        const placingSpec = ELECTRONICS_COMPONENTS.find((c) => c.id === placingCatalogId);
+        if (!placingSpec) return null;
+        const nextPinLabel = pendingPos ? placingSpec.pins[1]?.label : placingSpec.pins[0]?.label;
+        return (
+          <div className="flex items-center gap-3 rounded-xl border-2 border-primary-600 bg-primary-50 dark:bg-primary-950/30 px-3 py-2.5">
+            <span className="w-4 h-4 rounded-full border-2 border-slate-900 dark:border-slate-600 shrink-0" style={{ background: placingSpec.colorHex || '#94a3b8' }} />
+            <p className="text-xs text-primary-900 dark:text-primary-200 flex-1">
+              <strong className="font-bold">Now placing: {placingSpec.name}</strong>
+              {' -- '}
+              {pendingPos ? `first lead placed. Click a hole for its "${nextPinLabel}" lead.` : `click a hole for its "${nextPinLabel}" lead.`}
+            </p>
+            <button
+              onClick={() => { setPlacingCatalogId(null); setPendingPos(null); }}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-bold border-2 border-primary-600 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/40 shrink-0"
+            >
+              Cancel
+            </button>
+          </div>
+        );
+      })()}
+
       <p className="text-xs text-slate-500 min-h-[1rem]">
         {browsingDrawers && !openDrawerId && 'Click a drawer to slide it open, then click any real part inside to pick it. Green-ringed drawers hold parts this project actually calls for -- but every drawer is real, so grab whatever you need.'}
         {browsingDrawers && openDrawerId && `${ELECTRONICS_CATEGORY_LABELS[openDrawerId]} -- click a part to pick it for placement.`}
         {!browsingDrawers && mode === 'wire' && !pendingPos && 'Wire Tool: click a hole or power rail, then click a second one to connect them.'}
         {!browsingDrawers && mode === 'wire' && pendingPos && 'Now click the second point to complete the wire.'}
         {!browsingDrawers && mode === 'delete' && 'Delete Tool: click any placed part or wire to remove it.'}
-        {!browsingDrawers && mode === 'interact' && placingCatalogId && !pendingPos && `Placing ${ELECTRONICS_COMPONENTS.find((c) => c.id === placingCatalogId)?.name}: click a hole for its "${ELECTRONICS_COMPONENTS.find((c) => c.id === placingCatalogId)?.pins[0]?.label}" lead.`}
-        {!browsingDrawers && mode === 'interact' && placingCatalogId && pendingPos && `Now click a hole for its "${ELECTRONICS_COMPONENTS.find((c) => c.id === placingCatalogId)?.pins[1]?.label}" lead.`}
         {!browsingDrawers && mode === 'interact' && !placingCatalogId && (hint || 'Pick a quick part below, browse the full cupboard, or click a switch/button already on the board to flip it.')}
       </p>
 

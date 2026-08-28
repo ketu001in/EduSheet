@@ -466,6 +466,13 @@ export interface OscilloscopeTrace {
   minVoltage: number;
   maxVoltage: number;
   label: string;
+  // A real, plain-language sentence explaining what the trace actually
+  // MEANS, not just what it's called -- a raw "9.00 Vpp" readout with a
+  // technical label is correct but genuinely unclear to a student who
+  // has never read a scope before. This is the single biggest thing
+  // that made the instrument feel "irrelevant" and "not understandable"
+  // in real use: the numbers were right, but nothing explained them.
+  explanation: string;
 }
 
 export function computeOscilloscopeTrace(
@@ -474,14 +481,20 @@ export function computeOscilloscopeTrace(
   battery: { posNode: string; negNode: string; voltage: number } | null,
   timer: { topology: Astable555Topology; timing: Astable555Result } | null,
 ): OscilloscopeTrace {
-  const flat = (v: number, label: string): OscilloscopeTrace => ({
-    kind: 'flat', voltageAtT: () => v, periodSeconds: null, frequencyHz: null, minVoltage: Math.min(0, v), maxVoltage: Math.max(0.001, v), label,
+  const flat = (v: number, label: string, explanation: string): OscilloscopeTrace => ({
+    kind: 'flat', voltageAtT: () => v, periodSeconds: null, frequencyHz: null, minVoltage: Math.min(0, v), maxVoltage: Math.max(0.001, v), label, explanation,
   });
 
   if (!probeNode || !groundNode) {
-    return { kind: 'unknown', voltageAtT: () => 0, periodSeconds: null, frequencyHz: null, minVoltage: 0, maxVoltage: 1, label: 'Not connected -- wire the probe and ground leads into the circuit' };
+    return {
+      kind: 'unknown', voltageAtT: () => 0, periodSeconds: null, frequencyHz: null, minVoltage: 0, maxVoltage: 1,
+      label: 'Not connected',
+      explanation: "This scope isn't wired into your circuit yet -- a real oscilloscope only shows something once you clip both its probe and ground leads onto two real points. Pick the Oscilloscope from the drawer, then click two holes to place its leads.",
+    };
   }
-  if (probeNode === groundNode) return flat(0, 'Probe and ground are on the same node -- 0V');
+  if (probeNode === groundNode) {
+    return flat(0, 'Probe and ground on the same point', 'Both leads are touching the exact same electrical point, so there is genuinely zero voltage BETWEEN them -- that\'s correct, not a bug. Move one lead to a different point in the circuit to read a real voltage.');
+  }
 
   if (timer) {
     const { topology, timing } = timer;
@@ -494,7 +507,8 @@ export function computeOscilloscopeTrace(
           return phase < timing.highTimeSeconds ? vcc : 0;
         },
         periodSeconds: timing.periodSeconds, frequencyHz: timing.frequencyHz, minVoltage: 0, maxVoltage: vcc,
-        label: '555 Output (Pin 3) -- real astable square wave',
+        label: '555 Output (Pin 3)',
+        explanation: `This is the 555's real output pin. The voltage is genuinely jumping between 0V and ${vcc}V, ${timing.frequencyHz.toFixed(2)} times every second -- that flipping on/off IS the blinking you see on the LED, just measured electrically instead of watched with your eyes. A flat line here would mean the timer had stopped oscillating.`,
       };
     }
     if (probeNode === topology.thresTrigNode && groundNode === topology.gndNode) {
@@ -515,20 +529,26 @@ export function computeOscilloscopeTrace(
           return (2 * vcc / 3) * Math.exp(-t2 / tau2);
         },
         periodSeconds: timing.periodSeconds, frequencyHz: timing.frequencyHz, minVoltage: vcc / 3, maxVoltage: (2 * vcc) / 3,
-        label: '555 Timing Capacitor (Pin 6/2) -- real RC charge/discharge curve',
+        label: '555 Timing Capacitor (Pin 6/2)',
+        explanation: `This is the actual capacitor charging and discharging, in a real curve, not a straight jump -- that's what a real capacitor's voltage always looks like. It rises toward ${vcc}V, but the 555 chip cuts it off the instant it reaches 2/3 of ${vcc}V and lets it fall back to 1/3 before charging again. That curve, not the resistor or capacitor values alone, is what actually sets the blink rate.`,
       };
     }
   }
 
   if (battery) {
-    if (probeNode === battery.posNode && groundNode === battery.negNode) return flat(battery.voltage, 'Battery terminals -- steady DC supply');
-    if (probeNode === battery.negNode && groundNode === battery.posNode) return flat(-battery.voltage, 'Battery terminals (reversed) -- steady DC supply');
-    if (probeNode === battery.posNode && groundNode === battery.posNode) return flat(0, 'Both leads on the positive rail -- 0V');
-    if (probeNode === battery.negNode && groundNode === battery.negNode) return flat(0, 'Both leads on ground -- 0V');
+    if (probeNode === battery.posNode && groundNode === battery.negNode) {
+      return flat(battery.voltage, 'Battery terminals', `A real, steady ${battery.voltage}V -- exactly what a scope SHOULD show on a plain DC circuit like this one. There's nothing oscillating here to draw a wave, so a flat line is the correct, real reading, not a sign something is missing. Try the 555 project to see an actual waveform instead.`);
+    }
+    if (probeNode === battery.negNode && groundNode === battery.posNode) {
+      return flat(-battery.voltage, 'Battery terminals (reversed)', 'Same battery, but the probe and ground leads are swapped from the usual way round -- the reading is the same real voltage, just negative, because voltage is measured relative to which lead you call "ground".');
+    }
+    if (probeNode === battery.posNode && groundNode === battery.posNode) return flat(0, 'Both leads on the positive rail', 'Both leads are on the same rail, so there is genuinely no voltage difference between them -- 0V is the correct reading.');
+    if (probeNode === battery.negNode && groundNode === battery.negNode) return flat(0, 'Both leads on ground', 'Both leads are on the same rail, so there is genuinely no voltage difference between them -- 0V is the correct reading.');
   }
 
   return {
     kind: 'unknown', voltageAtT: () => 0, periodSeconds: null, frequencyHz: null, minVoltage: 0, maxVoltage: 1,
-    label: 'No signal here yet -- try the battery terminals, or (on a 555 circuit) the output or timing-capacitor pins',
+    label: 'No signal at these two points',
+    explanation: "These two probe points aren't part of a path this engine can determine a voltage for yet -- try moving a lead to the battery's own terminals for a guaranteed real reading, or (on a 555 circuit) its output or timing-capacitor pins for a real waveform.",
   };
 }

@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Zap, Wrench, Activity, Sparkles, CheckCircle2, ShieldAlert, Lightbulb } from 'lucide-react';
+import { Zap, Wrench, Activity, Sparkles, CheckCircle2, ShieldAlert, Lightbulb, Info } from 'lucide-react';
 import { ELECTRONICS_COMPONENTS, ELECTRONICS_PROJECTS, ELECTRONICS_CATEGORY_LABELS, ELECTRONICS_CATEGORY_ACCENT } from '@edusheets/content';
 import Tilt3DCard from '@/components/labshared/Tilt3DCard';
 import SpeakButton from '@/components/labshared/SpeakButton';
@@ -90,23 +90,32 @@ export default function ElectronicsLabPage() {
       {tab === 'projects' && activeProject && (
         <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4">
           <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
-            {ELECTRONICS_PROJECTS.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => { setActiveProjectId(p.id); playSelectChime(); }}
-                className={`shrink-0 md:shrink text-left px-3.5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all whitespace-nowrap md:whitespace-normal ${
-                  activeProjectId === p.id ? 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]' : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
-                }`}
-              >
-                {p.title}
-              </button>
-            ))}
+            {ELECTRONICS_PROJECTS.map((p) => {
+              const isSandbox = p.id === 'free-play-sandbox';
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => { setActiveProjectId(p.id); playSelectChime(); }}
+                  className={`shrink-0 md:shrink text-left px-3.5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all whitespace-nowrap md:whitespace-normal flex items-center gap-1.5 ${
+                    activeProjectId === p.id
+                      ? isSandbox ? 'border-slate-900 bg-accent-600 text-white shadow-[3px_3px_0_var(--color-ink)]' : 'border-slate-900 bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]'
+                      : isSandbox ? 'border-slate-900 dark:border-slate-700 bg-accent-50 dark:bg-accent-950/20 text-accent-700 dark:text-accent-400 hover:shadow-[3px_3px_0_var(--color-ink)]'
+                      : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                  }`}
+                >
+                  {isSandbox && <Sparkles className="w-3.5 h-3.5 shrink-0" />}
+                  {p.title}
+                </button>
+              );
+            })}
           </div>
 
           <div className="glass-card rounded-3xl p-5 md:p-7 space-y-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <h3 className="font-display text-xl font-semibold">{activeProject.title}</h3>
-              <span className="px-2.5 py-1 rounded-full bg-accent-50 dark:bg-accent-950/30 text-accent-700 dark:text-accent-400 text-[11px] font-bold">Live simulation -- wire it, probe it, watch it work</span>
+              <span className="px-2.5 py-1 rounded-full bg-accent-50 dark:bg-accent-950/30 text-accent-700 dark:text-accent-400 text-[11px] font-bold">
+                {activeProject.id === 'free-play-sandbox' ? 'Free play -- nothing pre-built, build anything real' : 'Live simulation -- wire it, probe it, watch it work'}
+              </span>
             </div>
 
             <p className="text-sm text-slate-600 dark:text-slate-300">{activeProject.purpose}</p>
@@ -120,6 +129,13 @@ export default function ElectronicsLabPage() {
               <Sparkles className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
               <p><strong className="text-slate-900 dark:text-white">Force at work:</strong> {activeProject.forceSection}</p>
             </div>
+
+            {activeProject.simulationHonestyNote && (
+              <div className="flex items-start gap-2 text-sm bg-blue-50 dark:bg-blue-950/20 rounded-2xl p-4">
+                <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <p className="text-blue-900/90 dark:text-blue-200/90"><strong className="text-blue-700 dark:text-blue-400">Honestly, what this simulation does and doesn't do:</strong> {activeProject.simulationHonestyNote}</p>
+              </div>
+            )}
 
             <div className="glass-card rounded-2xl p-4 border-2 border-slate-900 dark:border-slate-700">
               <h4 className="font-bold text-sm mb-2 flex items-center gap-1.5"><Wrench className="w-4 h-4 text-primary-600" /> Simulation Workbench &amp; Oscilloscope</h4>
@@ -157,17 +173,19 @@ export default function ElectronicsLabPage() {
               );
             })()}
 
-            <div className="space-y-2">
-              <h4 className="font-bold text-sm">Build Steps</h4>
-              <ol className="space-y-2">
-                {activeProject.buildSteps.map((s) => (
-                  <li key={s.number} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-900/30 rounded-xl p-3">
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-primary-600 text-white text-[11px] font-bold flex items-center justify-center mt-0.5">{s.number}</span>
-                    <span>{s.instruction}{s.hint && <span className="block text-xs text-slate-400 mt-1">Hint: {s.hint}</span>}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            {activeProject.buildSteps.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-bold text-sm">Build Steps</h4>
+                <ol className="space-y-2">
+                  {activeProject.buildSteps.map((s) => (
+                    <li key={s.number} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-900/30 rounded-xl p-3">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-primary-600 text-white text-[11px] font-bold flex items-center justify-center mt-0.5">{s.number}</span>
+                      <span>{s.instruction}{s.hint && <span className="block text-xs text-slate-400 mt-1">Hint: {s.hint}</span>}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
             <div>
               <h4 className="font-bold text-sm mb-1.5 flex items-center gap-1.5"><Lightbulb className="w-4 h-4 text-amber-500" /> Real-World Use</h4>
