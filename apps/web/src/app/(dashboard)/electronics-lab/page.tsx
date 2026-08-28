@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Zap, Wrench, FolderOpen, Sparkles, CheckCircle2, ShieldAlert, Lightbulb } from 'lucide-react';
+import { Zap, Wrench, Activity, Sparkles, CheckCircle2, ShieldAlert, Lightbulb } from 'lucide-react';
 import { ELECTRONICS_COMPONENTS, ELECTRONICS_PROJECTS, ELECTRONICS_CATEGORY_LABELS, ELECTRONICS_CATEGORY_ACCENT } from '@edusheets/content';
 import Tilt3DCard from '@/components/labshared/Tilt3DCard';
 import SpeakButton from '@/components/labshared/SpeakButton';
@@ -50,9 +50,9 @@ export default function ElectronicsLabPage() {
       <div>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <h1 className="font-display text-3xl font-semibold mb-2 flex items-center gap-2"><Zap className="w-7 h-7 text-primary-600" /> Electronics Lab</h1>
-          <SpeakButton text="Welcome to Electronics Lab! Browse the component cupboard to learn about every real part, then step through hands-on circuit projects with real, verified electronics -- real Ohm's Law, real component thresholds, and real timer formulas." />
+          <SpeakButton text="Welcome to Electronics Lab! Browse the component cupboard to learn about every real part, then step into the Simulation Lab: wire a real breadboard circuit and read its real behavior on a live oscilloscope -- real Ohm's Law, real component thresholds, and real timer formulas." />
         </div>
-        <p className="text-slate-500 text-sm">A real component cupboard and hands-on circuit-building projects -- every formula and every component threshold here is real and verified, the same standard as every other lab.</p>
+        <p className="text-slate-500 text-sm">A real component cupboard and a real Simulation Lab -- wire a real breadboard circuit and probe it with a real, live oscilloscope. Every formula and every component threshold here is real and verified, the same standard as every other lab.</p>
       </div>
 
       <div className="flex flex-wrap gap-2.5">
@@ -60,7 +60,7 @@ export default function ElectronicsLabPage() {
           <Wrench className="w-4 h-4" /> Component Cupboard
         </Tilt3DCard>
         <Tilt3DCard active={tab === 'projects'} onClick={() => switchTab('projects')} className={`px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 ${tab === 'projects' ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}>
-          <FolderOpen className="w-4 h-4" /> Projects
+          <Activity className="w-4 h-4" /> Simulation Lab
         </Tilt3DCard>
       </div>
 
@@ -106,7 +106,7 @@ export default function ElectronicsLabPage() {
           <div className="glass-card rounded-3xl p-5 md:p-7 space-y-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <h3 className="font-display text-xl font-semibold">{activeProject.title}</h3>
-              <span className="px-2.5 py-1 rounded-full bg-accent-50 dark:bg-accent-950/30 text-accent-700 dark:text-accent-400 text-[11px] font-bold">Live workbench -- wire it yourself</span>
+              <span className="px-2.5 py-1 rounded-full bg-accent-50 dark:bg-accent-950/30 text-accent-700 dark:text-accent-400 text-[11px] font-bold">Live simulation -- wire it, probe it, watch it work</span>
             </div>
 
             <p className="text-sm text-slate-600 dark:text-slate-300">{activeProject.purpose}</p>
@@ -122,7 +122,7 @@ export default function ElectronicsLabPage() {
             </div>
 
             <div className="glass-card rounded-2xl p-4 border-2 border-slate-900 dark:border-slate-700">
-              <h4 className="font-bold text-sm mb-2 flex items-center gap-1.5"><Wrench className="w-4 h-4 text-primary-600" /> Breadboard Workbench</h4>
+              <h4 className="font-bold text-sm mb-2 flex items-center gap-1.5"><Wrench className="w-4 h-4 text-primary-600" /> Simulation Workbench &amp; Oscilloscope</h4>
               <BreadboardWorkbench project={activeProject} />
             </div>
 

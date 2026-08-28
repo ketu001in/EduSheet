@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Cable, Trash2, RotateCcw, FileText, Zap, Move3d, Maximize2, Minimize2, PackageOpen, ArrowLeft } from 'lucide-react';
+import { Cable, Trash2, RotateCcw, FileText, Zap, Move3d, Maximize2, Minimize2, PackageOpen, ArrowLeft, Activity } from 'lucide-react';
 import {
   ELECTRONICS_COMPONENTS,
   ELECTRONICS_CATEGORY_LABELS,
@@ -297,11 +297,17 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
   // voltage there via the same connectivity/topology data everything
   // else on this board already uses. Available on every project (it's
   // just another real catalog part), not authored per project.
+  //
+  // The trace is computed UNCONDITIONALLY -- even with no CRO placed
+  // yet, computeOscilloscopeTrace(null, null, ...) legitimately returns
+  // its real 'unknown'/not-connected state -- so the scope panel is
+  // always mounted as a permanent instrument on this bench (a real lab
+  // bench has a scope sitting there whether or not it's currently
+  // hooked up), instead of only appearing once wired in.
   const oscilloscopePlacement = placements.find((p) => ELECTRONICS_COMPONENTS.find((c) => c.id === p.componentId)?.kind === 'oscilloscope');
   const oscilloscopeTrace = useMemo(() => {
-    if (!oscilloscopePlacement) return null;
-    const probeNode = connectivity.electricalNode(oscilloscopePlacement.instanceId, 'probe');
-    const groundNode = connectivity.electricalNode(oscilloscopePlacement.instanceId, 'ground');
+    const probeNode = oscilloscopePlacement ? connectivity.electricalNode(oscilloscopePlacement.instanceId, 'probe') : null;
+    const groundNode = oscilloscopePlacement ? connectivity.electricalNode(oscilloscopePlacement.instanceId, 'ground') : null;
     const battery = batteryPlacement
       ? {
           posNode: connectivity.electricalNode(batteryPlacement.instanceId, 'pos'),
@@ -420,10 +426,6 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
             </div>
           </div>
 
-          {!browsingDrawers && oscilloscopeTrace && (
-            <OscilloscopeDisplay trace={oscilloscopeTrace} />
-          )}
-
           {!browsingDrawers && (
             <div>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1"><Zap className="w-3 h-3" /> Quick Pick -- this project's parts</p>
@@ -446,6 +448,19 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
           )}
         </div>
       </div>
+
+      {/* The oscilloscope -- a real permanent instrument on this bench,
+          given its own full-width row instead of a cramped sidebar card,
+          since a scope's whole point is being legible enough to actually
+          read values off. Always mounted (see oscilloscopeTrace above)
+          so it's a visible, standing part of the lab, not something that
+          only appears once wired in. */}
+      {!browsingDrawers && (
+        <div>
+          <h4 className="font-bold text-sm mb-2 flex items-center gap-1.5"><Activity className="w-4 h-4 text-emerald-500" /> Oscilloscope</h4>
+          <OscilloscopeDisplay trace={oscilloscopeTrace} wide />
+        </div>
+      )}
     </div>
   );
 

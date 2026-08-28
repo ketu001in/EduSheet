@@ -19,6 +19,11 @@ import type { OscilloscopeTrace } from '@/lib/circuitEngine';
 // and a STABLE (not scrolling) trace for a periodic signal -- a real
 // bench scope with its sweep triggered on a repeating signal shows
 // exactly this: one steady, readable cycle, not a smear.
+//
+// Always mounted on the bench (see BreadboardWorkbench.tsx) rather than
+// only appearing once a CRO is wired in, so `trace.kind === 'unknown'`
+// (no probe connected yet) is a real, expected, first-seen state, not
+// an edge case -- it gets its own clear on-screen message.
 const VOLTS_PER_DIV_PRESETS = [0.5, 1, 2, 5, 10];
 const TIME_PER_DIV_PRESETS = [0.02, 0.05, 0.1, 0.2, 0.5, 1, 2];
 const H_DIVS = 10;
@@ -29,7 +34,7 @@ function snapToPreset(ideal: number, presets: number[]): number {
   return found ?? presets[presets.length - 1];
 }
 
-export default function OscilloscopeDisplay({ trace }: { trace: OscilloscopeTrace }) {
+export default function OscilloscopeDisplay({ trace, wide = false }: { trace: OscilloscopeTrace; wide?: boolean }) {
   // 0V is always the vertical CENTER of the screen (a real scope's own
   // ground reference), so a one-directional signal like 0-9V only uses
   // the upper half of the display -- the needed volts/div has to fit
@@ -59,14 +64,14 @@ export default function OscilloscopeDisplay({ trace }: { trace: OscilloscopeTrac
     setTimePerDiv(defaultTimePerDiv);
   }
 
-  const width = 400;
-  const height = 280;
+  const width = wide ? 1000 : 400;
+  const height = wide ? 260 : 280;
   const gridW = width - 20;
   const gridH = height - 20;
   const originY = 10 + gridH / 2;
 
   const totalTime = timePerDiv * H_DIVS;
-  const samples = 240;
+  const samples = wide ? 400 : 240;
   const points = useMemo(() => {
     const pts: string[] = [];
     for (let i = 0; i <= samples; i++) {
@@ -77,9 +82,33 @@ export default function OscilloscopeDisplay({ trace }: { trace: OscilloscopeTrac
       pts.push(`${x.toFixed(1)},${Math.max(10, Math.min(height - 10, y)).toFixed(1)}`);
     }
     return pts.join(' ');
-  }, [trace, totalTime, voltsPerDiv, gridW, gridH, originY, height]);
+  }, [trace, totalTime, samples, voltsPerDiv, gridW, gridH, originY, height]);
 
   const amplitude = trace.maxVoltage - trace.minVoltage;
+  const notConnected = trace.kind === 'unknown';
+
+  const readouts = (
+    <div className={`grid grid-cols-3 gap-2 text-center ${wide ? '' : 'pt-1'}`}>
+      <div className="rounded-lg bg-slate-900 p-2">
+        <p className="text-[9px] font-bold text-slate-500 uppercase">Amplitude</p>
+        <p className="text-xs font-mono font-bold text-emerald-400">{notConnected ? '--' : amplitude < 0.01 ? '0' : `${amplitude.toFixed(2)} Vpp`}</p>
+      </div>
+      <div className="rounded-lg bg-slate-900 p-2">
+        <p className="text-[9px] font-bold text-slate-500 uppercase">Period</p>
+        <p className="text-xs font-mono font-bold text-emerald-400">{trace.periodSeconds != null ? `${trace.periodSeconds.toFixed(2)}s` : '--'}</p>
+      </div>
+      <div className="rounded-lg bg-slate-900 p-2">
+        <p className="text-[9px] font-bold text-slate-500 uppercase">Frequency</p>
+        <p className="text-xs font-mono font-bold text-emerald-400">{trace.frequencyHz != null ? `${trace.frequencyHz.toFixed(2)} Hz` : '--'}</p>
+      </div>
+    </div>
+  );
+  const controls = (
+    <div className="grid grid-cols-2 gap-2">
+      <ScaleControl label="VOLTS/DIV" value={voltsPerDiv} unit="V" presets={VOLTS_PER_DIV_PRESETS} onChange={setVoltsPerDiv} />
+      <ScaleControl label="TIME/DIV" value={timePerDiv} unit="s" presets={TIME_PER_DIV_PRESETS} onChange={setTimePerDiv} />
+    </div>
+  );
 
   return (
     <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 bg-slate-950 overflow-hidden">
@@ -93,31 +122,26 @@ export default function OscilloscopeDisplay({ trace }: { trace: OscilloscopeTrac
             <line key={`h${i}`} x1={10} y1={10 + (i * gridH) / V_DIVS} x2={width - 10} y2={10 + (i * gridH) / V_DIVS} stroke="#16a34a" strokeOpacity={i === V_DIVS / 2 ? 0.45 : 0.15} strokeWidth={i === V_DIVS / 2 ? 1.2 : 0.6} />
           ))}
           {/* Trace */}
-          <polyline points={points} fill="none" stroke="#4ade80" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 3px #4ade8099)' }} />
+          <polyline points={points} fill="none" stroke={notConnected ? '#475569' : '#4ade80'} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" style={notConnected ? undefined : { filter: 'drop-shadow(0 0 3px #4ade8099)' }} />
+          {notConnected && (
+            <text x={width / 2} y={height / 2 - 18} textAnchor="middle" fontSize={wide ? 13 : 11} fontFamily="monospace" fill="#64748b">NO SIGNAL</text>
+          )}
         </svg>
       </div>
 
-      <div className="px-3 pb-3 space-y-2">
-        <p className="text-[11px] font-mono text-emerald-400/90 leading-snug">{trace.label}</p>
-        <div className="grid grid-cols-2 gap-2">
-          <ScaleControl label="VOLTS/DIV" value={voltsPerDiv} unit="V" presets={VOLTS_PER_DIV_PRESETS} onChange={setVoltsPerDiv} />
-          <ScaleControl label="TIME/DIV" value={timePerDiv} unit="s" presets={TIME_PER_DIV_PRESETS} onChange={setTimePerDiv} />
+      {wide ? (
+        <div className="px-3 pb-3 flex flex-wrap items-center gap-4">
+          <p className="text-[11px] font-mono text-emerald-400/90 leading-snug flex-1 min-w-[220px]">{trace.label}</p>
+          <div className="w-64">{controls}</div>
+          <div className="w-72">{readouts}</div>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center pt-1">
-          <div className="rounded-lg bg-slate-900 p-2">
-            <p className="text-[9px] font-bold text-slate-500 uppercase">Amplitude</p>
-            <p className="text-xs font-mono font-bold text-emerald-400">{amplitude < 0.01 ? '0' : amplitude.toFixed(2)} Vpp</p>
-          </div>
-          <div className="rounded-lg bg-slate-900 p-2">
-            <p className="text-[9px] font-bold text-slate-500 uppercase">Period</p>
-            <p className="text-xs font-mono font-bold text-emerald-400">{trace.periodSeconds != null ? `${trace.periodSeconds.toFixed(2)}s` : '--'}</p>
-          </div>
-          <div className="rounded-lg bg-slate-900 p-2">
-            <p className="text-[9px] font-bold text-slate-500 uppercase">Frequency</p>
-            <p className="text-xs font-mono font-bold text-emerald-400">{trace.frequencyHz != null ? `${trace.frequencyHz.toFixed(2)} Hz` : '--'}</p>
-          </div>
+      ) : (
+        <div className="px-3 pb-3 space-y-2">
+          <p className="text-[11px] font-mono text-emerald-400/90 leading-snug">{trace.label}</p>
+          {controls}
+          {readouts}
         </div>
-      </div>
+      )}
     </div>
   );
 }
