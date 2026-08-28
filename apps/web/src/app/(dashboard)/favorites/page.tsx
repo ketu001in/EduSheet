@@ -66,7 +66,7 @@ export default function FavoritesPage() {
           <p className="text-sm text-slate-500">
             Click the heart icon on any generated worksheet to bookmark it here for quick revision.
           </p>
-          <Link href="/worksheets" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform text-sm">
+          <Link href="/worksheets" className="inline-flex items-center gap-2 btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl text-sm">
             <BookOpen className="w-4 h-4" /> Browse My Worksheets
           </Link>
         </div>
@@ -130,7 +130,7 @@ export default function FavoritesPage() {
                 <button
                   onClick={() => handleDownloadPdf(selectedWorksheet.id, 'worksheet')}
                   disabled={downloadingPdf !== null}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg disabled:opacity-50"
+                  className="btn-brutal px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-50"
                 >
                   {downloadingPdf === 'worksheet' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} PDF
                 </button>

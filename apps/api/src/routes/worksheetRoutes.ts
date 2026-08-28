@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimiter';
-import { generateWorksheet } from '../services/worksheetService';
+import { generateWorksheet, generateCustomWorksheet, regenerateWorksheetPdf } from '../services/worksheetService';
 import { getSignedURL } from '../services/storageService';
 import { resolveAiOverride, AiKeyRequiredError } from '../lib/resolveAiOverride';
 import { z } from 'zod';
@@ -32,6 +32,31 @@ router.post('/generate', aiLimiter, validate(generateSchema), async (req: Authen
   try {
     const aiOverride = await resolveAiOverride(req.supabase, req.user!.id);
     const result = await generateWorksheet(req.body, req.user!.id, req.supabase, aiOverride);
+    res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    if (error instanceof AiKeyRequiredError) {
+      return res.status(400).json({ success: false, error: 'AI_KEY_REQUIRED' });
+    }
+    next(error);
+  }
+});
+
+const generateCustomSchema = z.object({
+  title: z.string().optional(),
+  className: z.string().min(1),
+  subjectName: z.string().min(1),
+  topic: z.string().min(1),
+  requirement: z.string().optional(),
+  difficulty: z.enum(['easy', 'medium', 'hard', 'mixed']).default('mixed'),
+  questionCount: z.number().min(1).max(50),
+  questionTypes: z.array(z.string()).min(1),
+  language: z.string().optional(),
+});
+
+router.post('/generate-custom', aiLimiter, validate(generateCustomSchema), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const aiOverride = await resolveAiOverride(req.supabase, req.user!.id);
+    const result = await generateCustomWorksheet(req.body, req.user!.id, req.supabase, aiOverride);
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof AiKeyRequiredError) {
@@ -118,6 +143,15 @@ router.post('/:id/duplicate', async (req: AuthenticatedRequest, res, next) => {
     }
 
     res.status(201).json({ success: true, data: copy });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/:id/regenerate-pdf', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const result = await regenerateWorksheetPdf(req.params.id, req.user!.id, req.supabase);
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

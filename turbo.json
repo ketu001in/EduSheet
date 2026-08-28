@@ -1,6 +1,24 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  // Turborepo only passes environment variables through to a task's build
+  // process if they're declared here (its "env var pruning" for cache
+  // determinism) -- without this, Vercel project env vars set in the
+  // dashboard/CLI are silently stripped from `turbo run build`, which
+  // broke the Next.js build (SUPABASE_SERVICE_ROLE_KEY missing at page-data
+  // collection time for /api/auth/* routes) even though the vars were
+  // genuinely configured on the project.
+  "globalEnv": [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL",
+    "NEXT_PUBLIC_SITE_URL",
+    "NEXT_PUBLIC_API_URL",
+    "AI_KEY_ENCRYPTION_SECRET",
+    "POLLINATIONS_API_KEY",
+    "FRONTEND_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

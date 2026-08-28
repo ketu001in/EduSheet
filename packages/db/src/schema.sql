@@ -4,10 +4,11 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Enums
 CREATE TYPE user_role AS ENUM ('student', 'parent', 'teacher', 'admin');
-CREATE TYPE question_type AS ENUM ('mcq', 'fill_in_blank', 'true_false', 'match_following', 'short_answer', 'long_answer', 'word_problem', 'diagram_based', 'logical_reasoning');
+CREATE TYPE question_type AS ENUM ('mcq', 'fill_in_blank', 'true_false', 'match_following', 'short_answer', 'long_answer', 'word_problem', 'diagram_based', 'logical_reasoning', 'coloring_sheet', 'tracing');
 CREATE TYPE difficulty_level AS ENUM ('easy', 'medium', 'hard', 'mixed');
 CREATE TYPE linking_status AS ENUM ('pending', 'approved', 'rejected');
 CREATE TYPE favorite_type AS ENUM ('topic', 'chapter', 'worksheet');
+CREATE TYPE tech_project_category AS ENUM ('robotics', 'ai', 'coding');
 
 -- Helper function for updated_at
 CREATE OR REPLACE FUNCTION handle_updated_at()
@@ -22,6 +23,9 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE public.users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT UNIQUE NOT NULL,
+  -- Nullable at the DB level (existing rows predate this column) even though
+  -- the signup flow always requires and sets it for new accounts.
+  username TEXT UNIQUE,
   full_name TEXT,
   avatar_url TEXT,
   role user_role DEFAULT 'student',
@@ -41,12 +45,22 @@ CREATE TABLE public.boards (
 );
 
 -- 4. classes (create before user_profiles)
+-- board_id NULL = a shared/global class (e.g. CBSE/ICSE's Class 1-12, LKG,
+-- UKG -- grade_number is a real, globally-unique grade). board_id set = a
+-- stage scoped to one alternative-pedagogy board (Montessori/Reggio Emilia/
+-- Steiner-Waldorf), whose age-stage names don't correspond to a numbered
+-- grade at all -- grade_number there is just a display-order key, unique
+-- only within that board, not a real grade (see the two partial unique
+-- indexes below instead of one global UNIQUE).
 CREATE TABLE public.classes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  grade_number INT UNIQUE NOT NULL CHECK (grade_number BETWEEN 1 AND 12),
+  grade_number INT NOT NULL CHECK (grade_number BETWEEN -5 AND 20),
   name TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE UNIQUE INDEX classes_grade_number_global_uidx ON public.classes(grade_number) WHERE board_id IS NULL;
+CREATE UNIQUE INDEX classes_grade_number_per_board_uidx ON public.classes(board_id, grade_number) WHERE board_id IS NOT NULL;
 
 -- 2. user_profiles
 CREATE TABLE public.user_profiles (
@@ -79,6 +93,14 @@ CREATE TABLE public.subjects (
   name TEXT NOT NULL,
   code TEXT,
   icon_url TEXT,
+  -- Curriculum Manager: where this subject's chapter/topic list was sourced
+  -- from (a link to the real CBSE/CISCE syllabus document) and when an
+  -- admin last checked it against the current official syllabus. A human-
+  -- verification record, not an automated sync -- see adminRoutes.ts's
+  -- /curriculum/subjects/:id/verify route.
+  syllabus_source_url TEXT,
+  syllabus_last_verified_at TIMESTAMPTZ,
+  syllabus_verified_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(class_id, board_id, name)
 );
@@ -146,6 +168,255 @@ CREATE TABLE public.projects (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8c. study_materials (teacher/parent-only, role-gated at the app layer --
+-- role-gating itself has NO database enforcement here since the underlying
+-- data isn't sensitive; access is refused server-side via requireRole
+-- middleware before this table is ever touched, see apps/api/src/middleware/auth.ts).
+CREATE TABLE public.study_materials (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  creator_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE,
+  subject_id UUID REFERENCES public.subjects(id) ON DELETE CASCADE,
+  chapter_id UUID REFERENCES public.chapters(id) ON DELETE SET NULL,
+  settings JSONB,
+  -- Each section: { heading, content, audience: 'teacher' | 'student' } --
+  -- combines educator teaching-notes and child-facing revision-notes
+  -- sections in one document, per the user's explicit choice.
+  sections JSONB NOT NULL,
+  pdf_storage_path TEXT,
+  is_public BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8d. activity_sheets (teacher/parent-only, same role-gating model as
+-- study_materials -- enforced server-side, not by RLS). A hands-on activity
+-- FOR THE STUDENT to do (materials + numbered steps + reflection questions),
+-- plus a short facilitation note for the adult running it -- deliberately a
+-- different shape than a worksheet (no MCQ/fill-blank/answer-key questions)
+-- and different than study_materials (this is a "do this" sheet, not notes).
+CREATE TABLE public.activity_sheets (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  creator_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE,
+  subject_id UUID REFERENCES public.subjects(id) ON DELETE CASCADE,
+  chapter_id UUID REFERENCES public.chapters(id) ON DELETE SET NULL,
+  settings JSONB,
+  materials JSONB NOT NULL, -- string[] of items needed for the activity
+  steps JSONB NOT NULL, -- string[] of numbered procedure steps for the student
+  reflection_questions JSONB, -- string[] of post-activity reflection prompts
+  facilitation_notes TEXT, -- short guidance for the adult running the activity
+  pdf_storage_path TEXT,
+  is_public BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8e. tech_projects ("Tech Lab" -- Robotics/AI/Coding builds). Open to ALL
+-- roles (no requireRole gate, same access model as worksheets/projects) --
+-- unlike study_materials/activity_sheets, this is explicitly for students
+-- too. Deliberately NOT linked to subjects/chapters/topics (no official
+-- CBSE/ICSE Computer Science/AI curriculum is seeded in this app yet, and
+-- the user chose to keep this curriculum-loose rather than block on that
+-- research) -- board_id/class_id are kept directly on the row (not derived
+-- via a subject join) specifically because study_materials' lack of a
+-- direct board_id caused a real bug earlier (the Activity Sheet prefill
+-- silently defaulted to the wrong board) -- don't repeat that here.
+CREATE TABLE public.tech_projects (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  creator_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE,
+  category tech_project_category NOT NULL,
+  idea_prompt TEXT NOT NULL, -- the chosen/typed project idea or theme
+  settings JSONB,
+  purpose TEXT NOT NULL, -- why this project, what concept it teaches
+  materials JSONB NOT NULL, -- string[] -- the always-free software/simulation-path materials
+  -- { available: boolean, items: [{ name, purpose, approxCostINR }], note } --
+  -- optional, never required; the free `materials` path above always stands alone.
+  hardware_upgrade JSONB,
+  -- [{ number, title, instruction, imagePrompt?, imageUrl? }] -- imageUrl filled in
+  -- by apps/api after generation, same pattern as worksheet_questions.diagram.
+  steps JSONB NOT NULL,
+  simulation_guide JSONB, -- { tool, toolUrl, instructions } -- e.g. Tinkercad/Wokwi/Scratch
+  code_snippet TEXT, -- only for coding/AI projects that involve actual code
+  code_language TEXT,
+  troubleshooting JSONB, -- [{ issue, fix }]
+  safety_notes JSONB, -- string[] -- populated for anything electrical/hardware-adjacent
+  extensions JSONB, -- string[] -- ideas to extend the project further
+  pdf_storage_path TEXT,
+  is_public BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8f. chemistry_experiment_attempts ("Chem Lab" -- interactive Robotics-Lab
+-- sibling for Chemistry). The experiment SCRIPTS themselves (reaction steps,
+-- equations, safety notes) are deliberately NOT stored here -- they live as
+-- curated, hand-authored static data in packages/content (never AI-generated
+-- at request time; see that package's header comment for the safety
+-- rationale: a wrong AI guess about a real chemical reaction is dangerous,
+-- not just a bad worksheet answer). This table only tracks a user's PROGRESS
+-- through one of those curated experiments -- their predict-then-observe
+-- answer and filled-in observations -- so `experiment_id` is a plain TEXT key
+-- matching packages/content's CHEMISTRY_EXPERIMENTS[].id, not a DB foreign
+-- key. Open to ALL roles, same access model as tech_projects, but scoped to
+-- own-or-parent (no is_public sharing -- this is a personal lab notebook,
+-- not a document meant to be shared/browsed).
+CREATE TABLE public.chemistry_experiment_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  experiment_id TEXT NOT NULL,
+  experiment_title TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE SET NULL,
+  predict_answer_index INT,
+  predict_correct BOOLEAN,
+  observations JSONB, -- { [promptIndex]: studentAnswerText }
+  completed_at TIMESTAMPTZ,
+  pdf_storage_path TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8g. physics_experiment_attempts ("Physics Lab" -- same personal-lab-
+-- notebook model as chemistry_experiment_attempts, for exactly the same
+-- reason: the experiment scripts (steps, formulas, safety notes) are
+-- curated, hand-authored static data in packages/content (see
+-- physicsTypes.ts's header comment), never AI-generated -- a wrong physics
+-- formula silently teaches a misconception. `experiment_id` is a plain TEXT
+-- key matching packages/content's PHYSICS_EXPERIMENTS[].id, not a DB
+-- foreign key. Open to ALL roles, own-or-parent access, no is_public.
+-- `final_params` additionally records the simulation parameter values the
+-- student ended up testing (e.g. the pendulum length they tried), so a
+-- regenerated report can show exactly what was explored, not just the
+-- default script.
+CREATE TABLE public.physics_experiment_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  experiment_id TEXT NOT NULL,
+  experiment_title TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE SET NULL,
+  predict_answer_index INT,
+  predict_correct BOOLEAN,
+  observations JSONB, -- { [promptIndex]: studentAnswerText }
+  final_params JSONB, -- { [paramKey]: numberTheyEndedUpTesting }
+  completed_at TIMESTAMPTZ,
+  pdf_storage_path TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8h. biology_experiment_attempts ("Biology Lab" -- same personal-lab-
+-- notebook model as physics/chemistry_experiment_attempts, for exactly the
+-- same reason: food-test colors, osmosis direction, and Punnett-square
+-- ratios are curated, hand-verified static data in packages/content (see
+-- biologyTypes.ts's header comment), never AI-generated. `experiment_id` is
+-- a plain TEXT key matching packages/content's BIOLOGY_EXPERIMENTS[].id,
+-- not a DB foreign key. Open to ALL roles, own-or-parent access, no
+-- is_public.
+CREATE TABLE public.biology_experiment_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  experiment_id TEXT NOT NULL,
+  experiment_title TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE SET NULL,
+  predict_answer_index INT,
+  predict_correct BOOLEAN,
+  observations JSONB, -- { [promptIndex]: studentAnswerText }
+  final_params JSONB, -- { [paramKey]: numberTheyEndedUpTesting }
+  completed_at TIMESTAMPTZ,
+  pdf_storage_path TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8i. math_experiment_attempts ("Math Lab" -- same personal-lab-notebook
+-- model as physics/chemistry/biology_experiment_attempts: every theorem,
+-- formula, and experiment is curated, hand-verified static data in
+-- packages/content (see mathTypes.ts's header comment), never AI-generated.
+-- `experiment_id` is a plain TEXT key matching packages/content's
+-- MATH_EXPERIMENTS[].id, not a DB foreign key. Open to ALL roles,
+-- own-or-parent access, no is_public.
+CREATE TABLE public.math_experiment_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  experiment_id TEXT NOT NULL,
+  experiment_title TEXT NOT NULL,
+  board_id UUID REFERENCES public.boards(id) ON DELETE SET NULL,
+  class_id UUID REFERENCES public.classes(id) ON DELETE SET NULL,
+  predict_answer_index INT,
+  predict_correct BOOLEAN,
+  observations JSONB, -- { [promptIndex]: studentAnswerText }
+  final_params JSONB, -- { [paramKey]: numberTheyEndedUpTesting }
+  completed_at TIMESTAMPTZ,
+  pdf_storage_path TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8j. nav_items -- admin-editable main navigation (CMS Phase 1), replacing
+-- the previously hardcoded apps/web/src/components/layout/navItems.ts
+-- list. Self-referential: a row with is_group=true and parent_group_id
+-- NULL is a collapsible group header (e.g. "Virtual Labs"); rows with
+-- parent_group_id set are that group's children; rows with is_group=false
+-- and parent_group_id NULL are plain top-level links (e.g. "Dashboard").
+-- Seeded once from the static list via a migration DO block (not
+-- reproduced here -- see the applied migration
+-- `add_cms_nav_items_and_site_settings`), so nothing changed visually
+-- until an admin actually edits something in /admin/menu.
+CREATE TABLE public.nav_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  label TEXT NOT NULL,
+  href TEXT,
+  icon_name TEXT NOT NULL, -- must match a lucide-react icon component name, validated app-side against an allowlist
+  is_group BOOLEAN NOT NULL DEFAULT false,
+  parent_group_id UUID REFERENCES public.nav_items(id) ON DELETE CASCADE,
+  order_index INT NOT NULL DEFAULT 0,
+  visible BOOLEAN NOT NULL DEFAULT true,
+  role_visibility TEXT[] NOT NULL DEFAULT ARRAY['student','parent','teacher','admin'],
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8k. site_settings -- a small admin-editable key/value store (CMS Phase 1)
+-- for site-wide branding (name, tagline, primary color, logo) and the
+-- default voice preference for narration. Readable by anon too since
+-- branding should apply on the public landing/login pages, not just the
+-- logged-in app. Seeded with today's real defaults via the same migration.
+CREATE TABLE public.site_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8l. content_overrides -- CMS Phase 2. Every curated lab item (theorems,
+-- formulas, experiments, anatomy hotspots, Vedic sutras, historical
+-- figures, etc.) still lives in packages/content as hand-authored,
+-- verified TypeScript data -- that discipline doesn't change. This table
+-- adds an admin-editable LAYER on top: at runtime, the app fetches any
+-- rows matching a given content_type and merges them over the static base
+-- array (see apps/web/src/lib/useContent.ts) -- override an existing
+-- item's fields by matching item_key to its static `id`, add a brand-new
+-- item with an item_key that doesn't match anything static, or
+-- soft-delete (hide) a static item without touching the source file.
+CREATE TABLE public.content_overrides (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  content_type TEXT NOT NULL,
+  item_key TEXT NOT NULL,
+  data JSONB, -- NULL when deleted=true (a pure "hide this static item" row)
+  deleted BOOLEAN NOT NULL DEFAULT false,
+  updated_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (content_type, item_key)
+);
+
 -- 9. worksheet_questions
 CREATE TABLE public.worksheet_questions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -156,6 +427,10 @@ CREATE TABLE public.worksheet_questions (
   correct_answer TEXT,
   explanation TEXT,
   hints TEXT,
+  -- Simplified shape-based schematic for "diagram_based" questions (see
+  -- packages/ai's DiagramSpec) -- rendered as an unlabeled wireframe on the
+  -- worksheet and a fully-labeled diagram in the answer key PDF.
+  diagram JSONB,
   marks INT DEFAULT 1,
   order_index INT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -254,11 +529,12 @@ BEGIN
     user_role_val := (NEW.raw_user_meta_data->>'role')::user_role;
   END IF;
 
-  INSERT INTO public.users (id, email, full_name, avatar_url, role)
+  INSERT INTO public.users (id, email, full_name, username, avatar_url, role)
   VALUES (
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'username',
     NEW.raw_user_meta_data->>'avatar_url',
     user_role_val
   )
@@ -304,6 +580,16 @@ CREATE TRIGGER set_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW E
 CREATE TRIGGER set_user_profiles_updated_at BEFORE UPDATE ON public.user_profiles FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_worksheets_updated_at BEFORE UPDATE ON public.worksheets FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_study_materials_updated_at BEFORE UPDATE ON public.study_materials FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_activity_sheets_updated_at BEFORE UPDATE ON public.activity_sheets FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_tech_projects_updated_at BEFORE UPDATE ON public.tech_projects FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_chemistry_experiment_attempts_updated_at BEFORE UPDATE ON public.chemistry_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_physics_experiment_attempts_updated_at BEFORE UPDATE ON public.physics_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_biology_experiment_attempts_updated_at BEFORE UPDATE ON public.biology_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_math_experiment_attempts_updated_at BEFORE UPDATE ON public.math_experiment_attempts FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_nav_items_updated_at BEFORE UPDATE ON public.nav_items FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_site_settings_updated_at BEFORE UPDATE ON public.site_settings FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_content_overrides_updated_at BEFORE UPDATE ON public.content_overrides FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_user_behavior_updated_at BEFORE UPDATE ON public.user_behavior FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_parent_children_updated_at BEFORE UPDATE ON public.parent_children FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_teacher_classrooms_updated_at BEFORE UPDATE ON public.teacher_classrooms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
@@ -348,6 +634,16 @@ ALTER TABLE public.chapters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.topics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.study_materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activity_sheets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tech_projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chemistry_experiment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.physics_experiment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.biology_experiment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.math_experiment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.nav_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.content_overrides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worksheet_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
@@ -412,6 +708,126 @@ USING (creator_id = auth.uid() OR is_admin());
 
 CREATE POLICY "Projects DELETE own or admin" ON public.projects FOR DELETE TO authenticated
 USING (creator_id = auth.uid() OR is_admin());
+
+-- Study Materials (role-gating itself is enforced server-side, not by RLS --
+-- see apps/api/src/middleware/auth.ts's requireRole)
+CREATE POLICY "Study materials SELECT public or related" ON public.study_materials FOR SELECT TO authenticated
+USING (is_public = true OR creator_id = auth.uid() OR is_parent_of(creator_id) OR is_admin());
+
+CREATE POLICY "Study materials INSERT own" ON public.study_materials FOR INSERT TO authenticated
+WITH CHECK (creator_id = auth.uid());
+
+CREATE POLICY "Study materials UPDATE own or admin" ON public.study_materials FOR UPDATE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Study materials DELETE own or admin" ON public.study_materials FOR DELETE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+-- Activity Sheets (role-gating itself is enforced server-side, not by RLS --
+-- see apps/api/src/middleware/auth.ts's requireRole)
+CREATE POLICY "Activity sheets SELECT public or related" ON public.activity_sheets FOR SELECT TO authenticated
+USING (is_public = true OR creator_id = auth.uid() OR is_parent_of(creator_id) OR is_admin());
+
+CREATE POLICY "Activity sheets INSERT own" ON public.activity_sheets FOR INSERT TO authenticated
+WITH CHECK (creator_id = auth.uid());
+
+CREATE POLICY "Activity sheets UPDATE own or admin" ON public.activity_sheets FOR UPDATE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Activity sheets DELETE own or admin" ON public.activity_sheets FOR DELETE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+-- Tech Projects (open to all roles, same access model as Projects/Worksheets --
+-- no role-gating, server-side or otherwise)
+CREATE POLICY "Tech projects SELECT public or related" ON public.tech_projects FOR SELECT TO authenticated
+USING (is_public = true OR creator_id = auth.uid() OR is_parent_of(creator_id) OR is_admin());
+
+CREATE POLICY "Tech projects INSERT own" ON public.tech_projects FOR INSERT TO authenticated
+WITH CHECK (creator_id = auth.uid());
+
+CREATE POLICY "Tech projects UPDATE own or admin" ON public.tech_projects FOR UPDATE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Tech projects DELETE own or admin" ON public.tech_projects FOR DELETE TO authenticated
+USING (creator_id = auth.uid() OR is_admin());
+
+-- Chemistry Experiment Attempts (open to all roles, own-or-parent only --
+-- a personal lab notebook, not a shareable document)
+CREATE POLICY "Chem attempts SELECT own or related" ON public.chemistry_experiment_attempts FOR SELECT TO authenticated
+USING (user_id = auth.uid() OR is_parent_of(user_id) OR is_admin());
+
+CREATE POLICY "Chem attempts INSERT own" ON public.chemistry_experiment_attempts FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Chem attempts UPDATE own or admin" ON public.chemistry_experiment_attempts FOR UPDATE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Chem attempts DELETE own or admin" ON public.chemistry_experiment_attempts FOR DELETE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+-- Physics Experiment Attempts (same own-or-parent model as Chem attempts)
+CREATE POLICY "Physics attempts SELECT own or related" ON public.physics_experiment_attempts FOR SELECT TO authenticated
+USING (user_id = auth.uid() OR is_parent_of(user_id) OR is_admin());
+
+CREATE POLICY "Physics attempts INSERT own" ON public.physics_experiment_attempts FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Physics attempts UPDATE own or admin" ON public.physics_experiment_attempts FOR UPDATE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Physics attempts DELETE own or admin" ON public.physics_experiment_attempts FOR DELETE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+-- Biology Experiment Attempts (same own-or-parent model as Physics/Chem)
+CREATE POLICY "Biology attempts SELECT own or related" ON public.biology_experiment_attempts FOR SELECT TO authenticated
+USING (user_id = auth.uid() OR is_parent_of(user_id) OR is_admin());
+
+CREATE POLICY "Biology attempts INSERT own" ON public.biology_experiment_attempts FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Biology attempts UPDATE own or admin" ON public.biology_experiment_attempts FOR UPDATE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Biology attempts DELETE own or admin" ON public.biology_experiment_attempts FOR DELETE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+-- Math Experiment Attempts (same own-or-parent model as Physics/Chem/Biology)
+CREATE POLICY "Math attempts SELECT own or related" ON public.math_experiment_attempts FOR SELECT TO authenticated
+USING (user_id = auth.uid() OR is_parent_of(user_id) OR is_admin());
+
+CREATE POLICY "Math attempts INSERT own" ON public.math_experiment_attempts FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Math attempts UPDATE own or admin" ON public.math_experiment_attempts FOR UPDATE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+CREATE POLICY "Math attempts DELETE own or admin" ON public.math_experiment_attempts FOR DELETE TO authenticated
+USING (user_id = auth.uid() OR is_admin());
+
+-- Nav Items (CMS Phase 1) -- every logged-in user can read the live menu
+-- config; only admins can change it.
+CREATE POLICY "Nav items SELECT for authenticated" ON public.nav_items FOR SELECT TO authenticated
+USING (true);
+
+CREATE POLICY "Nav items ALL for admin" ON public.nav_items FOR ALL TO authenticated
+USING (is_admin()) WITH CHECK (is_admin());
+
+-- Site Settings (CMS Phase 1) -- readable by everyone (including signed-out
+-- visitors, so branding applies on the public/login pages too); only
+-- admins can change it.
+CREATE POLICY "Site settings SELECT for everyone" ON public.site_settings FOR SELECT TO anon, authenticated
+USING (true);
+
+CREATE POLICY "Site settings ALL for admin" ON public.site_settings FOR ALL TO authenticated
+USING (is_admin()) WITH CHECK (is_admin());
+
+-- Content Overrides (CMS Phase 2) -- every logged-in user reads the merged
+-- content (their app needs the overridden values); only admins can write.
+CREATE POLICY "Content overrides SELECT for authenticated" ON public.content_overrides FOR SELECT TO authenticated
+USING (true);
+
+CREATE POLICY "Content overrides ALL for admin" ON public.content_overrides FOR ALL TO authenticated
+USING (is_admin()) WITH CHECK (is_admin());
 
 -- Worksheet Questions
 CREATE POLICY "Questions SELECT if worksheet accessible" ON public.worksheet_questions FOR SELECT TO authenticated

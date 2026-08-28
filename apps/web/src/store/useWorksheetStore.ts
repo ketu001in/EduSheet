@@ -22,12 +22,21 @@ export interface SavedWorksheet {
   favoriteId?: string;
 }
 
+export type UserRole = 'student' | 'parent' | 'teacher' | 'admin';
+
 export interface UserProfile {
   name: string;
   email: string;
   board: string;
   grade: string;
   avatarUrl?: string;
+  // The real public.users.role, fetched from the backend (not from Supabase
+  // Auth user_metadata, which only reflects the role picked at signup and
+  // goes stale the moment a user self-changes their role -- see Header.tsx).
+  // Undefined until that fetch completes; defaults to 'student' everywhere
+  // it's used for gating so an unloaded role never accidentally unlocks
+  // teacher/parent-only features.
+  role?: UserRole;
 }
 
 interface RawWorksheetRow {
@@ -41,7 +50,7 @@ interface RawWorksheetRow {
   classes?: { name: string } | null;
   subjects?: { name: string } | null;
   chapters?: { title: string } | null;
-  settings?: { board?: string; topics?: string[] } | null;
+  settings?: { board?: string; topics?: string[]; isCustom?: boolean; className?: string; subjectName?: string; topic?: string } | null;
 }
 
 function mapRowToSummary(row: RawWorksheetRow): SavedWorksheet {
@@ -49,9 +58,9 @@ function mapRowToSummary(row: RawWorksheetRow): SavedWorksheet {
     id: row.id,
     title: row.title,
     board: row.settings?.board || 'CBSE',
-    class: row.classes?.name || '',
-    subject: row.subjects?.name || '',
-    chapter: row.chapters?.title || '',
+    class: row.classes?.name || row.settings?.className || '',
+    subject: row.subjects?.name || row.settings?.subjectName || '',
+    chapter: row.chapters?.title || row.settings?.topic || '',
     topics: row.settings?.topics || [],
     difficulty: row.difficulty,
     questionCount: row.question_count,
@@ -85,6 +94,7 @@ const defaultProfile: UserProfile = {
   email: 'student@edusheets.com',
   board: 'CBSE',
   grade: 'Class 8',
+  role: 'student',
 };
 
 export const useWorksheetStore = create<WorksheetState>((set, get) => ({

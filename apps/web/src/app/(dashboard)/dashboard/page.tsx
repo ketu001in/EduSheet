@@ -51,30 +51,30 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary-600 via-indigo-700 to-purple-800 p-8 text-white shadow-2xl shadow-primary-900/20">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+      <div className="relative overflow-hidden rounded-3xl bg-primary-600 border-[3px] border-slate-900 p-8 text-white">
+        <div className="absolute -right-8 -top-8 w-40 h-40 bg-secondary-500 border-[3px] border-slate-900 rounded-[32px] rotate-12 opacity-90" aria-hidden="true"></div>
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-bold mb-3 border border-white/20">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" /> CBSE Curriculum Ready
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-primary-700 text-xs font-bold mb-3 border-2 border-slate-900">
+              <Sparkles className="w-3.5 h-3.5 text-secondary-500" /> CBSE Curriculum Ready
             </span>
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">
+            <h1 className="font-display text-3xl md:text-4xl font-semibold mb-2 tracking-tight">
               Welcome back, {userProfile?.name || 'Student'}! 👋
             </h1>
-            <p className="text-primary-100 max-w-xl text-sm md:text-base">
+            <p className="text-primary-50 max-w-xl text-sm md:text-base">
               Ready to master new topics? Generate custom CBSE worksheets powered by your own AI key in seconds.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Link
               href="/generate"
-              className="inline-flex items-center justify-center gap-2.5 bg-white text-primary-700 px-6 py-3.5 rounded-2xl font-bold hover:scale-105 transition-all shadow-xl shadow-black/10"
+              className="btn-brutal inline-flex items-center justify-center gap-2.5 bg-white text-primary-700 px-6 py-3.5 rounded-2xl font-display font-medium"
             >
               <Sparkles className="w-5 h-5 text-primary-600" /> Quick Generate
             </Link>
             <Link
               href="/projects/new"
-              className="inline-flex items-center justify-center gap-2.5 bg-white/15 backdrop-blur-md border border-white/25 text-white px-6 py-3.5 rounded-2xl font-bold hover:bg-white/25 transition-all"
+              className="btn-brutal inline-flex items-center justify-center gap-2.5 bg-accent-500 text-white px-6 py-3.5 rounded-2xl font-display font-medium"
             >
               <FileStack className="w-5 h-5" /> New Project
             </Link>
@@ -92,11 +92,11 @@ export default function Dashboard() {
           { label: 'Favorites Saved', value: totalFavorites, icon: Heart, color: 'text-rose-500 bg-rose-100 dark:bg-rose-900/40' },
           { label: 'Study Streak', value: worksheets.length > 0 ? '3 Days 🔥' : '1 Day 🌟', icon: Clock, color: 'text-emerald-500 bg-emerald-100 dark:bg-emerald-900/40' },
         ].map((stat, i) => (
-          <div key={i} className="glass-card p-5 rounded-2xl flex items-center gap-4 hover:-translate-y-1 transition-all">
-            <div className={`p-3 rounded-xl ${stat.color} shrink-0`}><stat.icon className="w-6 h-6" /></div>
+          <div key={i} className="glass-card p-5 rounded-2xl flex items-center gap-4 hover:-translate-y-1 hover:shadow-[8px_8px_0_var(--color-ink)] transition-transform">
+            <div className={`p-3 rounded-xl border-2 border-slate-900 dark:border-slate-700 ${stat.color} shrink-0`}><stat.icon className="w-6 h-6" /></div>
             <div>
-              <p className="text-2xl font-black text-slate-900 dark:text-white">{stat.value}</p>
-              <p className="text-xs font-semibold text-slate-400">{stat.label}</p>
+              <p className="font-display text-2xl font-semibold text-slate-900 dark:text-white tabular-nums">{stat.value}</p>
+              <p className="text-xs font-semibold text-slate-500">{stat.label}</p>
             </div>
           </div>
         ))}
@@ -123,16 +123,16 @@ export default function Dashboard() {
             <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 text-primary-600 rounded-2xl flex items-center justify-center mx-auto">
               <BookOpen className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold">No Worksheets Generated Yet</h3>
+            <h3 className="font-display text-lg font-semibold">No Worksheets Generated Yet</h3>
             <p className="text-sm text-slate-500">Create your first custom CBSE practice paper tailored to your class and subject.</p>
-            <Link href="/generate" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform text-sm">
+            <Link href="/generate" className="btn-brutal inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-display font-medium rounded-xl text-sm">
               <Sparkles className="w-4 h-4" /> Create First Worksheet
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {worksheets.slice(0, 3).map((ws) => (
-              <div key={ws.id} className="glass-card rounded-2xl p-5 hover:border-primary-500/50 transition-all flex flex-col justify-between group">
+              <div key={ws.id} className="glass-card rounded-2xl p-5 hover:-translate-y-1 hover:shadow-[8px_8px_0_var(--color-ink)] transition-transform flex flex-col justify-between group">
                 <div>
                   <div className="flex justify-between items-start mb-3">
                     <span className="px-2.5 py-1 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-lg text-xs font-bold">
@@ -153,7 +153,7 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-                <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex gap-2 pt-2 border-t-2 border-slate-100 dark:border-slate-800">
                   <button
                     onClick={() => openWorksheet(ws)}
                     disabled={loadingWorksheetId === ws.id}
@@ -171,33 +171,33 @@ export default function Dashboard() {
       {/* Modal Viewer */}
       {selectedWorksheet && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 shadow-2xl relative space-y-6">
+          <div className="glass-card bg-surface-light dark:bg-surface-dark rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 relative space-y-6">
             <button
               onClick={() => setSelectedWorksheet(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 rounded-full border-2 border-transparent hover:border-slate-900 dark:hover:border-slate-700"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex justify-between items-center pr-8 border-b pb-4 border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-center pr-8 border-b-2 border-slate-900 dark:border-slate-700 pb-4">
               <div>
-                <span className="px-2.5 py-1 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-lg text-xs font-bold uppercase">
+                <span className="px-2.5 py-1 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border-2 border-slate-900 dark:border-primary-800 rounded-lg text-xs font-bold uppercase">
                   {selectedWorksheet.subject} • {selectedWorksheet.class}
                 </span>
-                <h2 className="text-xl font-bold mt-2">{selectedWorksheet.chapter}</h2>
+                <h2 className="font-display text-xl font-semibold mt-2">{selectedWorksheet.chapter}</h2>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleDownloadPdf(selectedWorksheet.id, 'worksheet')}
                   disabled={downloadingPdf !== null}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg disabled:opacity-50"
+                  className="btn-brutal px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-50"
                 >
                   {downloadingPdf === 'worksheet' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} PDF
                 </button>
                 <button
                   onClick={() => handleDownloadPdf(selectedWorksheet.id, 'answer-key')}
                   disabled={downloadingPdf !== null}
-                  className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold flex items-center gap-2 shadow disabled:opacity-50"
+                  className="btn-brutal px-4 py-2 bg-white text-slate-700 rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-50"
                 >
                   {downloadingPdf === 'answer-key' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Answer Key
                 </button>
