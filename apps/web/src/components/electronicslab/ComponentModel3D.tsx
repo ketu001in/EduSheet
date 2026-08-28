@@ -136,6 +136,34 @@ export default function ComponentModel({ spec }: { spec: ComponentSpec }) {
           </mesh>
         </group>
       );
+    case 'oscilloscope':
+      return (
+        <group>
+          {/* Real bench-instrument body */}
+          <mesh castShadow position={[0, 0.28, 0]}>
+            <boxGeometry args={[0.55, 0.4, 0.4]} />
+            <meshStandardMaterial color={color} roughness={0.5} />
+          </mesh>
+          {/* The real screen -- a dark bezel with a glowing green trace-colored panel */}
+          <mesh position={[0, 0.3, 0.201]}>
+            <boxGeometry args={[0.42, 0.28, 0.01]} />
+            <meshStandardMaterial color="#0a0f0a" roughness={0.6} />
+          </mesh>
+          <mesh position={[0, 0.3, 0.207]}>
+            <boxGeometry args={[0.36, 0.22, 0.005]} />
+            <meshStandardMaterial color="#052e16" emissive="#22c55e" emissiveIntensity={0.35} roughness={0.4} />
+          </mesh>
+          {/* Control knobs (VOLTS/DIV, TIME/DIV) */}
+          <mesh position={[-0.18, 0.12, 0.201]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
+            <meshStandardMaterial color="#334155" metalness={0.4} roughness={0.4} />
+          </mesh>
+          <mesh position={[0.18, 0.12, 0.201]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.035, 0.035, 0.02, 16]} />
+            <meshStandardMaterial color="#334155" metalness={0.4} roughness={0.4} />
+          </mesh>
+        </group>
+      );
     case 'buzzer':
       return (
         <group>

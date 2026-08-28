@@ -43,7 +43,7 @@ const CENTER_X = BOARD_W / 2;
 const CENTER_Z = BOARD_D / 2;
 
 const BODY_SCALE_BY_KIND: Record<string, number> = {
-  resistor: 0.34, capacitor: 0.4, 'battery-9v': 0.24, 'battery-6v': 0.24, 'timer-555': 0.42,
+  resistor: 0.34, capacitor: 0.4, 'battery-9v': 0.24, 'battery-6v': 0.24, 'timer-555': 0.42, oscilloscope: 0.5,
 };
 
 function colX(col: string): number {

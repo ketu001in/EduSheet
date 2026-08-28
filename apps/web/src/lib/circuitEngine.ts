@@ -440,3 +440,95 @@ export function evaluateCircuit(
     anyBatteryPlaced: sources.length > 0,
   };
 }
+
+// ---------------------------------------------------------------------
+// Oscilloscope -- a real probe-any-two-points instrument, matching how
+// Virtual Labs' own "Generation of Clock" experiment (and every real
+// circuit simulator: Tinkercad, Falstad/CircuitJS, EveryCircuit) treats
+// a CRO: wire it to two nodes and it draws the actual voltage-vs-time
+// trace there. Every trace shape below is derived from formulas already
+// verified elsewhere in this file (astable555's own tH/tL derivation,
+// and the real RC charge/discharge equations that produce those exact
+// times -- cross-checked algebraically in this file's own comments), not
+// invented per case. A point this engine genuinely cannot determine a
+// voltage for (scoped honestly: this is a DC-steady-state engine, not a
+// transient solver -- see this file's header) reports 'unknown' rather
+// than a fabricated reading.
+// ---------------------------------------------------------------------
+
+export type OscilloscopeTraceKind = 'flat' | 'square' | 'rc-curve' | 'unknown';
+
+export interface OscilloscopeTrace {
+  kind: OscilloscopeTraceKind;
+  voltageAtT: (tSeconds: number) => number;
+  periodSeconds: number | null;
+  frequencyHz: number | null;
+  minVoltage: number;
+  maxVoltage: number;
+  label: string;
+}
+
+export function computeOscilloscopeTrace(
+  probeNode: string | null,
+  groundNode: string | null,
+  battery: { posNode: string; negNode: string; voltage: number } | null,
+  timer: { topology: Astable555Topology; timing: Astable555Result } | null,
+): OscilloscopeTrace {
+  const flat = (v: number, label: string): OscilloscopeTrace => ({
+    kind: 'flat', voltageAtT: () => v, periodSeconds: null, frequencyHz: null, minVoltage: Math.min(0, v), maxVoltage: Math.max(0.001, v), label,
+  });
+
+  if (!probeNode || !groundNode) {
+    return { kind: 'unknown', voltageAtT: () => 0, periodSeconds: null, frequencyHz: null, minVoltage: 0, maxVoltage: 1, label: 'Not connected -- wire the probe and ground leads into the circuit' };
+  }
+  if (probeNode === groundNode) return flat(0, 'Probe and ground are on the same node -- 0V');
+
+  if (timer) {
+    const { topology, timing } = timer;
+    if (probeNode === topology.outNode && groundNode === topology.gndNode) {
+      const vcc = battery?.voltage ?? 9;
+      return {
+        kind: 'square',
+        voltageAtT: (t) => {
+          const phase = ((t % timing.periodSeconds) + timing.periodSeconds) % timing.periodSeconds;
+          return phase < timing.highTimeSeconds ? vcc : 0;
+        },
+        periodSeconds: timing.periodSeconds, frequencyHz: timing.frequencyHz, minVoltage: 0, maxVoltage: vcc,
+        label: '555 Output (Pin 3) -- real astable square wave',
+      };
+    }
+    if (probeNode === topology.thresTrigNode && groundNode === topology.gndNode) {
+      const vcc = battery?.voltage ?? 9;
+      const tau1 = timing.highTimeSeconds / Math.LN2; // (R1+R2)*C, recovered from the same real derivation astable555() uses
+      const tau2 = timing.lowTimeSeconds / Math.LN2; // R2*C
+      return {
+        kind: 'rc-curve',
+        voltageAtT: (t) => {
+          const phase = ((t % timing.periodSeconds) + timing.periodSeconds) % timing.periodSeconds;
+          if (phase < timing.highTimeSeconds) {
+            // Real RC charge curve, asymptote Vcc, starting at Vcc/3 -- algebraically
+            // guaranteed to reach exactly 2Vcc/3 at phase=highTimeSeconds (see file header).
+            return vcc - (2 * vcc / 3) * Math.exp(-phase / tau1);
+          }
+          const t2 = phase - timing.highTimeSeconds;
+          // Real RC discharge curve, asymptote 0V, starting at 2Vcc/3.
+          return (2 * vcc / 3) * Math.exp(-t2 / tau2);
+        },
+        periodSeconds: timing.periodSeconds, frequencyHz: timing.frequencyHz, minVoltage: vcc / 3, maxVoltage: (2 * vcc) / 3,
+        label: '555 Timing Capacitor (Pin 6/2) -- real RC charge/discharge curve',
+      };
+    }
+  }
+
+  if (battery) {
+    if (probeNode === battery.posNode && groundNode === battery.negNode) return flat(battery.voltage, 'Battery terminals -- steady DC supply');
+    if (probeNode === battery.negNode && groundNode === battery.posNode) return flat(-battery.voltage, 'Battery terminals (reversed) -- steady DC supply');
+    if (probeNode === battery.posNode && groundNode === battery.posNode) return flat(0, 'Both leads on the positive rail -- 0V');
+    if (probeNode === battery.negNode && groundNode === battery.negNode) return flat(0, 'Both leads on ground -- 0V');
+  }
+
+  return {
+    kind: 'unknown', voltageAtT: () => 0, periodSeconds: null, frequencyHz: null, minVoltage: 0, maxVoltage: 1,
+    label: 'No signal here yet -- try the battery terminals, or (on a 555 circuit) the output or timing-capacitor pins',
+  };
+}

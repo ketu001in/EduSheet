@@ -16,12 +16,14 @@ import {
   buildConnectivity,
   detect555AstableTopology,
   astable555,
+  computeOscilloscopeTrace,
   type EvalComponentInput,
   type VirtualSource,
   type LeadPlacement,
 } from '@/lib/circuitEngine';
 import { playSelectChime, playSuccessChime, playWarnBuzz, startBuzzerTone, stopBuzzerTone } from '@/lib/uiSoundEngine';
 import type { DrawerCategory } from './ElectronicsCupboard3DScene';
+import OscilloscopeDisplay from './OscilloscopeDisplay';
 
 const Breadboard3DScene = dynamic(() => import('./Breadboard3DScene'), {
   ssr: false,
@@ -246,10 +248,19 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
   });
   const batteryVoltage = batteryPlacement ? ELECTRONICS_COMPONENTS.find((c) => c.id === batteryPlacement.componentId)?.electrical?.voltage ?? 9 : 9;
 
+  // Shared physical connectivity -- which breadboard positions are
+  // genuinely the same electrical node, real strip/rail/wire topology
+  // (nodeKeyForPosition/UnionFind, see circuitEngine.ts). Used both for
+  // 555 topology recognition and for the oscilloscope probe below, so
+  // it's built once, not duplicated per feature.
+  const connectivity = useMemo(() => {
+    const leads: LeadPlacement[] = placements.flatMap((p) => Object.entries(p.pinPositions).map(([pin, position]) => ({ componentId: p.instanceId, pin, position })));
+    return buildConnectivity(leads, wireEdges);
+  }, [placements, wireEdges]);
+
   const timerResult = useMemo(() => {
     if (!timerPlacement) return null;
-    const leads: LeadPlacement[] = placements.flatMap((p) => Object.entries(p.pinPositions).map(([pin, position]) => ({ componentId: p.instanceId, pin, position })));
-    const conn = buildConnectivity(leads, wireEdges);
+    const conn = connectivity;
     const resistors = placements
       .filter((p) => ELECTRONICS_COMPONENTS.find((c) => c.id === p.componentId)?.kind === 'resistor')
       .map((p) => ({ componentId: p.instanceId, ohms: p.valueOverride?.resistanceOhms ?? ELECTRONICS_COMPONENTS.find((c) => c.id === p.componentId)?.electrical?.resistanceOhms ?? 0 }));
@@ -260,7 +271,7 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
     const topology = detect555AstableTopology(conn, timerPlacement.instanceId, resistors, capacitor);
     if (!topology) return null;
     return { topology, timing: astable555(topology.r1Ohms, topology.r2Ohms, topology.capacitanceFarads) };
-  }, [placements, wireEdges, timerPlacement]);
+  }, [placements, connectivity, timerPlacement]);
 
   const extraSources: VirtualSource[] = useMemo(
     () => (timerResult ? [{ posNode: timerResult.topology.outNode, negNode: timerResult.topology.gndNode, voltage: batteryVoltage }] : []),
@@ -279,6 +290,28 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
 
   const litCount = evaluation.leds.filter((l) => l.lit).length;
   const activeLoadCount = evaluation.loads.filter((l) => l.active).length;
+
+  // -- Oscilloscope -- a real probe-any-two-points instrument, wired in
+  // exactly like the LED/switch/motor/etc above: place it, wire its
+  // probe and ground leads into the circuit, and it reads the real
+  // voltage there via the same connectivity/topology data everything
+  // else on this board already uses. Available on every project (it's
+  // just another real catalog part), not authored per project.
+  const oscilloscopePlacement = placements.find((p) => ELECTRONICS_COMPONENTS.find((c) => c.id === p.componentId)?.kind === 'oscilloscope');
+  const oscilloscopeTrace = useMemo(() => {
+    if (!oscilloscopePlacement) return null;
+    const probeNode = connectivity.electricalNode(oscilloscopePlacement.instanceId, 'probe');
+    const groundNode = connectivity.electricalNode(oscilloscopePlacement.instanceId, 'ground');
+    const battery = batteryPlacement
+      ? {
+          posNode: connectivity.electricalNode(batteryPlacement.instanceId, 'pos'),
+          negNode: connectivity.electricalNode(batteryPlacement.instanceId, 'neg'),
+          voltage: batteryVoltage,
+        }
+      : null;
+    const validBattery = battery && battery.posNode && battery.negNode ? { posNode: battery.posNode, negNode: battery.negNode, voltage: battery.voltage } : null;
+    return computeOscilloscopeTrace(probeNode, groundNode, validBattery, timerResult);
+  }, [oscilloscopePlacement, connectivity, batteryPlacement, batteryVoltage, timerResult]);
 
   const content = (
     <div className="space-y-3">
@@ -386,6 +419,10 @@ export default function BreadboardWorkbench({ project }: { project: ElectronicsP
               <p className="font-mono font-bold">{timerResult ? `${timerResult.timing.frequencyHz.toFixed(2)} Hz` : batteryPlacement ? `${batteryVoltage}V` : '--'}</p>
             </div>
           </div>
+
+          {!browsingDrawers && oscilloscopeTrace && (
+            <OscilloscopeDisplay trace={oscilloscopeTrace} />
+          )}
 
           {!browsingDrawers && (
             <div>

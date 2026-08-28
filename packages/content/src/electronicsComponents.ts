@@ -313,6 +313,17 @@ export const ELECTRONICS_COMPONENTS: ComponentSpec[] = [
     modelHint: 'solder-spool',
     colorHex: '#a8a29e',
   },
+  {
+    id: 'oscilloscope',
+    kind: 'oscilloscope',
+    name: 'Oscilloscope (CRO)',
+    category: 'tools',
+    pins: [{ id: 'probe', label: 'Probe (CH1)' }, { id: 'ground', label: 'Ground' }],
+    description: 'A real test instrument -- probe any two points in your circuit and it draws the actual voltage-versus-time trace there, exactly like a real bench oscilloscope (or the CRO used in the Virtual Labs "Generation of Clock" experiment).',
+    deepDive: "A real Cathode Ray Oscilloscope (CRO) works by steering an electron beam across a phosphor screen, deflected vertically by the probed voltage and swept horizontally by time -- which is exactly why its two core controls are VOLTS/DIV (how many volts each vertical grid square represents) and TIME/DIV (how many seconds each horizontal grid square represents). Probe a steady DC circuit and you'll see a flat line at its real voltage; probe a 555 astable's output and you'll see the real square wave at its real computed frequency; probe the 555's own timing capacitor and you'll see the real RC charge/discharge curve underneath that square wave.",
+    modelHint: 'oscilloscope',
+    colorHex: '#1e293b',
+  },
 ];
 
 export const ELECTRONICS_CATEGORY_LABELS: Record<string, string> = {

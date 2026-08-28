@@ -16,12 +16,13 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'middle',
     board: 'both',
     chapterTags: ['Electricity', 'Electric Circuits'],
-    componentIds: ['battery-9v', 'resistor-470', 'led-red', 'breadboard-half'],
+    componentIds: ['battery-9v', 'resistor-470', 'led-red', 'oscilloscope', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'battery-9v', instanceId: 'battery1', pinPositions: { pos: { rail: 'top-pos' }, neg: { rail: 'top-neg' } } },
         { componentId: 'resistor-470', instanceId: 'r1', pinPositions: { a: { row: 1, col: 'a' }, b: { row: 3, col: 'a' } } },
         { componentId: 'led-red', instanceId: 'led1', pinPositions: { anode: { row: 3, col: 'c' }, cathode: { row: 5, col: 'a' } } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: { probe: { rail: 'top-pos' }, ground: { rail: 'top-neg' } } },
       ],
       wires: [
         { id: 'w-r1-pos', from: { row: 1, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
@@ -54,13 +55,14 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'middle',
     board: 'both',
     chapterTags: ['Electricity', 'Electric Circuits'],
-    componentIds: ['battery-9v', 'switch-spst', 'resistor-470', 'led-red', 'breadboard-half'],
+    componentIds: ['battery-9v', 'switch-spst', 'resistor-470', 'led-red', 'oscilloscope', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'battery-9v', instanceId: 'battery1', pinPositions: { pos: { rail: 'top-pos' }, neg: { rail: 'top-neg' } } },
         { componentId: 'switch-spst', instanceId: 'sw1', pinPositions: { a: { row: 1, col: 'a' }, b: { row: 3, col: 'a' } } },
         { componentId: 'resistor-470', instanceId: 'r1', pinPositions: { a: { row: 3, col: 'c' }, b: { row: 5, col: 'a' } } },
         { componentId: 'led-red', instanceId: 'led1', pinPositions: { anode: { row: 5, col: 'c' }, cathode: { row: 7, col: 'a' } } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: { probe: { rail: 'top-pos' }, ground: { rail: 'top-neg' } } },
       ],
       wires: [
         { id: 'w-sw-pos', from: { row: 1, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
@@ -93,13 +95,14 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'middle',
     board: 'both',
     chapterTags: ['Electricity', 'Electric Circuits'],
-    componentIds: ['battery-9v', 'push-button', 'resistor-470', 'led-red', 'breadboard-half'],
+    componentIds: ['battery-9v', 'push-button', 'resistor-470', 'led-red', 'oscilloscope', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'battery-9v', instanceId: 'battery1', pinPositions: { pos: { rail: 'top-pos' }, neg: { rail: 'top-neg' } } },
         { componentId: 'push-button', instanceId: 'pb1', pinPositions: { a: { row: 1, col: 'a' }, b: { row: 3, col: 'a' } } },
         { componentId: 'resistor-470', instanceId: 'r1', pinPositions: { a: { row: 3, col: 'c' }, b: { row: 5, col: 'a' } } },
         { componentId: 'led-red', instanceId: 'led1', pinPositions: { anode: { row: 5, col: 'c' }, cathode: { row: 7, col: 'a' } } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: { probe: { rail: 'top-pos' }, ground: { rail: 'top-neg' } } },
       ],
       wires: [
         { id: 'w-pb-pos', from: { row: 1, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
@@ -132,13 +135,14 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'senior',
     board: 'both',
     chapterTags: ['Electricity', 'Electric Circuits', 'Current Electricity'],
-    componentIds: ['battery-9v', 'resistor-330', 'led-red', 'led-yellow', 'breadboard-half'],
+    componentIds: ['battery-9v', 'resistor-330', 'led-red', 'led-yellow', 'oscilloscope', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'battery-9v', instanceId: 'battery1', pinPositions: { pos: { rail: 'top-pos' }, neg: { rail: 'top-neg' } } },
         { componentId: 'resistor-330', instanceId: 'r1', pinPositions: { a: { row: 1, col: 'a' }, b: { row: 3, col: 'a' } } },
         { componentId: 'led-red', instanceId: 'led1', pinPositions: { anode: { row: 3, col: 'c' }, cathode: { row: 5, col: 'a' } } },
         { componentId: 'led-yellow', instanceId: 'led2', pinPositions: { anode: { row: 5, col: 'c' }, cathode: { row: 7, col: 'a' } } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: { probe: { rail: 'top-pos' }, ground: { rail: 'top-neg' } } },
       ],
       wires: [
         { id: 'w-r1-pos', from: { row: 1, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
@@ -170,7 +174,7 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'senior',
     board: 'both',
     chapterTags: ['Electricity', 'Electric Circuits', 'Current Electricity'],
-    componentIds: ['battery-9v', 'resistor-470', 'led-red', 'led-green', 'breadboard-half'],
+    componentIds: ['battery-9v', 'resistor-470', 'led-red', 'led-green', 'oscilloscope', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'battery-9v', instanceId: 'battery1', pinPositions: { pos: { rail: 'top-pos' }, neg: { rail: 'top-neg' } } },
@@ -178,6 +182,7 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
         { componentId: 'led-red', instanceId: 'led1', pinPositions: { anode: { row: 3, col: 'c' }, cathode: { row: 5, col: 'a' } } },
         { componentId: 'resistor-470', instanceId: 'r2', pinPositions: { a: { row: 2, col: 'a' }, b: { row: 4, col: 'a' } } },
         { componentId: 'led-green', instanceId: 'led2', pinPositions: { anode: { row: 4, col: 'c' }, cathode: { row: 6, col: 'a' } } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: { probe: { rail: 'top-pos' }, ground: { rail: 'top-neg' } } },
       ],
       wires: [
         { id: 'w-r1-pos', from: { row: 1, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
@@ -211,12 +216,13 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'senior',
     board: 'both',
     chapterTags: ['Electricity', 'Electric Circuits'],
-    componentIds: ['battery-9v', 'switch-spst', 'buzzer-piezo', 'breadboard-half'],
+    componentIds: ['battery-9v', 'switch-spst', 'buzzer-piezo', 'oscilloscope', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'battery-9v', instanceId: 'battery1', pinPositions: { pos: { rail: 'top-pos' }, neg: { rail: 'top-neg' } } },
         { componentId: 'switch-spst', instanceId: 'sw1', pinPositions: { a: { row: 1, col: 'a' }, b: { row: 3, col: 'a' } } },
         { componentId: 'buzzer-piezo', instanceId: 'bz1', pinPositions: { pos: { row: 3, col: 'c' }, neg: { row: 5, col: 'a' } } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: { probe: { rail: 'top-pos' }, ground: { rail: 'top-neg' } } },
       ],
       wires: [
         { id: 'w-sw-pos', from: { row: 1, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
@@ -249,12 +255,13 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'senior',
     board: 'both',
     chapterTags: ['Electricity', 'Magnetic Effects of Electric Current'],
-    componentIds: ['battery-6v', 'switch-spst', 'motor-dc', 'breadboard-half'],
+    componentIds: ['battery-6v', 'switch-spst', 'motor-dc', 'oscilloscope', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'battery-6v', instanceId: 'battery1', pinPositions: { pos: { rail: 'top-pos' }, neg: { rail: 'top-neg' } } },
         { componentId: 'switch-spst', instanceId: 'sw1', pinPositions: { a: { row: 1, col: 'a' }, b: { row: 3, col: 'a' } } },
         { componentId: 'motor-dc', instanceId: 'm1', pinPositions: { pos: { row: 3, col: 'c' }, neg: { row: 5, col: 'a' } } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: { probe: { rail: 'top-pos' }, ground: { rail: 'top-neg' } } },
       ],
       wires: [
         { id: 'w-sw-pos', from: { row: 1, col: 'e' }, to: { rail: 'top-pos' }, colorHex: '#dc2626' },
@@ -290,7 +297,7 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
     gradeBand: 'senior',
     board: 'both',
     chapterTags: ['Electricity', 'Electric Circuits', 'Current Electricity'],
-    componentIds: ['battery-9v', 'resistor-1000', 'resistor-100000', 'resistor-470', 'cap-electro-10uf', 'led-red', 'timer-555', 'breadboard-half'],
+    componentIds: ['battery-9v', 'resistor-1000', 'resistor-100000', 'resistor-470', 'cap-electro-10uf', 'led-red', 'timer-555', 'oscilloscope', 'breadboard-half'],
     referenceCircuit: {
       placements: [
         { componentId: 'timer-555', instanceId: 'ic555', pinPositions: {
@@ -326,6 +333,10 @@ export const ELECTRONICS_PROJECTS: ElectronicsProject[] = [
         { componentId: 'battery-9v', instanceId: 'battery1', pinPositions: {
           pos: { rail: 'top-pos' },
           neg: { rail: 'top-neg' },
+        } },
+        { componentId: 'oscilloscope', instanceId: 'cro1', pinPositions: {
+          probe: { row: 12, col: 'd' },
+          ground: { rail: 'top-neg' },
         } },
       ],
       wires: [

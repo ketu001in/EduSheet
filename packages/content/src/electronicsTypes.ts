@@ -51,7 +51,8 @@ export type ComponentKind =
   | 'switch-spst' | 'switch-spdt' | 'push-button'
   | 'buzzer' | 'dc-motor' | 'motor-servo' | 'motor-stepper' | 'relay'
   | 'breadboard' | 'perfboard' | 'pcb-blank'
-  | 'soldering-iron' | 'solder-wire';
+  | 'soldering-iron' | 'solder-wire'
+  | 'oscilloscope';
 
 // A pin/lead on a component, named the way a real datasheet names it
 // (e.g. the 555's 8 pins by their real names) -- the circuit engine's
@@ -80,7 +81,7 @@ export interface ComponentSpec {
     forwardVoltage?: number; // LEDs/diodes, in volts
     maxCurrentAmps?: number; // LEDs -- the rated safe maximum
   };
-  modelHint?: 'box' | 'cylinder' | 'led-dome' | 'ic-dip8' | 'switch-toggle' | 'push-button' | 'motor' | 'servo' | 'stepper' | 'buzzer' | 'relay' | 'breadboard' | 'perfboard' | 'pcb-blank' | 'soldering-iron' | 'solder-spool';
+  modelHint?: 'box' | 'cylinder' | 'led-dome' | 'ic-dip8' | 'switch-toggle' | 'push-button' | 'motor' | 'servo' | 'stepper' | 'buzzer' | 'relay' | 'breadboard' | 'perfboard' | 'pcb-blank' | 'soldering-iron' | 'solder-spool' | 'oscilloscope';
   colorHex?: string; // real, typical color for this part (e.g. a red LED's real dome color)
 }
 
