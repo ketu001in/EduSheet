@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { Document, Page, Text, View, StyleSheet, renderToStream, Svg, Rect, Line, Circle, Ellipse, Path, Polygon, Defs, LinearGradient, Stop, Font, Image } from '@react-pdf/renderer';
 import type { DiagramSpec, DiagramShape, DiagramLabelPoint } from '@edusheets/ai';
-import type { ChemistryExperiment, PhysicsExperiment, BiologyExperiment, MathExperiment } from '@edusheets/content';
-import { CHEM_REAGENTS, CHEM_EQUIPMENT, PHYSICS_EQUIPMENT, BIOLOGY_EQUIPMENT } from '@edusheets/content';
+import type { ChemistryExperiment, PhysicsExperiment, BiologyExperiment, MathExperiment, DocRouteEntry } from '@edusheets/content';
+import { CHEM_REAGENTS, CHEM_EQUIPMENT, PHYSICS_EQUIPMENT, BIOLOGY_EQUIPMENT, HELP_CATEGORIES } from '@edusheets/content';
 
 // Helvetica (react-pdf's default) is a base-14 PDF font with Latin glyphs
 // only -- Hindi/Sanskrit worksheets are generated in Devanagari script, and
@@ -1677,4 +1677,109 @@ export const generateMathLabReportPDF = async (
   return renderToBuffer(
     <MathLabReportDocument meta={meta} experiment={experiment} observations={observations} predictAnswerIndex={predictAnswerIndex} predictCorrect={predictCorrect} finalParams={finalParams} />
   );
+};
+
+// -- User Guide (Help Documentation Center, printable) --------------------
+// Same DocRouteEntry data that drives the F1 drawer and the /help web pages
+// (see @edusheets/content's helpRegistry.ts) -- one cover page, a table of
+// contents grouped by category, then one section per article. Content is
+// static (not user-specific), so this is always generated fresh on request
+// rather than tied to any stored record.
+
+const userGuideStyles = StyleSheet.create({
+  coverPage: { padding: 40, alignItems: 'center', justifyContent: 'center', fontFamily: 'Helvetica' },
+  coverTitle: { fontSize: 26, fontWeight: 'bold', color: '#1B2A6B', marginTop: 18, textAlign: 'center' },
+  coverSubtitle: { fontSize: 12, color: '#475569', marginTop: 8, textAlign: 'center' },
+  tocCategoryHeading: { fontSize: 13, fontWeight: 'bold', color: '#1B2A6B', marginTop: 14, marginBottom: 6 },
+  tocRow: { fontSize: 10, color: '#334155', marginBottom: 3 },
+  categoryHeading: { fontSize: 16, fontWeight: 'bold', color: '#1B2A6B', marginBottom: 4, marginTop: 6 },
+  categoryDescription: { fontSize: 10, color: '#64748b', marginBottom: 14, fontStyle: 'italic' },
+  articleTitle: { fontSize: 13, fontWeight: 'bold', color: '#1B2A6B', marginBottom: 4 },
+  articleSummary: { marginBottom: 8, color: '#334155' },
+  articleSubheading: { fontSize: 9, fontWeight: 'bold', color: '#8A5A00', letterSpacing: 0.5, marginBottom: 4, marginTop: 4 },
+  bulletItem: { marginBottom: 3, marginLeft: 8 },
+  articleBlock: { marginBottom: 16 },
+});
+
+const UserGuideDocument = ({ entries }: { entries: DocRouteEntry[] }) => {
+  const categorized = HELP_CATEGORIES.map((cat) => ({
+    ...cat,
+    entries: entries.filter((e) => e.category === cat.id),
+  })).filter((cat) => cat.entries.length > 0);
+
+  return (
+    <Document>
+      <Page size="A4" style={userGuideStyles.coverPage}>
+        <PdfLogo />
+        <Text style={userGuideStyles.coverTitle}>EduSheets User Guide</Text>
+        <Text style={userGuideStyles.coverSubtitle}>A complete reference for every page and virtual lab in the app</Text>
+        <Text style={{ fontSize: 8, color: '#94a3b8', marginTop: 30 }}>Bosket&apos;s EDStudio • Developed by Bosket&apos;s Tech Ventures</Text>
+      </Page>
+
+      <Page size="A4" style={styles.page}>
+        <View style={styles.pageBorder} fixed />
+        <View style={styles.brandMark} fixed>
+          <PdfLogo />
+          <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
+        </View>
+        <Text style={styles.title}>Table of Contents</Text>
+        {categorized.map((cat) => (
+          <View key={cat.id} wrap={false}>
+            <Text style={userGuideStyles.tocCategoryHeading}>{cat.label}</Text>
+            {cat.entries.map((e) => (
+              <Text key={e.id} style={userGuideStyles.tocRow}>{e.title}</Text>
+            ))}
+          </View>
+        ))}
+        <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+          `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+        )} fixed />
+      </Page>
+
+      {categorized.map((cat) => (
+        <Page key={cat.id} size="A4" style={styles.page}>
+          <View style={styles.pageBorder} fixed />
+          <View style={styles.brandMark} fixed>
+            <PdfLogo />
+            <Text style={styles.brandName}>Bosket&apos;s EDStudio</Text>
+          </View>
+          <Text style={userGuideStyles.categoryHeading}>{cat.label}</Text>
+          <Text style={userGuideStyles.categoryDescription}>{cat.description}</Text>
+
+          {cat.entries.map((entry) => (
+            <View key={entry.id} style={userGuideStyles.articleBlock} wrap={false}>
+              <Text style={userGuideStyles.articleTitle}>{entry.title}</Text>
+              <Text style={userGuideStyles.articleSummary}>{entry.summary}</Text>
+
+              <Text style={userGuideStyles.articleSubheading}>WHAT YOU CAN DO HERE</Text>
+              {entry.keyActions.map((action, i) => (
+                <Text key={i} style={userGuideStyles.bulletItem}>• {action}</Text>
+              ))}
+
+              {entry.tips && entry.tips.length > 0 && (
+                <>
+                  <Text style={userGuideStyles.articleSubheading}>TIPS</Text>
+                  {entry.tips.map((tip, i) => (
+                    <Text key={i} style={userGuideStyles.bulletItem}>• {tip}</Text>
+                  ))}
+                </>
+              )}
+
+              {entry.longDescription?.map((para, i) => (
+                <Text key={i} style={{ marginTop: 6, textAlign: 'justify' }}>{para}</Text>
+              ))}
+            </View>
+          ))}
+
+          <Text style={styles.footer} render={({ pageNumber, totalPages }) => (
+            `Bosket's EDStudio • Developed by Bosket's Tech Ventures • Page ${pageNumber} of ${totalPages}`
+          )} fixed />
+        </Page>
+      ))}
+    </Document>
+  );
+};
+
+export const generateUserGuidePDF = async (entries: DocRouteEntry[]): Promise<Buffer> => {
+  return renderToBuffer(<UserGuideDocument entries={entries} />);
 };

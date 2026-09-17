@@ -153,6 +153,26 @@ export const uploadMathLabReportPDF = async (userId: string, attemptId: string, 
   return path;
 };
 
+// Not user-specific -- same guide content for everyone, one fixed path,
+// regenerated and overwritten (upsert) on each request rather than kept per
+// user like every other PDF in this file.
+export const uploadHelpGuidePDF = async (buffer: Buffer): Promise<string> => {
+  const path = `help-guide/user-guide.pdf`;
+
+  const { error } = await supabaseAdmin.storage
+    .from('worksheets')
+    .upload(path, buffer, {
+      contentType: 'application/pdf',
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Failed to upload user guide PDF: ${error.message}`);
+  }
+
+  return path;
+};
+
 export const getSignedURL = async (path: string, expiresIn = 3600): Promise<string> => {
   const { data, error } = await supabaseAdmin.storage
     .from('worksheets')

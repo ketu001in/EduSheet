@@ -404,3 +404,16 @@ html[data-font="merriweather"] body { --font-sans: var(--font-merriweather), Geo
     animation: none;
   }
 }
+
+/* Help drawer (HelpPanel) -- same pattern as the mobile nav drawer, mirrored
+   to slide in from the right. */
+@keyframes help-drawer-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[help-drawer-slide-in_0\.22s_ease-out\],
+  .animate-\[mobile-drawer-fade_0\.2s_ease-out\] {
+    animation: none;
+  }
+}

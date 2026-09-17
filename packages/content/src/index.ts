@@ -47,3 +47,5 @@ export * from './codingExperiments';
 export * from './electronicsTypes';
 export * from './electronicsComponents';
 export * from './electronicsProjects';
+export * from './helpTypes';
+export * from './helpRegistry';

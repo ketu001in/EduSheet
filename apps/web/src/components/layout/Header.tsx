@@ -1,13 +1,14 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Bell, Search, Moon, Sun, User, KeyRound, LogOut, ChevronDown, Loader2 } from 'lucide-react';
+import { Bell, Search, Moon, Sun, User, KeyRound, LogOut, ChevronDown, Loader2, HelpCircle } from 'lucide-react';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
 import { createClient } from '@/lib/supabase/client';
 import { api } from '@/lib/api';
 import { useLogout } from '@/hooks/useLogout';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import MobileMenu from './MobileMenu';
+import HelpButton from './HelpButton';
 
 interface NotificationRow {
   id: string;
@@ -132,6 +133,8 @@ export default function Header() {
           {isDarkMode ? <Sun className="w-5 h-5 text-secondary-500" /> : <Moon className="w-5 h-5" />}
         </button>
 
+        <HelpButton />
+
         <div className="relative" ref={notifRef}>
           <button
             onClick={openNotifications}
@@ -195,6 +198,9 @@ export default function Header() {
               </Link>
               <Link href="/profile#security" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
                 <KeyRound className="w-4 h-4" /> Change Password
+              </Link>
+              <Link href="/help" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <HelpCircle className="w-4 h-4" /> Help &amp; Documentation
               </Link>
               <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
               <button
