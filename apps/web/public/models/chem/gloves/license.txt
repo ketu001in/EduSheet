@@ -1,0 +1,11 @@
+Model Information:
+* title:	Lab Equipment Gloves
+* source:	https://sketchfab.com/3d-models/lab-equipment-gloves-3519914b790d47d7a80abbf4ee7919bf
+* author:	eerotiainen (https://sketchfab.com/eerotiainen)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Lab Equipment Gloves" (https://sketchfab.com/3d-models/lab-equipment-gloves-3519914b790d47d7a80abbf4ee7919bf) by eerotiainen (https://sketchfab.com/eerotiainen) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { DiagramSpec } from '@/components/DiagramPreview';
 
 // Question-type keys shared with packages/ai's prompt-instruction system.
 // Keep these in sync with apps/api/src/services/worksheetService.ts's AI_TYPE_TO_DB_TYPE map.
@@ -17,6 +18,8 @@ export const QUESTION_TYPE_OPTIONS: QuestionTypeOption[] = [
   { key: 'word_problem', label: 'Word Problems' },
   { key: 'diagram', label: 'Diagram Based' },
   { key: 'logical_reasoning', label: 'Logical Reasoning' },
+  { key: 'coloring', label: 'Coloring Sheet' },
+  { key: 'tracing', label: 'Tracing Practice' },
 ];
 
 const DB_TYPE_TO_SECTION_TITLE: Record<string, string> = {
@@ -29,6 +32,8 @@ const DB_TYPE_TO_SECTION_TITLE: Record<string, string> = {
   word_problem: 'Word Problems',
   diagram_based: 'Diagram Based Questions',
   logical_reasoning: 'Logical Reasoning',
+  coloring_sheet: 'Coloring Sheets',
+  tracing: 'Tracing Practice',
 };
 
 export interface WorksheetQuestionRow {
@@ -39,6 +44,7 @@ export interface WorksheetQuestionRow {
   correct_answer: string;
   explanation: string | null;
   order_index: number;
+  diagram?: DiagramSpec | null;
 }
 
 export interface SavedQuestion {
@@ -48,6 +54,7 @@ export interface SavedQuestion {
   options?: string[];
   answer: string;
   explanation?: string;
+  diagram?: DiagramSpec;
 }
 
 export interface SavedSection {
@@ -78,6 +85,7 @@ export function groupQuestionsBySection(questions: WorksheetQuestionRow[]): Save
       options: q.options || undefined,
       answer: q.correct_answer,
       explanation: q.explanation || undefined,
+      diagram: q.diagram || undefined,
     });
   }
 
@@ -143,3 +151,11 @@ async function openSignedPdf(endpoint: string) {
 
 export const downloadWorksheetPdf = (id: string) => openSignedPdf(`/api/worksheets/${id}/pdf`);
 export const downloadAnswerKeyPdf = (id: string) => openSignedPdf(`/api/worksheets/${id}/answer-key`);
+
+// Re-renders the worksheet PDF + answer key from already-saved questions --
+// a user-initiated retry for worksheets whose PDF generation failed silently
+// at creation time (pdf_storage_path/answer_key_pdf_path left null).
+export const regenerateWorksheetPdf = (id: string) =>
+  api.post<{ success: boolean; data: { pdfStoragePath: string; answerKeyPdfPath: string } }>(
+    `/api/worksheets/${id}/regenerate-pdf`
+  );

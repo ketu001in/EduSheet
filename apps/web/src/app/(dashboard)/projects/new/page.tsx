@@ -70,17 +70,26 @@ export default function NewProjectPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [boardsRes, classesRes] = await Promise.all([fetchBoards(), fetchClasses()]);
+        const boardsRes = await fetchBoards();
         setBoards(boardsRes.data);
-        setClasses(classesRes.data);
         const cbse = boardsRes.data.find((b) => b.code === 'CBSE');
         if (cbse) setSelectedBoardId(cbse.id);
       } catch (err) {
         console.error(err);
-        setCatalogError('Could not load boards/classes from the server. Is the API running?');
+        setCatalogError('Could not load boards from the server. Is the API running?');
       }
     })();
   }, []);
+
+  // Alternative-pedagogy boards (Montessori/Reggio Emilia/Steiner-Waldorf)
+  // have their own age-stage classes scoped to them, not the shared
+  // Class 1-12/LKG/UKG list.
+  useEffect(() => {
+    if (!selectedBoardId) { setClasses([]); return; }
+    fetchClasses(selectedBoardId)
+      .then((res) => setClasses(res.data))
+      .catch((err) => { console.error(err); setClasses([]); });
+  }, [selectedBoardId]);
 
   useEffect(() => {
     if (!selectedClassId || !selectedBoardId) { setSubjects([]); return; }
@@ -108,6 +117,14 @@ export default function NewProjectPage() {
       .catch((err) => { console.error(err); setTopics([]); })
       .finally(() => setLoadingTopics(false));
   }, [selectedChapterId]);
+
+  const pickBoard = (b: Board) => {
+    setSelectedBoardId(b.id);
+    setSelectedClassId(null); setSelectedClass(null);
+    setSelectedSubjectId(null); setSelectedSubject(null);
+    setSelectedChapterId(null); setSelectedChapter(null);
+    setSelectedTopicIds([]); setSelectedTopics([]);
+  };
 
   const pickClass = (cls: ClassLevel) => {
     setSelectedClassId(cls.id);
@@ -158,6 +175,7 @@ export default function NewProjectPage() {
       const res = await api.post<{ success: boolean; data: { project: any; sections: ProjectSection[]; bibliography: string[] } }>(
         '/api/projects/generate',
         {
+          board: boards.find((b) => b.id === selectedBoardId)?.name,
           classId: selectedClassId,
           className: selectedClass || 'Class 5',
           subjectId: selectedSubjectId,
@@ -208,7 +226,7 @@ export default function NewProjectPage() {
   return (
     <div className="max-w-4xl mx-auto pb-20 select-none">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Create Project / Assignment</h1>
+        <h1 className="font-display text-3xl font-semibold mb-2">Create Project / Assignment</h1>
         <p className="text-slate-500">Generate a written project report — objective, content sections, conclusion, and bibliography — ready to submit.</p>
       </div>
 
@@ -221,7 +239,7 @@ export default function NewProjectPage() {
       <div className="flex items-center justify-between mb-8 relative">
         <div className="absolute left-0 right-0 top-1/2 h-1 bg-slate-200 dark:bg-slate-800 -z-10 -translate-y-1/2"></div>
         {[1, 2, 3, 4, 5].map((step) => (
-          <div key={step} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep >= step ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'bg-surface-light dark:bg-surface-dark border-2 border-slate-200 dark:border-slate-800 text-slate-400'}`}>
+          <div key={step} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border-2 border-slate-900 dark:border-slate-700 ${currentStep >= step ? 'bg-primary-600 text-white shadow-[3px_3px_0_var(--color-ink)]' : 'bg-surface-light dark:bg-surface-dark text-slate-400'}`}>
             {step}
           </div>
         ))}
@@ -239,17 +257,17 @@ export default function NewProjectPage() {
                 <button
                   key={b.id}
                   disabled={!b.is_active}
-                  onClick={() => setSelectedBoardId(b.id)}
-                  className={`p-6 border-2 rounded-2xl text-center transition-all shadow-md ${
+                  onClick={() => pickBoard(b)}
+                  className={`p-6 border-2 border-slate-900 dark:border-slate-700 rounded-2xl text-center transition-all ${
                     !b.is_active
-                      ? 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark opacity-50 cursor-not-allowed'
+                      ? 'bg-surface-light dark:bg-surface-dark opacity-50 cursor-not-allowed'
                       : selectedBoardId === b.id
-                      ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/40'
-                      : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                      ? 'bg-primary-600 shadow-[4px_4px_0_var(--color-ink)]'
+                      : 'bg-surface-light dark:bg-surface-dark hover:shadow-[4px_4px_0_var(--color-ink)]'
                   }`}
                 >
-                  <span className={`block text-2xl font-bold ${selectedBoardId === b.id ? 'text-primary-700 dark:text-primary-300' : ''}`}>{b.code}</span>
-                  <span className={`text-sm ${selectedBoardId === b.id ? 'text-primary-600 dark:text-primary-400' : 'text-slate-500'}`}>{b.is_active ? b.name : 'Coming Soon'}</span>
+                  <span className={`block text-2xl font-bold ${selectedBoardId === b.id ? 'text-white' : ''}`}>{b.code}</span>
+                  <span className={`text-sm ${selectedBoardId === b.id ? 'text-primary-50' : 'text-slate-500'}`}>{b.is_active ? b.name : 'Coming Soon'}</span>
                 </button>
               ))}
             </div>
@@ -258,26 +276,48 @@ export default function NewProjectPage() {
 
         {currentStep === 2 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">Select Class</h2>
-            <p className="text-slate-500 text-sm mb-6">Choose the grade level for the project.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-              {classes.map((cls) => (
-                <button
-                  key={cls.id}
-                  onClick={() => pickClass(cls)}
-                  className={`p-4 rounded-2xl text-center transition-all ${
-                    selectedClassId === cls.id
-                      ? 'border-2 border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 scale-105 shadow-md font-bold'
-                      : 'border border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:border-primary-300'
-                  }`}
-                >
-                  <span className={`block font-bold ${selectedClassId === cls.id ? 'text-primary-600 dark:text-primary-400 text-xl' : 'text-slate-700 dark:text-slate-300'}`}>
-                    {cls.grade_number}
-                  </span>
-                  <span className="text-xs text-slate-500 block">Class</span>
-                </button>
-              ))}
-            </div>
+            <h2 className="text-2xl font-bold mb-2">{classes[0]?.board_id ? 'Select Stage' : 'Select Class'}</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              {classes[0]?.board_id ? 'Choose the developmental stage for the project.' : 'Choose the grade level for the project.'}
+            </p>
+            {classes[0]?.board_id ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {classes.map((cls) => (
+                  <button
+                    key={cls.id}
+                    onClick={() => pickClass(cls)}
+                    className={`p-4 rounded-2xl text-left transition-all ${
+                      selectedClassId === cls.id
+                        ? 'border-2 border-slate-900 bg-primary-600 text-white shadow-[4px_4px_0_var(--color-ink)] font-bold'
+                        : 'border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)]'
+                    }`}
+                  >
+                    <span className={`block font-bold ${selectedClassId === cls.id ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                      {cls.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                {classes.map((cls) => (
+                  <button
+                    key={cls.id}
+                    onClick={() => pickClass(cls)}
+                    className={`p-4 rounded-2xl text-center transition-all ${
+                      selectedClassId === cls.id
+                        ? 'border-2 border-slate-900 bg-primary-600 text-white scale-105 shadow-[4px_4px_0_var(--color-ink)] font-bold'
+                        : 'border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)]'
+                    }`}
+                  >
+                    <span className={`block font-bold ${selectedClassId === cls.id ? 'text-white text-xl' : 'text-slate-700 dark:text-slate-300'}`}>
+                      {cls.grade_number > 0 ? cls.grade_number : cls.name}
+                    </span>
+                    {cls.grade_number > 0 && <span className={`text-xs block ${selectedClassId === cls.id ? 'text-primary-100' : 'text-slate-500'}`}>Class</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -300,11 +340,11 @@ export default function NewProjectPage() {
                     onClick={() => pickSubject(sub)}
                     className={`p-6 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all ${
                       selectedSubjectId === sub.id
-                        ? 'border-2 border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 scale-105 shadow-md font-bold'
-                        : 'border border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:border-primary-300'
+                        ? 'border-2 border-slate-900 bg-primary-600 text-white scale-105 shadow-[4px_4px_0_var(--color-ink)] font-bold'
+                        : 'border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)]'
                     }`}
                   >
-                    <Icon className={`w-8 h-8 ${selectedSubjectId === sub.id ? 'text-primary-500' : 'text-slate-500'}`} />
+                    <Icon className={`w-8 h-8 ${selectedSubjectId === sub.id ? 'text-white' : 'text-slate-500'}`} />
                     <span className="font-semibold text-center">{sub.name}</span>
                   </button>
                 );
@@ -330,8 +370,8 @@ export default function NewProjectPage() {
                   onClick={() => pickChapter(chap)}
                   className={`p-4 rounded-2xl text-left transition-all flex items-center gap-4 ${
                     selectedChapterId === chap.id
-                      ? 'border-2 border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 shadow-md font-bold'
-                      : 'border border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:border-primary-300'
+                      ? 'border-2 border-slate-900 bg-primary-600 text-white shadow-[4px_4px_0_var(--color-ink)] font-bold'
+                      : 'border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:-translate-y-1 hover:shadow-[4px_4px_0_var(--color-ink)]'
                   }`}
                 >
                   <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold ${
@@ -384,10 +424,10 @@ export default function NewProjectPage() {
                       return (
                         <label
                           key={topic.id}
-                          className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                          className={`p-3 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all ${
                             isSelected
-                              ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 font-bold'
-                              : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                              ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 font-bold shadow-[3px_3px_0_var(--color-ink)]'
+                              : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                           }`}
                         >
                           <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${
@@ -403,22 +443,22 @@ export default function NewProjectPage() {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
-                  <h2 className="text-2xl font-bold mb-1">Project Length</h2>
+                <div className="border-t-2 border-slate-900 dark:border-slate-800 pt-8">
+                  <h2 className="font-display text-2xl font-semibold mb-1">Project Length</h2>
                   <p className="text-slate-500 text-sm mb-6">How in-depth should the report be?</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {LENGTH_OPTIONS.map((opt) => (
                       <button
                         key={opt.id}
                         onClick={() => setLength(opt.id)}
-                        className={`p-4 rounded-xl border text-center transition-all ${
+                        className={`p-4 rounded-xl border-2 border-slate-900 dark:border-slate-700 text-center transition-all ${
                           length === opt.id
-                            ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 font-bold shadow-sm'
-                            : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                            ? 'bg-primary-600 text-white font-bold shadow-[3px_3px_0_var(--color-ink)]'
+                            : 'bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                         }`}
                       >
                         <span className="block text-sm font-bold">{opt.label}</span>
-                        <span className="block text-xs text-slate-500 mt-1">{opt.hint}</span>
+                        <span className={`block text-xs mt-1 ${length === opt.id ? 'text-primary-100' : 'text-slate-500'}`}>{opt.hint}</span>
                       </button>
                     ))}
                   </div>
@@ -427,7 +467,7 @@ export default function NewProjectPage() {
             )}
 
             {!isGenerating && !result && (
-              <div className="flex flex-col items-center justify-center py-8 space-y-6 text-center border-t border-slate-200 dark:border-slate-800 pt-8">
+              <div className="flex flex-col items-center justify-center py-8 space-y-6 text-center border-t-2 border-slate-900 dark:border-slate-800 pt-8">
                 <p className="text-slate-500 max-w-md text-sm">
                   {selectedClass || 'Class'} • {selectedSubject} • {selectedChapter}
                 </p>
@@ -446,7 +486,7 @@ export default function NewProjectPage() {
                 )}
                 <button
                   onClick={handleGenerate}
-                  className="px-8 py-4 bg-gradient-to-r from-primary-600 to-indigo-600 text-white rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-xl shadow-primary-500/25 flex items-center gap-3"
+                  className="btn-brutal px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-full font-display font-medium text-lg flex items-center gap-3"
                 >
                   <Sparkles className="w-6 h-6" /> Generate Project Report
                 </button>
@@ -460,7 +500,7 @@ export default function NewProjectPage() {
                   <Sparkles className="w-10 h-10 text-primary-600 animate-pulse" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Writing Your Project Report...</h3>
+                  <h3 className="font-display text-2xl font-semibold mb-2">Writing Your Project Report...</h3>
                   <p className="text-primary-600 dark:text-primary-400 font-medium animate-pulse">Asking your AI provider to draft the report...</p>
                 </div>
               </div>
@@ -468,27 +508,27 @@ export default function NewProjectPage() {
 
             {result && (
               <div className="space-y-6">
-                <div className="p-6 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="p-6 bg-accent-50 dark:bg-accent-950/30 border-2 border-slate-900 dark:border-accent-800 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-green-500 text-white rounded-xl">
+                    <div className="p-3 bg-accent-500 text-white rounded-xl border-2 border-slate-900">
                       <Check className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-green-900 dark:text-green-200">Project Generated & Saved! 🎉</h3>
-                      <p className="text-sm text-green-700 dark:text-green-400">Your AI-drafted project report is ready to print & download.</p>
+                      <h3 className="font-display text-lg font-semibold text-accent-900 dark:text-accent-200">Project Generated & Saved! 🎉</h3>
+                      <p className="text-sm text-accent-700 dark:text-accent-400">Your AI-drafted project report is ready to print & download.</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3 w-full md:w-auto">
                     <button
                       onClick={handleDownloadPdf}
                       disabled={downloadingPdf}
-                      className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105 disabled:opacity-50"
+                      className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Download PDF
                     </button>
                     <button
                       onClick={resetAll}
-                      className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                      className="px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-900 dark:border-slate-700 rounded-xl font-medium text-sm hover:bg-secondary-50 dark:hover:bg-slate-700"
                     >
                       Create Another
                     </button>
@@ -538,7 +578,7 @@ export default function NewProjectPage() {
           <button
             onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
             disabled={currentStep === 1 || isGenerating}
-            className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium disabled:opacity-50 flex items-center gap-2"
+            className="btn-brutal px-6 py-3 bg-white dark:bg-slate-800 rounded-xl font-medium disabled:opacity-50 flex items-center gap-2"
           >
             <ChevronLeft className="w-5 h-5" /> Back
           </button>
@@ -546,7 +586,7 @@ export default function NewProjectPage() {
             <button
               onClick={() => setCurrentStep((s) => Math.min(5, s + 1))}
               disabled={!stepValid(currentStep)}
-              className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold disabled:opacity-50 flex items-center gap-2"
+              className="btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold disabled:opacity-50 flex items-center gap-2"
             >
               Next <ChevronRight className="w-5 h-5" />
             </button>

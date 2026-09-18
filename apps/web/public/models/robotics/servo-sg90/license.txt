@@ -1,0 +1,11 @@
+Model Information:
+* title:	SG90 Servo ( 1:1 Scale)
+* source:	https://sketchfab.com/3d-models/sg90-servo-11-scale-c865adb97e32477f8016658e340375b6
+* author:	IQuanix (https://sketchfab.com/iquanix)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "SG90 Servo ( 1:1 Scale)" (https://sketchfab.com/3d-models/sg90-servo-11-scale-c865adb97e32477f8016658e340375b6) by IQuanix (https://sketchfab.com/iquanix) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,7 +1,7 @@
 // Shared metadata for the "bring your own AI key" flow, used by both the
 // Profile settings page and the no-key setup prompt shown elsewhere in the app.
 export interface AiProviderInfo {
-  id: 'groq' | 'openai' | 'gemini';
+  id: 'groq' | 'openai' | 'gemini' | 'sarvam';
   label: string;
   hint: string;
   keyPageUrl: string;
@@ -43,6 +43,18 @@ export const AI_PROVIDERS: AiProviderInfo[] = [
       'Click "Get API key" in the left sidebar.',
       'Click "Create API key" (choose or create a Google Cloud project if prompted).',
       'Copy the key and paste it below.',
+    ],
+  },
+  {
+    id: 'sarvam',
+    label: 'Sarvam AI',
+    hint: 'Indian AI provider, free signup credits at dashboard.sarvam.ai',
+    keyPageUrl: 'https://dashboard.sarvam.ai',
+    steps: [
+      'Go to dashboard.sarvam.ai and sign up (free signup credits included).',
+      'Open "API Keys" from the dashboard.',
+      'Click "Create API Key", give it a name, and copy the key shown.',
+      'Paste it below.',
     ],
   },
 ];

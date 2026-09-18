@@ -1,0 +1,11 @@
+Model Information:
+* title:	Line Follower Robot
+* source:	https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506
+* author:	zoe.goodward (https://sketchfab.com/zoe.goodward)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Line Follower Robot" (https://sketchfab.com/3d-models/line-follower-robot-11bf9b71d5f34517b404d12c74ddb506) by zoe.goodward (https://sketchfab.com/zoe.goodward) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

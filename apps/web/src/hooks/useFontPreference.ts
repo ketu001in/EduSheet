@@ -2,7 +2,11 @@
 import { useEffect, useState } from 'react';
 
 export const FONT_OPTIONS = [
-  { id: 'inter', label: 'Inter', hint: 'Default — clean and neutral', cssVar: '--font-inter' },
+  // id/cssVar stay 'inter'/'--font-inter' for backward compatibility with
+  // already-saved localStorage values -- only the underlying font loaded
+  // into that variable changed (see layout.tsx), so the label here is
+  // updated to match what it now actually renders.
+  { id: 'inter', label: 'DM Sans', hint: 'Default — clean and warm', cssVar: '--font-inter' },
   { id: 'poppins', label: 'Poppins', hint: 'Rounded and friendly', cssVar: '--font-poppins' },
   { id: 'nunito', label: 'Nunito', hint: 'Soft and approachable', cssVar: '--font-nunito' },
   { id: 'lexend', label: 'Lexend', hint: 'Designed for reading proficiency', cssVar: '--font-lexend' },

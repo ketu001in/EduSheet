@@ -57,7 +57,7 @@ export default function LoginPage() {
   return (
     <div className="space-y-6">
       <div className="text-center md:text-left mb-8">
-        <h2 className="text-3xl font-bold mb-2">Welcome back</h2>
+        <h2 className="font-display text-3xl font-semibold mb-2">Welcome back</h2>
         <p className="text-slate-500 dark:text-slate-400">Please enter your details to sign in.</p>
       </div>
 
@@ -77,8 +77,8 @@ export default function LoginPage() {
             required 
             value={email} 
             onChange={e => setEmail(e.target.value)} 
-            className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary-500 outline-none" 
-            placeholder="Enter your email" 
+            className="w-full p-3 rounded-xl border-2 border-slate-900 dark:border-slate-600 bg-transparent focus:border-primary-600 outline-none"
+            placeholder="Enter your email"
           />
         </div>
         <div>
@@ -88,8 +88,8 @@ export default function LoginPage() {
             required 
             value={password} 
             onChange={e => setPassword(e.target.value)} 
-            className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary-500 outline-none" 
-            placeholder="••••••••" 
+            className="w-full p-3 rounded-xl border-2 border-slate-900 dark:border-slate-600 bg-transparent focus:border-primary-600 outline-none"
+            placeholder="••••••••"
           />
         </div>
         <div className="flex justify-between items-center text-sm">
@@ -99,24 +99,24 @@ export default function LoginPage() {
           </label>
           <Link href="/forgot-password" className="text-primary-600 hover:underline font-medium">Forgot password?</Link>
         </div>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={isLoading}
-          className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-50"
+          className="btn-brutal w-full py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-display font-medium disabled:opacity-50"
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
 
       <div className="relative my-8">
-        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-700"></div></div>
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t-2 border-slate-900 dark:border-slate-700"></div></div>
         <div className="relative flex justify-center text-sm"><span className="px-2 bg-surface-light dark:bg-surface-dark text-slate-500">Or continue with</span></div>
       </div>
 
-      <button 
+      <button
         type="button"
         onClick={handleGoogleLogin}
-        className="w-full py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+        className="btn-brutal w-full py-3 bg-white dark:bg-slate-800 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-secondary-50 dark:hover:bg-slate-700"
       >
         Google
       </button>

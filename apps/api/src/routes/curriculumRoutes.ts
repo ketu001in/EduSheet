@@ -17,7 +17,26 @@ router.get('/boards', async (req: AuthenticatedRequest, res, next) => {
 
 router.get('/classes', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { data, error } = await req.supabase!.from('classes').select('*').order('grade_number');
+    const { boardId } = req.query;
+
+    // Alternative-pedagogy boards (Montessori/Reggio Emilia/Steiner-Waldorf)
+    // have their own age-stage classes scoped to them via board_id -- e.g.
+    // "Primary (Ages 3-6)" instead of "Class 1". Prefer those when the board
+    // has any; otherwise fall back to the shared/global classes (CBSE/ICSE's
+    // Class 1-12, LKG, UKG, which have board_id NULL).
+    if (boardId) {
+      const { data: scoped, error: scopedError } = await req.supabase!
+        .from('classes')
+        .select('*')
+        .eq('board_id', boardId)
+        .order('grade_number');
+      if (scopedError) throw scopedError;
+      if (scoped && scoped.length > 0) {
+        return res.json({ success: true, data: scoped });
+      }
+    }
+
+    const { data, error } = await req.supabase!.from('classes').select('*').is('board_id', null).order('grade_number');
     if (error) throw error;
     res.json({ success: true, data });
   } catch (error) {
