@@ -10,9 +10,19 @@ interface HelpContextValue {
 
 const HelpContext = createContext<HelpContextValue | null>(null);
 
-// The app's first global keyboard shortcut -- F1 opens/closes the
+// True while the keydown's target is somewhere the user is actively typing
+// -- '?' is a printable character (Shift+/), so without this guard the
+// shortcut would fire on every "?" typed into the search box, a form field,
+// etc. instead of just being typed.
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+}
+
+// The app's global keyboard shortcut -- "?" (Shift+/) opens/closes the
 // contextual help drawer from anywhere in the dashboard (Escape closes it
-// too). preventDefault stops the OS/browser's own F1 help where applicable.
+// too), the same convention used by GitHub, Slack, Linear, and Notion.
 export function HelpProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -22,7 +32,7 @@ export function HelpProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'F1') {
+      if (e.key === '?' && !isTypingTarget(e.target)) {
         e.preventDefault();
         toggle();
       } else if (e.key === 'Escape') {

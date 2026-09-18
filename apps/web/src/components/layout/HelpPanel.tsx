@@ -7,7 +7,7 @@ import { getHelpEntryForPath } from '@edusheets/content';
 import { downloadUserGuidePdf } from '@/lib/help';
 import { useHelp } from './HelpProvider';
 
-// The F1 contextual help drawer, mounted once in (dashboard)/layout.tsx so
+// The "?" contextual help drawer, mounted once in (dashboard)/layout.tsx so
 // it's reachable from anywhere. Slides in from the right, mirroring
 // MobileMenu's left-side nav drawer (same backdrop + <aside> + body-scroll
 // lock pattern, see globals.css's help-drawer-slide-in keyframe).
@@ -81,6 +81,14 @@ export default function HelpPanel() {
                   <li key={i} className="text-sm text-slate-700 dark:text-slate-300">{tip}</li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {entry.longDescription && entry.longDescription.length > 0 && (
+            <div className="space-y-3 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+              {entry.longDescription.map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
             </div>
           )}
 

@@ -35,7 +35,7 @@ export default function HelpCenterPage() {
           <HelpCircle className="w-7 h-7 text-primary-600" /> Help &amp; Documentation
         </h1>
         <p className="text-slate-500 text-sm">
-          The full, searchable version of the same help you get from pressing F1 on any page.
+          The full, searchable version of the same help you get from pressing ? on any page.
         </p>
       </div>
 

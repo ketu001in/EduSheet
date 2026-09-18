@@ -7,7 +7,7 @@ export default function HelpButton() {
   return (
     <button
       onClick={toggle}
-      title="Help (F1)"
+      title="Help (press ?)"
       aria-label="Help"
       className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
     >

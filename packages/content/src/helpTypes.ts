@@ -1,7 +1,8 @@
-// Shared types for the in-app Help system: the same content feeds the F1
-// contextual drawer (compact), the /help Documentation Center (full
-// article), and the downloadable PDF user guide (same data, printable
-// layout). One content source, three consumers -- see helpRegistry.ts.
+// Shared types for the in-app Help system: the same content feeds the "?"
+// contextual drawer (compact, but includes longDescription too -- see
+// HelpPanel.tsx), the /help Documentation Center (full article), and the
+// downloadable PDF user guide (same data, printable layout). One content
+// source, three consumers -- see helpRegistry.ts.
 
 export type HelpCategory = 'getting-started' | 'labs' | 'library' | 'admin' | 'account';
 
@@ -21,15 +22,15 @@ export const HELP_CATEGORIES: HelpCategoryInfo[] = [
 
 export interface DocRouteEntry {
   id: string; // slug, used for /help/[slug]
-  // Path(s) this entry answers F1 help for. A route ending in '/' matches
-  // any path starting with it (used for dynamic segments like
-  // worksheets/[id]); otherwise it must match exactly. getHelpEntryForPath
-  // prefers an exact match, then the longest matching prefix.
+  // Path(s) this entry answers help for. A route ending in '/' matches any
+  // path starting with it (used for dynamic segments like worksheets/[id]);
+  // otherwise it must match exactly. getHelpEntryForPath prefers an exact
+  // match, then the longest matching prefix.
   routes: string[];
   category: HelpCategory;
   title: string;
-  summary: string; // 1-2 sentences -- shown in the F1 drawer and at the top of the article
-  keyActions: string[]; // "What you can do here" bullets -- F1 drawer + article
-  tips?: string[]; // optional gotchas / pro-tips -- F1 drawer + article
-  longDescription?: string[]; // extra paragraphs, article page and PDF only (not the F1 drawer)
+  summary: string; // 1-2 sentences -- shown in the drawer and at the top of the article
+  keyActions: string[]; // "What you can do here" bullets -- drawer + article
+  tips?: string[]; // optional gotchas / pro-tips -- drawer + article
+  longDescription?: string[]; // fuller explanatory paragraphs -- drawer, article, and PDF
 }
