@@ -8,7 +8,7 @@
     "start": "node dist/index.js",
     "lint": "echo 'no linting configured'",
     "check-types": "tsc --noEmit",
-    "vercel-build": "esbuild src/app.ts --bundle --platform=node --target=node20 --format=esm --packages=external --alias:@edusheets/ai=../../packages/ai/src/index.ts --alias:@edusheets/content=../../packages/content/src/index.ts --alias:@edusheets/db=../../packages/db/src/index.ts --alias:@edusheets/types=../../packages/types/src/index.ts --outfile=build/app.mjs && node -e \"require('fs').mkdirSync('public',{recursive:true})\""
+    "vercel-build": "esbuild src/app.ts --bundle --platform=node --target=node20 --format=esm --packages=external --alias:@edusheets/ai=../../packages/ai/src/index.ts --alias:@edusheets/content=../../packages/content/src/index.ts --alias:@edusheets/db=../../packages/db/src/index.ts --alias:@edusheets/types=../../packages/types/src/index.ts --outfile=build/app.mjs && node scripts/vercel-public.mjs"
   },
   "dependencies": {
     "@edusheets/ai": "workspace:*",

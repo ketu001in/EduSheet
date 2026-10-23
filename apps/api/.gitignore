@@ -6,6 +6,6 @@
 # commit this, it's regenerated fresh on every Vercel build. The committed
 # api/index.mjs is a one-line entry that re-exports it.
 build/
-# Empty static-output dir Vercel requires for a framework-less project;
-# created by vercel-build.
+# Static-output dir Vercel requires (non-empty) for a framework-less
+# project; vercel-build creates it holding just a robots.txt.
 public/
