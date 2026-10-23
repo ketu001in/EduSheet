@@ -33,6 +33,19 @@ interface WizardState {
   reset: () => void;
   setField: (field: string, value: any) => void;
   setSettings: (settings: Partial<WorksheetSettings>) => void;
+  // Bulk-sets a resolved curriculum selection (e.g. from the Ask AI agent
+  // pilot) and jumps straight to the step that selection supports --
+  // currentStep is a plain counter, not derived from what's filled in, so it
+  // must be set explicitly here rather than left for the page to figure out.
+  hydrateFromSelection: (
+    selection: {
+      boardId: string; board: string;
+      classId: string; className: string;
+      subjectId: string; subjectName: string;
+      chapterId?: string; chapterName?: string;
+    },
+    settings?: Partial<WorksheetSettings>
+  ) => void;
 }
 
 const defaultSettings: WorksheetSettings = {
@@ -72,5 +85,18 @@ export const useWizardStore = create<WizardState>((set) => ({
   setSettings: (settings) =>
     set((state) => ({
       worksheetSettings: { ...state.worksheetSettings, ...settings },
+    })),
+  hydrateFromSelection: (selection, settings) =>
+    set((state) => ({
+      selectedBoardId: selection.boardId,
+      selectedBoard: selection.board,
+      selectedClassId: selection.classId,
+      selectedClass: selection.className,
+      selectedSubjectId: selection.subjectId,
+      selectedSubject: selection.subjectName,
+      selectedChapterId: selection.chapterId || null,
+      selectedChapter: selection.chapterName || null,
+      currentStep: selection.chapterId ? 5 : 4,
+      worksheetSettings: settings ? { ...state.worksheetSettings, ...settings } : state.worksheetSettings,
     })),
 }));
