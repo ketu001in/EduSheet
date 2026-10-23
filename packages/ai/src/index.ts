@@ -11,3 +11,4 @@ export * from './prompts/techProjectPrompt';
 export * from './prompts/questionTypes';
 export * from './prompts/pedagogy';
 export * from './utils/parser';
+export * from './tutor';

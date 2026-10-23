@@ -4,6 +4,7 @@ import { ChevronDown, RotateCcw, ListOrdered, Lightbulb, Stethoscope, HeartPulse
 import { AnatomyModel, AnatomyHotspot } from '@edusheets/content';
 import { speak, isSpeechSupported } from '@/lib/speech';
 import SpeakButton from '@/components/labshared/SpeakButton';
+import { usePageAskDetails } from '@/components/ask/AskContext';
 
 const ROTATE_X_LIMIT = 35; // up/down tilt stays modest -- keeps the plate
 // readable and avoids the distorted, page-curl look extreme angles cause.
@@ -56,6 +57,17 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
     setDragging(false);
     setRotation({ x: 0, y: 0 }); // eases back to flat once you let go
   };
+
+  // Tells "Ask AI" exactly what's in focus -- the visible page text alone
+  // doesn't say which part is selected or include its Deep Dive.
+  const activeHotspot = level.hotspots.find((h) => h.id === activeId);
+  usePageAskDetails(
+    `Anatomy Explorer -- ${model.name}${model.levels.length > 1 ? `, view: ${level.label}` : ''}. ${model.intro}
+` +
+    `Parts on this diagram: ${level.hotspots.map((h) => h.label).join(', ')}.` +
+    (activeHotspot ? `
+Selected part: ${activeHotspot.label} -- ${activeHotspot.info} ${activeHotspot.deepDive}` : '')
+  );
 
   const selectHotspot = (h: AnatomyHotspot) => {
     setActiveId(h.id);
