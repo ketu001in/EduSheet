@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { streamTutorAnswer } from '@edusheets/ai';
+import { streamTutorAnswer, TutorPageContext, TutorTurn } from '@edusheets/ai';
 import { requireAuth, requireRole, AuthenticatedRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimiter';
 import { validate } from '../middleware/validate';
@@ -45,7 +45,9 @@ router.post('/', aiLimiter, validate(askSchema), async (req: AuthenticatedReques
     return next(error);
   }
 
-  const { question, page, history } = req.body as z.infer<typeof askSchema>;
+  // Explicit types rather than z.infer: under a non-strict tsconfig z.infer
+  // marks every field optional, which Vercel's stricter build rejects.
+  const { question, page, history } = req.body as { question: string; page: TutorPageContext; history: TutorTurn[] };
   const audience = req.userRole === 'teacher' ? 'teacher' : 'parent';
 
   let started = false;
