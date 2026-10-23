@@ -1,0 +1,11 @@
+Model Information:
+* title:	Large Tube and Rack
+* source:	https://sketchfab.com/3d-models/large-tube-and-rack-7743f61c59584492a3811dda9ef1f6da
+* author:	3dLabWare (https://sketchfab.com/3dlabwaremodels)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Large Tube and Rack" (https://sketchfab.com/3d-models/large-tube-and-rack-7743f61c59584492a3811dda9ef1f6da) by 3dLabWare (https://sketchfab.com/3dlabwaremodels) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 
-export const metadata = { title: "Privacy Policy - Bosket's EduSheet" };
+export const metadata = { title: "Privacy Policy - Bosket's EDStudio" };
 
 export default function PrivacyPage() {
   return (
@@ -9,7 +9,7 @@ export default function PrivacyPage() {
       <header className="max-w-3xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <Logo size={32} />
-          <span className="font-display text-lg font-semibold">Bosket&apos;s EduSheet</span>
+          <span className="font-display text-lg font-semibold">Bosket&apos;s EDStudio</span>
         </Link>
         <Link href="/" className="text-sm font-bold text-primary-600 dark:text-primary-400 hover:underline">Back to Home</Link>
       </header>
@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         <div className="prose-content space-y-8 text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
           <section>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3">1. Who we are</h2>
-            <p>Bosket&apos;s EduSheet is developed and operated by <strong>Bosket&apos;s Tech Ventures</strong> (&quot;we&quot;, &quot;us&quot;). This policy explains what information we collect from students, parents, and teachers who use the platform, and how we use it.</p>
+            <p>Bosket&apos;s EDStudio is developed and operated by <strong>Bosket&apos;s Tech Ventures</strong> (&quot;we&quot;, &quot;us&quot;). This policy explains what information we collect from students, parents, and teachers who use the platform, and how we use it.</p>
           </section>
 
           <section>

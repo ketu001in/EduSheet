@@ -14,7 +14,7 @@ const supabaseAdmin = createServiceClient(supabaseUrl, serviceRoleKey);
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, name, role, board, grade } = body;
+    const { email, password, name, username, role, board, grade } = body;
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
@@ -24,6 +24,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long.' }, { status: 400 });
     }
 
+    if (!username || !/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      return NextResponse.json({ error: 'Username must be 3-20 characters: letters, numbers, and underscores only.' }, { status: 400 });
+    }
+
+    // Checked up front (rather than relying solely on the DB's UNIQUE
+    // constraint) so a taken username never gets as far as creating an auth
+    // user we'd then have to explain away with a generic error.
+    const { data: existingUsername } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (existingUsername) {
+      return NextResponse.json({ error: 'That username is already taken. Please choose another.' }, { status: 400 });
+    }
+
     // 1. Admin create user (service role, no session involved).
     const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -31,6 +48,7 @@ export async function POST(request: Request) {
       email_confirm: true,
       user_metadata: {
         full_name: name,
+        username,
         role: role || 'student',
         board: board || 'CBSE',
         grade: grade || '1',
@@ -50,6 +68,7 @@ export async function POST(request: Request) {
         id: newUserId,
         email,
         full_name: name,
+        username,
         role: role || 'student',
       });
 

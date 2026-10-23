@@ -1,0 +1,148 @@
+import { PhysicsEquipment } from './physicsTypes';
+
+// Curated apparatus for the Mechanics MVP (Simple Pendulum, Hooke's Law &
+// Spring, Projectile Motion). Every deepDive paragraph is a real, verifiable
+// fact about the equipment or technique -- shown when a student clicks a
+// piece of apparatus on the Physics Stage and taps "Deep Dive".
+export const PHYSICS_EQUIPMENT: PhysicsEquipment[] = [
+  {
+    id: 'pendulum-stand',
+    name: 'Pendulum Stand & Clamp',
+    category: 'mechanics',
+    description: 'A sturdy stand holding a horizontal rod that the pendulum string hangs from, giving it a fixed pivot point.',
+    deepDive: 'The stand needs to be rigid and the pivot as close to frictionless as possible -- any wobble or friction at the pivot slowly drains energy from the swing (damping), which is why real pendulums eventually stop even though the ideal T=2π√(L/g) formula assumes they never would.',
+  },
+  {
+    id: 'pendulum-bob',
+    name: 'Pendulum Bob',
+    category: 'mechanics',
+    description: 'The small, dense mass (usually a metal sphere) tied to the end of the string.',
+    deepDive: "It's dense and small on purpose -- a dense bob keeps air resistance negligible compared to its weight, and a small bob approximates a single point mass, which is exactly what the \"simple\" in simple pendulum assumes. Galileo is said to have first noticed that a swinging lamp's period didn't depend on how far it swung, by timing it against his own pulse in Pisa Cathedral.",
+  },
+  {
+    id: 'pendulum-string',
+    name: 'Inextensible String',
+    category: 'mechanics',
+    description: 'A light, non-stretchable thread connecting the bob to the pivot.',
+    deepDive: "The formula assumes the string is massless and never stretches. A real elastic string would add its own restoring force and change the period unpredictably -- that's why real experiments use thin, stiff thread rather than elastic cord.",
+  },
+  {
+    id: 'spring-coil',
+    name: 'Helical Spring',
+    category: 'mechanics',
+    description: 'A coiled metal spring that stretches or compresses in proportion to the force applied to it.',
+    deepDive: "Hooke's Law (F=-kx) only holds up to the spring's elastic limit. Stretch it too far and the spring deforms permanently -- it won't spring back to its original shape, and F=-kx stops being true for it entirely.",
+  },
+  {
+    id: 'mass-hanger',
+    name: 'Slotted Weights & Hanger',
+    category: 'mechanics',
+    description: 'A small hanger with precisely known, stackable weights used to load a spring or pulley with an exact mass.',
+    deepDive: 'Using calibrated slotted weights (rather than random objects) is what lets a real lab experiment actually match a formula\'s prediction numerically -- you need to know the mass precisely to check F=-kx or T=2π√(m/k) against your measurements.',
+  },
+  {
+    id: 'launcher',
+    name: 'Projectile Launcher',
+    category: 'mechanics',
+    description: 'A spring-loaded launcher that fires a ball at a controlled, repeatable initial speed and angle.',
+    deepDive: 'Real projectile launchers compress a spring by a known amount to give a repeatable, measurable launch speed every time -- without one, comparing "theory vs measurement" for range and height would be nearly impossible, since a hand-thrown ball\'s speed can\'t be controlled precisely.',
+  },
+  {
+    id: 'ball',
+    name: 'Steel Ball',
+    category: 'mechanics',
+    description: 'A small, dense ball used as the projectile.',
+    deepDive: "The classic projectile range formula R=(v²sin2θ)/g assumes zero air resistance. A dense steel ball gets you much closer to that ideal than a light ball would, since air drag matters far less relative to its weight -- which is exactly why real experiments still show small deviations from the formula's prediction.",
+  },
+  {
+    id: 'stopwatch',
+    name: 'Stopwatch',
+    category: 'mechanics',
+    description: 'Used to time how long an oscillation or fall takes.',
+    deepDive: "A real lab trick: instead of timing one single oscillation (where your own reaction time causes a big relative error), time 20 oscillations and divide by 20. Reaction time error stays the same in absolute terms but shrinks 20x relative to the total time measured -- a far more accurate result.",
+  },
+  {
+    id: 'meter-scale',
+    name: 'Meter Scale',
+    category: 'mechanics',
+    description: 'A rigid ruler used to measure length, such as the pendulum string or the spring\'s stretch.',
+    deepDive: 'Every measuring instrument has a "least count" -- the smallest division it can reliably read. A standard meter scale\'s least count is 1mm, which is why careful lab reports record lengths like "1.000m" rather than an unrealistically precise "1.0003m".',
+  },
+  {
+    id: 'lever-beam',
+    name: 'Lever Beam',
+    category: 'mechanics',
+    description: 'A rigid, uniform beam that rests on a central pivot and tips toward whichever side has the greater turning force.',
+    deepDive: "A beam is only truly balanced when it's uniform (same weight all along its length) and pivots at its exact center -- otherwise the beam's own weight adds an extra moment that has to be accounted for too, which is why real lab beams are carefully machined to be perfectly even.",
+  },
+  {
+    id: 'lever-pivot',
+    name: 'Fulcrum (Pivot)',
+    category: 'mechanics',
+    description: 'The fixed point the lever beam balances and rotates on.',
+    deepDive: "The fulcrum is where all the turning (moments) are measured FROM. Move the pivot off-center and the same two weights that used to balance perfectly suddenly won't -- because the distances (d1 and d2) in F1xd1=F2xd2 changed.",
+  },
+  {
+    id: 'lever-weight',
+    name: 'Slotted Weight',
+    category: 'mechanics',
+    description: 'A weight of known force hung at a measured distance from the pivot to create a turning moment.',
+    deepDive: 'Real lab moment experiments always hang weights from a fine hook or loop at an exact, measured point -- because the whole result depends on distance from the pivot, a sloppily-placed weight throws off the entire calculation.',
+  },
+  {
+    id: 'beaker-water',
+    name: 'Beaker of Water',
+    category: 'mechanics',
+    description: 'A clear beaker filled with water, used as the fluid an object is tested in.',
+    deepDive: "Water's density is almost exactly 1000 kg per cubic metre -- which is precisely why it was chosen as the historical reference point: 1 gram was originally DEFINED as the mass of 1 cubic centimetre of water.",
+  },
+  {
+    id: 'density-block',
+    name: 'Test Block',
+    category: 'mechanics',
+    description: 'An object of adjustable density lowered into the beaker to test whether it sinks or floats.',
+    deepDive: "It's not an object's total weight that decides if it floats -- it's its density (mass per volume) compared to the fluid's. A massive steel ship floats because its overall shape (hull + air inside) makes its AVERAGE density less than water's, even though solid steel itself sinks.",
+  },
+  {
+    id: 'battery',
+    name: 'Battery Cell',
+    category: 'electricity',
+    description: 'Provides the voltage (electrical push) that drives current around the circuit.',
+    deepDive: "A battery's voltage rating (like 1.5V or 9V) is how much energy it gives to each unit of charge passing through it -- connect batteries in a line (in \"series\") and their voltages add up, which is why a torch using 2 AA batteries is brighter than one using just 1.",
+  },
+  {
+    id: 'bulb',
+    name: 'Light Bulb',
+    category: 'electricity',
+    description: 'Lights up when current flows through it -- brightness increases with current.',
+    deepDive: "An old-style bulb's thin wire filament resists the flow of current, and that resistance is exactly what converts electrical energy into heat and light. A \"blown\" bulb has a broken filament -- current has nowhere to flow, so the circuit is broken entirely, same as an open switch.",
+  },
+  {
+    id: 'connecting-wire',
+    name: 'Connecting Wire',
+    category: 'electricity',
+    description: 'Low-resistance wire that completes the circuit loop between the battery and the bulb.',
+    deepDive: "Real connecting wires DO have a tiny bit of resistance, but it's so small compared to a bulb's filament that lab calculations usually treat it as zero -- ignoring it entirely rather than measuring it precisely is a deliberate, reasonable simplification, not a mistake.",
+  },
+  {
+    id: 'plane-mirror',
+    name: 'Plane Mirror',
+    category: 'optics',
+    description: 'A flat, silvered surface that reflects light following the Laws of Reflection.',
+    deepDive: 'A plane mirror\'s image is "virtual" -- it looks like it\'s behind the mirror, but no light actually comes from there. That\'s different from a real image (like on a cinema screen), which you could actually catch on a piece of paper.',
+  },
+  {
+    id: 'light-ray-source',
+    name: 'Ray Box (Light Source)',
+    category: 'optics',
+    description: 'Produces a single, narrow beam of light aimed at the mirror to trace its path precisely.',
+    deepDive: 'A ray box uses a narrow slit to turn a normal bulb\'s spreading light into one clean, single beam -- essential for actually measuring an angle, since a wide fuzzy beam of light has no single precise "path" to measure from.',
+  },
+  {
+    id: 'bar-magnet',
+    name: 'Bar Magnet',
+    category: 'electricity',
+    description: 'A magnet with a North and a South pole -- like poles push apart, unlike poles pull together.',
+    deepDive: 'Every magnet, no matter how many times you cut it in half, always ends up with both a North AND a South pole again -- nobody has ever found a magnet with just one pole (a "magnetic monopole") despite decades of searching.',
+  },
+];

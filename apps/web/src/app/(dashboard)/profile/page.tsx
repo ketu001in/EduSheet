@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { User, Check, Save, LogOut, Shield, KeyRound, Cpu, ExternalLink, AlertTriangle, Type } from 'lucide-react';
+import { User, Check, Save, LogOut, Shield, KeyRound, Cpu, ExternalLink, AlertTriangle, Type, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
 import { createClient } from '@/lib/supabase/client';
@@ -38,6 +38,35 @@ export default function ProfilePage() {
     updateProfile({ name, board, grade });
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
+  };
+
+  // --- Role ---
+  // Deliberately self-service for now (any account can switch freely between
+  // student/parent/teacher) so teacher/parent-only features can be tested
+  // without a separate onboarding flow -- see apps/api's PATCH /users/profile
+  // and requireRole gate for where this actually gets enforced server-side.
+  const ROLE_OPTIONS: { id: 'student' | 'parent' | 'teacher'; label: string; hint: string }[] = [
+    { id: 'student', label: 'Student', hint: 'Worksheet and project generation.' },
+    { id: 'parent', label: 'Parent', hint: 'Everything a student gets, plus Study Material generation.' },
+    { id: 'teacher', label: 'Teacher', hint: 'Everything a student gets, plus Study Material generation.' },
+  ];
+  const [roleSaving, setRoleSaving] = useState(false);
+  const [roleMessage, setRoleMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const currentRole = userProfile.role || 'student';
+
+  const handleChangeRole = async (role: 'student' | 'parent' | 'teacher') => {
+    if (role === currentRole || roleSaving) return;
+    setRoleSaving(true);
+    setRoleMessage(null);
+    try {
+      await api.patch('/api/users/profile', { role });
+      updateProfile({ role });
+      setRoleMessage({ type: 'success', text: `Switched to ${role}. Reload the page if the navigation doesn't update.` });
+    } catch (err: any) {
+      setRoleMessage({ type: 'error', text: err.message || 'Could not change your role.' });
+    } finally {
+      setRoleSaving(false);
+    }
   };
 
   // --- Change password ---
@@ -132,7 +161,7 @@ export default function ProfilePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 bg-primary-600 text-white rounded-xl font-bold text-left shadow-lg shadow-primary-600/25 text-sm">
+          <button className="w-full flex items-center gap-3 px-4 py-3 bg-primary-600 text-white border-2 border-slate-900 dark:border-primary-800 rounded-xl font-bold text-left shadow-[3px_3px_0_var(--color-ink)] text-sm">
             <User className="w-5 h-5" /> Personal Info
           </button>
           <Link href="/privacy" className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-xl font-medium text-left text-sm transition-colors">
@@ -142,7 +171,7 @@ export default function ProfilePage() {
 
         <div className="md:col-span-2 space-y-6">
           <div className="glass-card p-6 md:p-8 rounded-3xl space-y-6">
-            <h2 className="text-xl font-bold">Personal Information</h2>
+            <h2 className="font-display text-xl font-semibold">Personal Information</h2>
 
             {savedSuccess && (
               <div className="p-4 bg-accent-50 dark:bg-accent-950/40 text-accent-600 dark:text-accent-300 rounded-xl text-sm font-bold flex items-center gap-2 border border-accent-200 dark:border-accent-800">
@@ -157,7 +186,7 @@ export default function ProfilePage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent focus:ring-2 focus:ring-primary-500 outline-none font-medium text-sm"
+                  className="w-full p-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-transparent focus:border-primary-600 outline-none font-medium text-sm"
                   required
                 />
               </div>
@@ -168,7 +197,7 @@ export default function ProfilePage() {
                   type="email"
                   value={userProfile.email || ''}
                   disabled
-                  className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 outline-none cursor-not-allowed text-sm font-medium"
+                  className="w-full p-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-slate-400 outline-none cursor-not-allowed text-sm font-medium"
                 />
               </div>
 
@@ -178,7 +207,7 @@ export default function ProfilePage() {
                   <select
                     value={board}
                     onChange={(e) => setBoard(e.target.value)}
-                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
+                    className="w-full p-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark outline-none focus:border-primary-600 text-sm font-medium"
                   >
                     <option value="CBSE">CBSE</option>
                     <option value="ICSE">ICSE</option>
@@ -189,7 +218,7 @@ export default function ProfilePage() {
                   <select
                     value={grade}
                     onChange={(e) => setGrade(e.target.value)}
-                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
+                    className="w-full p-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark outline-none focus:border-primary-600 text-sm font-medium"
                   >
                     {Array.from({ length: 10 }, (_, i) => `Class ${i + 1}`).map((g) => (
                       <option key={g} value={g}>{g}</option>
@@ -201,7 +230,7 @@ export default function ProfilePage() {
               <div className="pt-4">
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2"
+                  className="btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" /> Save Changes
                 </button>
@@ -211,7 +240,45 @@ export default function ProfilePage() {
 
           <div className="glass-card p-6 md:p-8 rounded-3xl space-y-6">
             <div>
-              <h2 className="text-xl font-bold flex items-center gap-2"><Type className="w-5 h-5" /> Appearance</h2>
+              <h2 className="font-display text-xl font-semibold flex items-center gap-2"><Users className="w-5 h-5" /> Account Type</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Teachers and parents get everything students get, plus Study Material generation. Switch freely for now while this is new.
+              </p>
+            </div>
+
+            {roleMessage && (
+              <div className={`p-4 rounded-xl text-sm font-bold flex items-center gap-2 border ${
+                roleMessage.type === 'success'
+                  ? 'bg-accent-50 dark:bg-accent-950/40 text-accent-600 dark:text-accent-300 border-accent-200 dark:border-accent-800'
+                  : 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 border-red-200 dark:border-red-900'
+              }`}>
+                {roleMessage.type === 'success' ? <Check className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />} {roleMessage.text}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {ROLE_OPTIONS.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  disabled={roleSaving}
+                  onClick={() => handleChangeRole(r.id)}
+                  className={`p-4 rounded-xl border text-left transition-all disabled:opacity-50 ${
+                    currentRole === r.id
+                      ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 shadow-[3px_3px_0_var(--color-ink)]'
+                      : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
+                  }`}
+                >
+                  <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">{r.label}</span>
+                  <span className="block text-xs text-slate-400 mt-0.5">{r.hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-card p-6 md:p-8 rounded-3xl space-y-6">
+            <div>
+              <h2 className="font-display text-xl font-semibold flex items-center gap-2"><Type className="w-5 h-5" /> Appearance</h2>
               <p className="text-sm text-slate-500 mt-1">Choose the font used throughout the tool. Applies instantly and only on this device.</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -222,8 +289,8 @@ export default function ProfilePage() {
                   onClick={() => setFont(f.id)}
                   className={`p-4 rounded-xl border text-left transition-all ${
                     font === f.id
-                      ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 shadow-sm'
-                      : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                      ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 shadow-[3px_3px_0_var(--color-ink)]'
+                      : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                   }`}
                 >
                   <span className="block text-lg font-semibold mb-1" style={{ fontFamily: `var(${f.cssVar})` }}>Aa</span>
@@ -235,7 +302,7 @@ export default function ProfilePage() {
           </div>
 
           <div id="security" className="glass-card p-6 md:p-8 rounded-3xl space-y-6 scroll-mt-6">
-            <h2 className="text-xl font-bold flex items-center gap-2"><KeyRound className="w-5 h-5" /> Change Password</h2>
+            <h2 className="font-display text-xl font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5" /> Change Password</h2>
 
             {passwordMessage && (
               <div className={`p-4 rounded-xl text-sm font-bold flex items-center gap-2 border ${
@@ -256,7 +323,7 @@ export default function ProfilePage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent focus:ring-2 focus:ring-primary-500 outline-none font-medium text-sm"
+                    className="w-full p-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-transparent focus:border-primary-600 outline-none font-medium text-sm"
                     required
                   />
                 </div>
@@ -267,7 +334,7 @@ export default function ProfilePage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent focus:ring-2 focus:ring-primary-500 outline-none font-medium text-sm"
+                    className="w-full p-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-transparent focus:border-primary-600 outline-none font-medium text-sm"
                     required
                   />
                 </div>
@@ -275,7 +342,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={passwordSaving}
-                className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                className="btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm flex items-center gap-2 disabled:opacity-50"
               >
                 <KeyRound className="w-4 h-4" /> {passwordSaving ? 'Updating...' : 'Update Password'}
               </button>
@@ -284,9 +351,9 @@ export default function ProfilePage() {
 
           <div id="ai-provider" className="glass-card p-6 md:p-8 rounded-3xl space-y-6 scroll-mt-6">
             <div>
-              <h2 className="text-xl font-bold flex items-center gap-2"><Cpu className="w-5 h-5" /> AI Provider</h2>
+              <h2 className="font-display text-xl font-semibold flex items-center gap-2"><Cpu className="w-5 h-5" /> AI Provider</h2>
               <p className="text-sm text-slate-500 mt-1">
-                Bosket&apos;s EduSheet doesn&apos;t come with a built-in AI key &mdash; add your own from any supported provider below to generate worksheets and projects.
+                Bosket&apos;s EDStudio doesn&apos;t come with a built-in AI key &mdash; add your own from any supported provider below to generate worksheets and projects.
               </p>
             </div>
 
@@ -309,7 +376,7 @@ export default function ProfilePage() {
                 <form onSubmit={handleSaveAiSettings} className="space-y-5">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Provider</label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {AI_PROVIDERS.map((p) => (
                         <button
                           type="button"
@@ -317,8 +384,8 @@ export default function ProfilePage() {
                           onClick={() => setAiProvider(p.id)}
                           className={`p-3 rounded-xl border text-center transition-all ${
                             aiProvider === p.id
-                              ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 font-bold shadow-sm'
-                              : 'border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark hover:border-primary-300'
+                              ? 'border-slate-900 bg-primary-50 dark:bg-primary-900/20 font-bold shadow-[3px_3px_0_var(--color-ink)]'
+                              : 'border-slate-900 dark:border-slate-700 bg-surface-light dark:bg-surface-dark hover:shadow-[3px_3px_0_var(--color-ink)]'
                           }`}
                         >
                           <span className="block font-semibold text-sm">{p.label}</span>
@@ -328,7 +395,7 @@ export default function ProfilePage() {
                     <p className="text-xs text-slate-400 mt-2">{activeProviderInfo.hint}</p>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-900 dark:border-slate-700 space-y-2">
                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">How to get a {activeProviderInfo.label} key</p>
                     <ol className="text-sm text-slate-600 dark:text-slate-300 space-y-1.5 list-decimal list-inside">
                       {activeProviderInfo.steps.map((step, i) => (
@@ -352,7 +419,7 @@ export default function ProfilePage() {
                       value={aiApiKey}
                       onChange={(e) => setAiApiKey(e.target.value)}
                       placeholder={aiHasKey ? 'Enter a new key to replace the saved one' : 'Paste your API key'}
-                      className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent focus:ring-2 focus:ring-primary-500 outline-none font-medium text-sm"
+                      className="w-full p-3.5 rounded-xl border-2 border-slate-900 dark:border-slate-700 bg-transparent focus:border-primary-600 outline-none font-medium text-sm"
                     />
                     <p className="text-xs text-slate-400 mt-2">Stored encrypted; never shown again after saving.</p>
                   </div>
@@ -361,7 +428,7 @@ export default function ProfilePage() {
                     <button
                       type="submit"
                       disabled={aiSaving || !aiApiKey}
-                      className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                      className="btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm flex items-center gap-2 disabled:opacity-50"
                     >
                       <Save className="w-4 h-4" /> {aiSaving ? 'Saving...' : 'Save Key'}
                     </button>
@@ -370,7 +437,7 @@ export default function ProfilePage() {
                         type="button"
                         onClick={handleClearAiSettings}
                         disabled={aiSaving}
-                        className="px-5 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
+                        className="px-5 py-3 border-2 border-slate-900 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-secondary-50 dark:hover:bg-slate-800 rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
                       >
                         Remove key
                       </button>
@@ -383,13 +450,13 @@ export default function ProfilePage() {
 
           <div className="glass-card p-6 md:p-8 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-slate-200">Sign out</h3>
+              <h3 className="font-display font-semibold text-slate-800 dark:text-slate-200">Sign out</h3>
               <p className="text-sm text-slate-500">End your session on this device.</p>
             </div>
             <button
               onClick={logout}
               disabled={isLoggingOut}
-              className="px-5 py-2.5 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 border-2 border-red-600 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
             >
               <LogOut className="w-4 h-4" /> {isLoggingOut ? 'Signing out...' : 'Sign out'}
             </button>

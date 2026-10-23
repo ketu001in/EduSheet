@@ -19,19 +19,19 @@ export function AiKeyBanner() {
   if (hasKey !== false) return null;
 
   return (
-    <div className="glass-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/20">
+    <div className="glass-card p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50 dark:bg-amber-950/20">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 border-2 border-slate-900 dark:border-amber-800 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
           <KeyRound className="w-5 h-5" />
         </div>
         <div>
           <h3 className="font-bold text-amber-900 dark:text-amber-200 text-sm">Add your AI key to start generating</h3>
-          <p className="text-xs text-amber-700 dark:text-amber-400">Bosket&apos;s EduSheet uses your own key from Groq, OpenAI, or Gemini &mdash; free options are available.</p>
+          <p className="text-xs text-amber-700 dark:text-amber-400">Bosket&apos;s EDStudio uses your own key from Groq, OpenAI, or Gemini &mdash; free options are available.</p>
         </div>
       </div>
       <Link
         href="/profile#ai-provider"
-        className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 shrink-0 transition-colors"
+        className="btn-brutal px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-white rounded-xl font-bold text-sm flex items-center gap-2 shrink-0"
       >
         Set up your key <ArrowRight className="w-4 h-4" />
       </Link>

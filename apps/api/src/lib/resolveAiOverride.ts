@@ -12,7 +12,7 @@ export class AiKeyRequiredError extends Error {
 }
 
 export interface ResolvedAiOverride {
-  provider: 'groq' | 'openai' | 'gemini' | 'anthropic';
+  provider: 'groq' | 'openai' | 'gemini' | 'anthropic' | 'sarvam';
   apiKey: string;
 }
 

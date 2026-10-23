@@ -13,7 +13,7 @@ export interface ProjectSummary {
   classes?: { name: string } | null;
   subjects?: { name: string } | null;
   chapters?: { title: string } | null;
-  settings?: { topics?: string[] } | null;
+  settings?: { topics?: string[]; isCustom?: boolean; className?: string; subjectName?: string } | null;
 }
 
 export interface ProjectDetail extends ProjectSummary {
@@ -41,3 +41,10 @@ export async function downloadProjectPdf(id: string) {
     throw err;
   }
 }
+
+// Re-renders the project PDF from already-saved sections -- a user-initiated
+// retry for projects whose PDF generation failed silently at creation time
+// (pdf_storage_path left null). See the identical pattern in
+// lib/worksheet.ts's regenerateWorksheetPdf.
+export const regenerateProjectPdf = (id: string) =>
+  api.post<{ success: boolean; data: { pdfStoragePath: string } }>(`/api/projects/${id}/regenerate-pdf`);

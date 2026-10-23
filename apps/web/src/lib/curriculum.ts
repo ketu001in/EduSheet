@@ -11,6 +11,7 @@ export interface ClassLevel {
   id: string;
   grade_number: number;
   name: string;
+  board_id?: string | null;
 }
 
 export interface Subject {
@@ -39,7 +40,14 @@ export interface Topic {
 
 export const fetchBoards = () => api.get<{ success: boolean; data: Board[] }>('/api/curriculum/boards');
 
-export const fetchClasses = () => api.get<{ success: boolean; data: ClassLevel[] }>('/api/curriculum/classes');
+// Alternative-pedagogy boards (Montessori/Reggio Emilia/Steiner-Waldorf) have
+// their own age-stage classes scoped to them -- pass boardId once a board is
+// selected so the picker shows those stages instead of Class 1-12/LKG/UKG,
+// which don't apply to those pedagogies at all.
+export const fetchClasses = (boardId?: string) =>
+  api.get<{ success: boolean; data: ClassLevel[] }>(
+    boardId ? `/api/curriculum/classes?boardId=${boardId}` : '/api/curriculum/classes'
+  );
 
 export const fetchSubjects = (classId: string, boardId: string) =>
   api.get<{ success: boolean; data: Subject[] }>(`/api/curriculum/subjects?classId=${classId}&boardId=${boardId}`);

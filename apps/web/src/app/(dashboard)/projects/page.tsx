@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trash2, Eye, Printer, X, Sparkles, FileStack, Loader2 } from 'lucide-react';
-import { fetchProjects, fetchProject, deleteProject, downloadProjectPdf, ProjectSummary, ProjectDetail } from '@/lib/project';
+import { Trash2, Eye, Printer, X, Sparkles, FileStack, Loader2, RefreshCw } from 'lucide-react';
+import { fetchProjects, fetchProject, deleteProject, downloadProjectPdf, regenerateProjectPdf, ProjectSummary, ProjectDetail } from '@/lib/project';
 import { Logo } from '@/components/Logo';
 
 export default function ProjectsPage() {
@@ -13,6 +13,7 @@ export default function ProjectsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [regeneratingPdf, setRegeneratingPdf] = useState(false);
 
   useEffect(() => {
     fetchProjects()
@@ -53,9 +54,23 @@ export default function ProjectsPage() {
       await downloadProjectPdf(id);
     } catch (err) {
       console.error('Failed to open PDF:', err);
-      setPdfError('The PDF isn\'t ready yet — try again in a few seconds.');
+      setPdfError('The PDF isn\'t ready yet — it may have failed to generate. Try regenerating it below.');
     } finally {
       setDownloadingPdf(false);
+    }
+  };
+
+  const handleRegeneratePdf = async (id: string) => {
+    setPdfError(null);
+    setRegeneratingPdf(true);
+    try {
+      await regenerateProjectPdf(id);
+      setPdfError(null);
+    } catch (err) {
+      console.error('Failed to regenerate PDF:', err);
+      setPdfError('Regeneration failed. Please try again in a moment.');
+    } finally {
+      setRegeneratingPdf(false);
     }
   };
 
@@ -66,12 +81,20 @@ export default function ProjectsPage() {
           <h1 className="text-3xl font-bold">My Projects</h1>
           <p className="text-slate-500 text-sm">Manage, view, and print your AI-generated project & assignment reports.</p>
         </div>
-        <Link
-          href="/projects/new"
-          className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
-        >
-          <Sparkles className="w-4 h-4" /> Create New Project
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/projects/custom"
+            className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm flex items-center gap-2 hover:border-primary-300 transition-colors"
+          >
+            <Sparkles className="w-4 h-4" /> Custom Project
+          </Link>
+          <Link
+            href="/projects/new"
+            className="btn-brutal px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold text-sm shadow-primary-500/20 flex items-center gap-2 hover:scale-105 transition-transform"
+          >
+            <Sparkles className="w-4 h-4" /> Create New Project
+          </Link>
+        </div>
       </div>
 
       {isLoading ? (
@@ -85,7 +108,7 @@ export default function ProjectsPage() {
           </div>
           <h3 className="text-lg font-bold">No Projects Found</h3>
           <p className="text-sm text-slate-500">You have not generated any project reports yet.</p>
-          <Link href="/projects/new" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform text-sm">
+          <Link href="/projects/new" className="inline-flex items-center gap-2 btn-brutal px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl text-sm">
             <Sparkles className="w-4 h-4" /> Generate Project
           </Link>
         </div>
@@ -96,7 +119,7 @@ export default function ProjectsPage() {
               <div className="p-5 space-y-3">
                 <div className="flex justify-between items-start">
                   <span className="px-2.5 py-1 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-lg text-xs font-bold">
-                    {p.subjects?.name || 'Project'}
+                    {p.subjects?.name || p.settings?.subjectName || 'Project'}
                   </span>
                   <button
                     onClick={() => handleDelete(p.id)}
@@ -112,7 +135,7 @@ export default function ProjectsPage() {
                   {p.title}
                 </h3>
                 <p className="text-xs text-slate-400">
-                  {p.classes?.name || ''} • {p.length} length
+                  {p.classes?.name || p.settings?.className || ''} • {p.length} length
                 </p>
                 <p className="text-xs font-medium text-slate-500 line-clamp-1">
                   Chapter: {p.chapters?.title || 'General'}
@@ -153,12 +176,23 @@ export default function ProjectsPage() {
               <button
                 onClick={() => handleDownloadPdf(selectedProject.id)}
                 disabled={downloadingPdf}
-                className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg disabled:opacity-50"
+                className="btn-brutal px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-50"
               >
                 {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} PDF
               </button>
             </div>
-            {pdfError && <p className="text-xs text-red-600 font-medium">{pdfError}</p>}
+            {pdfError && (
+              <div className="flex items-center justify-between gap-3 bg-red-50 dark:bg-red-950/30 rounded-xl px-4 py-2.5">
+                <p className="text-xs text-red-600 font-medium">{pdfError}</p>
+                <button
+                  onClick={() => handleRegeneratePdf(selectedProject.id)}
+                  disabled={regeneratingPdf}
+                  className="shrink-0 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {regeneratingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Regenerate PDF
+                </button>
+              </div>
+            )}
 
             <div className="bg-white text-slate-900 p-6 rounded-2xl border border-slate-200 space-y-6 text-left">
               <div className="flex justify-end items-center gap-1.5">

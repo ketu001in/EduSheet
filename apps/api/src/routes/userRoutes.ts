@@ -10,6 +10,14 @@ router.use(requireAuth);
 const profileUpdateSchema = z.object({
   full_name: z.string().optional(),
   avatar_url: z.string().url().optional(),
+  // Self-service role switching -- deliberately unrestricted for now (any
+  // account can freely switch between student/parent/teacher) so the user
+  // can test the new teacher/parent-only features without a separate
+  // onboarding flow. 'admin' is excluded, same as it's never offered as a
+  // signup option. Worth locking this down later (e.g. a verification step)
+  // once the role-gated features are settled -- see requireRole in
+  // middleware/auth.ts for where role actually gets enforced.
+  role: z.enum(['student', 'parent', 'teacher']).optional(),
   board_id: z.string().optional(),
   class_id: z.string().optional()
 });
@@ -31,12 +39,16 @@ router.get('/profile', async (req: AuthenticatedRequest, res, next) => {
 
 router.patch('/profile', validate(profileUpdateSchema), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const { full_name, avatar_url, ...profileFields } = req.body;
+    const { full_name, avatar_url, role, ...profileFields } = req.body;
 
-    if (full_name !== undefined || avatar_url !== undefined) {
+    if (full_name !== undefined || avatar_url !== undefined || role !== undefined) {
       const { error: userError } = await req.supabase!
         .from('users')
-        .update({ ...(full_name !== undefined && { full_name }), ...(avatar_url !== undefined && { avatar_url }) })
+        .update({
+          ...(full_name !== undefined && { full_name }),
+          ...(avatar_url !== undefined && { avatar_url }),
+          ...(role !== undefined && { role }),
+        })
         .eq('id', req.user!.id);
       if (userError) throw userError;
     }
@@ -86,7 +98,7 @@ router.get('/ai-settings', async (req: AuthenticatedRequest, res, next) => {
 });
 
 const aiSettingsSchema = z.object({
-  provider: z.enum(['groq', 'openai', 'gemini']),
+  provider: z.enum(['groq', 'openai', 'gemini', 'sarvam']),
   apiKey: z.string().min(10, 'That API key looks too short.'),
 });
 

@@ -1,0 +1,11 @@
+Model Information:
+* title:	PIR Sensor
+* source:	https://sketchfab.com/3d-models/pir-sensor-2f64edc09d4c4be5aaa26acecacb36ea
+* author:	Zeyad Hamed (https://sketchfab.com/Zeyad_Hamed)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "PIR Sensor" (https://sketchfab.com/3d-models/pir-sensor-2f64edc09d4c4be5aaa26acecacb36ea) by Zeyad Hamed (https://sketchfab.com/Zeyad_Hamed) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
