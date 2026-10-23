@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { streamTutorAnswer, TutorPageContext, TutorTurn } from '@edusheets/ai';
+import { streamTutorAnswer, decideWorksheetAction, TutorPageContext, TutorTurn } from '@edusheets/ai';
 import { requireAuth, requireRole, AuthenticatedRequest } from '../middleware/auth';
 import { aiLimiter } from '../middleware/rateLimiter';
 import { validate } from '../middleware/validate';
 import { resolveAiOverride, AiKeyRequiredError } from '../lib/resolveAiOverride';
+import { resolveCurriculumSelection } from '../lib/curriculumResolve';
 
 const router: Router = Router();
 
@@ -69,6 +70,57 @@ router.post('/', aiLimiter, validate(askSchema), async (req: AuthenticatedReques
     const message = error instanceof Error ? error.message : 'The AI request failed.';
     if (!started) return res.status(502).json({ success: false, error: `AI provider error: ${message}` });
     res.end(`${STREAM_ERROR_MARKER}${message}`);
+  }
+});
+
+// Pilot "agentic" endpoint: one non-streaming call that either answers in
+// plain text or resolves a generate_worksheet tool call into real curriculum
+// IDs for the client to route into the pre-filled /generate wizard. Never
+// generates a worksheet itself -- the user's own click on the wizard still
+// triggers the actual (budget-consuming, persisted) generation.
+router.post('/agent', aiLimiter, validate(askSchema), async (req: AuthenticatedRequest, res, next) => {
+  let aiOverride;
+  try {
+    aiOverride = await resolveAiOverride(req.supabase, req.user!.id);
+  } catch (error) {
+    if (error instanceof AiKeyRequiredError) {
+      return res.status(400).json({ success: false, error: 'AI_KEY_REQUIRED' });
+    }
+    return next(error);
+  }
+
+  const { question, page, history } = req.body as { question: string; page: TutorPageContext; history: TutorTurn[] };
+  const audience = req.userRole === 'teacher' ? 'teacher' : 'parent';
+
+  try {
+    const decision = await decideWorksheetAction(aiOverride, page, audience, history, question);
+
+    if (decision.type === 'text') {
+      return res.json({ success: true, type: 'text', content: decision.content });
+    }
+
+    const resolved = await resolveCurriculumSelection(req.supabase, decision.args);
+    if ('error' in resolved) {
+      return res.json({
+        success: true,
+        type: 'text',
+        content: `I couldn't find ${resolved.error} in the curriculum -- try naming the exact board/class/subject, or open Generate directly.`,
+      });
+    }
+
+    const settings = {
+      questionCount: decision.args.questionCount,
+      difficulty: decision.args.difficulty,
+      questionTypes: decision.args.questionTypes,
+      title: decision.args.title,
+    };
+    const label = `Set up: ${resolved.className} ${resolved.subjectName}${resolved.chapterName ? ` -- ${resolved.chapterName}` : ''}, ${settings.questionCount} questions (${settings.difficulty}).`;
+
+    res.json({ success: true, type: 'action', action: 'generate_worksheet', selection: resolved, settings, label });
+  } catch (error) {
+    console.error('Ask agent failed:', error);
+    const message = error instanceof Error ? error.message : 'The AI request failed.';
+    res.status(502).json({ success: false, error: `AI provider error: ${message}` });
   }
 });
 

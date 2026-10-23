@@ -1,14 +1,20 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, X, Mic, MicOff, Send, Volume2, VolumeX, Loader2, Trash2, Square } from 'lucide-react';
+import { Sparkles, X, Mic, MicOff, Send, Volume2, VolumeX, Loader2, Trash2, Square, ArrowRight } from 'lucide-react';
 import { getHelpEntryForPath } from '@edusheets/content';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
-import { streamAsk, AskError, AskTurn } from '@/lib/ask';
+import { useWizardStore } from '@/store/useWizardStore';
+import { askAgent, AskError, AskTurn, AskAgentAction } from '@/lib/ask';
 import { speak, stopSpeaking, isSpeechSupported } from '@/lib/speech';
 import SpeakButton from '@/components/labshared/SpeakButton';
 import { useAskDetails } from './AskContext';
+
+// A chat bubble that resolved to a routable action (currently just
+// generate_worksheet) carries the action payload alongside its display text --
+// everything else about rendering/history stays exactly AskTurn-shaped.
+type ChatTurn = AskTurn & { action?: AskAgentAction };
 
 const VISIBLE_TEXT_LIMIT = 5000;
 const SPEAK_PREF_KEY = 'ask-ai-read-aloud';
@@ -25,11 +31,12 @@ export default function AskPanel() {
   const role = useWorksheetStore((s) => s.userProfile.role);
   const hasLoadedProfile = useWorksheetStore((s) => s.hasLoadedProfile);
   const pathname = usePathname() || '/';
+  const router = useRouter();
   const pageDetails = useAskDetails();
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [turns, setTurns] = useState<AskTurn[]>([]);
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<AskError | null>(null);
   const [readAloud, setReadAloud] = useState(false);
@@ -79,24 +86,29 @@ export default function AskPanel() {
     stopSpeaking();
     setError(null);
     setInput('');
-    const history = turns.slice(-10);
+    const history = turns.slice(-10).map(({ role, content }) => ({ role, content }));
     setTurns([...turns, { role: 'user', content: question }, { role: 'assistant', content: '' }]);
     setStreaming(true);
 
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const answer = await streamAsk(
-        { question, page: buildPage(), history },
-        (chunk) => setTurns((cur) => {
+      const result = await askAgent({ question, page: buildPage(), history }, controller.signal);
+      if (controller.signal.aborted) return;
+      if (result.type === 'action') {
+        setTurns((cur) => {
           const next = [...cur];
-          const last = next[next.length - 1];
-          next[next.length - 1] = { ...last, content: last.content + chunk };
+          next[next.length - 1] = { role: 'assistant', content: result.label, action: result };
           return next;
-        }),
-        controller.signal
-      );
-      if (readAloud && !controller.signal.aborted) speak(answer);
+        });
+      } else {
+        setTurns((cur) => {
+          const next = [...cur];
+          next[next.length - 1] = { role: 'assistant', content: result.content };
+          return next;
+        });
+        if (readAloud) speak(result.content);
+      }
     } catch (err) {
       if (controller.signal.aborted) return;
       setError(err instanceof AskError ? err : new AskError('FAILED', err instanceof Error ? err.message : String(err)));
@@ -105,6 +117,19 @@ export default function AskPanel() {
     } finally {
       setStreaming(false);
     }
+  };
+
+  // Routes into the pre-filled wizard rather than generating anything itself
+  // -- the user's own click on Generate still triggers the actual,
+  // budget-consuming, persisted generation.
+  const openInGenerate = (action: AskAgentAction) => {
+    useWizardStore.getState().hydrateFromSelection(action.selection, {
+      questionCount: action.settings.questionCount,
+      difficulty: action.settings.difficulty,
+      questionTypes: action.settings.questionTypes,
+    });
+    setOpen(false);
+    router.push('/generate');
   };
 
   const stop = () => {
@@ -214,6 +239,18 @@ export default function AskPanel() {
         {turns.map((t, i) => (
           t.role === 'user' ? (
             <div key={i} className="ml-8 rounded-2xl rounded-br-sm bg-primary-600 text-white text-sm px-3 py-2 whitespace-pre-wrap">{t.content}</div>
+          ) : t.action ? (
+            <div key={i} className="mr-4 space-y-2">
+              <div className="rounded-2xl rounded-bl-sm bg-slate-100 dark:bg-slate-800/60 text-sm px-3 py-2 leading-relaxed text-slate-700 dark:text-slate-200">
+                {t.content}
+              </div>
+              <button
+                onClick={() => openInGenerate(t.action!)}
+                className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white transition-colors"
+              >
+                Open in Generate <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           ) : (
             <div key={i} className="mr-4 space-y-1.5">
               <div className="rounded-2xl rounded-bl-sm bg-slate-100 dark:bg-slate-800/60 text-sm px-3 py-2 leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-200">

@@ -262,9 +262,19 @@ export default function GeneratePage() {
 
   return (
     <div className="max-w-4xl mx-auto pb-20 select-none">
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-semibold mb-2">Create Worksheet</h1>
-        <p className="text-slate-500">Design a custom learning experience in seconds using your own AI key.</p>
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-3xl font-semibold mb-2">Create Worksheet</h1>
+          <p className="text-slate-500">Design a custom learning experience in seconds using your own AI key.</p>
+        </div>
+        {currentStep === 1 && (
+          <Link
+            href="/worksheets/custom"
+            className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm flex items-center gap-2 hover:border-primary-300 transition-colors shrink-0"
+          >
+            <Sparkles className="w-4 h-4" /> Custom Worksheet
+          </Link>
+        )}
       </div>
 
       {catalogError && (

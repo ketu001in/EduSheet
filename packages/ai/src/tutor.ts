@@ -9,7 +9,7 @@ import { AIConfig } from './providers/base';
 // Every supported provider exposes an OpenAI-compatible chat completions
 // endpoint (Groq included, at /openai/v1), so one streaming code path covers
 // them all. Default models match createAIProvider() in providers/index.ts.
-const CHAT_ENDPOINTS: Record<AIConfig['provider'], { baseURL: string; model: string }> = {
+export const CHAT_ENDPOINTS: Record<AIConfig['provider'], { baseURL: string; model: string }> = {
   groq: { baseURL: 'https://api.groq.com/openai/v1', model: 'openai/gpt-oss-120b' },
   openai: { baseURL: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
   gemini: { baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.0-flash' },
