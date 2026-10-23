@@ -16,6 +16,9 @@ credit line shown under each model in `AnatomyExplorer.tsx`.
 | `brain-sagittal.svg` | [Human_brain_-_Sagittal_section.svg](https://commons.wikimedia.org/wiki/File:Human_brain_-_Sagittal_section.svg) | Wikimedia contributor | CC BY-SA 4.0 |
 | `brain-deep.svg` | [Basal_Ganglia_and_Related_Structures.svg](https://commons.wikimedia.org/wiki/File:Basal_Ganglia_and_Related_Structures.svg) | US National Institutes of Health (NIH) | Public Domain (US Gov work) |
 | `eye.svg` | [Schematic_diagram_of_the_human_eye_en.svg](https://commons.wikimedia.org/wiki/File:Schematic_diagram_of_the_human_eye_en.svg) | Erin Silversmith, based on a diagram by Delta G | CC BY-SA 3.0 / GFDL |
+| `ear.svg` | [Anatomy_of_the_Human_Ear_blank.svg](https://commons.wikimedia.org/wiki/File:Anatomy_of_the_Human_Ear_blank.svg) | Chittka L, Brockmann A; derivative by M. Komorniczak | CC BY 2.5 |
+| `nose-cross-section.jpg` | [Head_olfactory_nerve.jpg](https://commons.wikimedia.org/wiki/File:Head_olfactory_nerve.jpg) | Patrick J. Lynch, medical illustrator | CC BY 2.5 |
+| `nose-smell-receptors.jpg` | [Olfactory_System_Large_Unlabeled.jpg](https://commons.wikimedia.org/wiki/File:Olfactory_System_Large_Unlabeled.jpg) (960px rendition) | Andrewmeyerson | CC BY-SA 3.0 |
 | `skeleton-front.svg` | [Human_skeleton_front_-_no_labels.svg](https://commons.wikimedia.org/wiki/File:Human_skeleton_front_-_no_labels.svg) | Mikael Häggström, based on a diagram by Mariana Ruiz Villarreal | Public Domain |
 | `skin.jpg` | [Anatomy_The_Skin_-_NCI_Visuals_Online.jpg](https://commons.wikimedia.org/wiki/File:Anatomy_The_Skin_-_NCI_Visuals_Online.jpg) | Don Bliss, National Cancer Institute (NCI Visuals Online) | Public Domain (US Gov work) |
 

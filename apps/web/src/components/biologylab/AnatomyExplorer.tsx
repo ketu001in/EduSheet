@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
-import { ChevronDown, RotateCcw } from 'lucide-react';
+import { ChevronDown, RotateCcw, ListOrdered, Lightbulb, Stethoscope, HeartPulse, GraduationCap } from 'lucide-react';
 import { AnatomyModel, AnatomyHotspot } from '@edusheets/content';
 import { speak, isSpeechSupported } from '@/lib/speech';
 import SpeakButton from '@/components/labshared/SpeakButton';
@@ -29,6 +29,7 @@ const DRAG_SENSITIVITY = 0.5;
 export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
   const [levelId, setLevelId] = useState(model.levels[0].id);
   const level = model.levels.find((l) => l.id === levelId) || model.levels[0];
+  const credit = level.credit || model.credit;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -104,7 +105,7 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
                 hotspots need to be positioned as a simple percentage of its
                 rendered box, which next/image's fixed-aspect wrapper fights. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={level.imageSrc} alt={level.imageAlt} className="w-full h-auto rounded-xl select-none" draggable={false} />
+            <img src={level.imageSrc} alt={level.imageAlt} className="w-full h-auto rounded-xl select-none bg-white" draggable={false} />
             {level.hotspots.map((h) => (
               <button
                 key={h.id}
@@ -156,10 +157,73 @@ export default function AnatomyExplorer({ model }: { model: AnatomyModel }) {
         </div>
       </div>
 
+      {model.guide && <AnatomyGuidePanel model={model} />}
+
       <p className="text-center text-[10px] text-slate-400">
-        Image: {model.credit.author} &middot; {model.credit.license} &middot;{' '}
-        <a href={model.credit.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary-600">Source</a>
+        Image: {credit.author} &middot; {credit.license} &middot;{' '}
+        <a href={credit.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary-600">Source</a>
       </p>
+    </div>
+  );
+}
+
+// The whole-system story below the per-part cards: how the parts work
+// together, surprising facts, what goes wrong, and how to look after it.
+function AnatomyGuidePanel({ model }: { model: AnatomyModel }) {
+  const guide = model.guide!;
+  return (
+    <div className="space-y-4">
+      <h3 className="font-display text-lg font-semibold">How {model.name.replace(/^The /, 'the ')} Works</h3>
+
+      <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 p-4">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <h4 className="font-bold text-sm flex items-center gap-2"><ListOrdered className="w-4 h-4 text-primary-600" /> Step by Step</h4>
+          <SpeakButton text={guide.howItWorks.map((s, i) => `Step ${i + 1}. ${s}`).join(' ')} />
+        </div>
+        <ol className="space-y-2">
+          {guide.howItWorks.map((step, i) => (
+            <li key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              <span className="shrink-0 w-6 h-6 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center">{i + 1}</span>
+              <span className="pt-0.5">{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 p-4">
+          <h4 className="font-bold text-sm flex items-center gap-2 mb-2"><Lightbulb className="w-4 h-4 text-amber-500" /> Did You Know?</h4>
+          <ul className="space-y-2 list-disc pl-5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            {guide.didYouKnow.map((f, i) => <li key={i}>{f}</li>)}
+          </ul>
+        </div>
+        <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 p-4">
+          <h4 className="font-bold text-sm flex items-center gap-2 mb-2"><HeartPulse className="w-4 h-4 text-emerald-600" /> Keep It Healthy</h4>
+          <ul className="space-y-2 list-disc pl-5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            {guide.keepHealthy.map((t, i) => <li key={i}>{t}</li>)}
+          </ul>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-800 p-4">
+        <h4 className="font-bold text-sm flex items-center gap-2 mb-3"><Stethoscope className="w-4 h-4 text-rose-500" /> When Things Go Wrong</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+          {guide.conditions.map((c) => (
+            <div key={c.name} className="text-sm leading-relaxed">
+              <p className="font-bold">{c.name}</p>
+              <p className="text-slate-600 dark:text-slate-300">{c.info}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl p-4 bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-600/30 flex gap-3">
+        <GraduationCap className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" />
+        <div className="text-sm leading-relaxed">
+          <p className="font-bold mb-0.5">Exam Tip</p>
+          <p className="text-slate-600 dark:text-slate-300">{guide.examTip}</p>
+        </div>
+      </div>
     </div>
   );
 }
