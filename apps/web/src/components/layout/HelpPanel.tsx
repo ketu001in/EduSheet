@@ -73,6 +73,20 @@ export default function HelpPanel() {
             </ul>
           </div>
 
+          {entry.steps && entry.steps.length > 0 && (
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">How to do it</h3>
+              <ol className="space-y-2">
+                {entry.steps.map((step, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300">
+                    <span className="mt-0.5 w-5 h-5 rounded-full bg-primary-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           {entry.tips && entry.tips.length > 0 && (
             <div className="rounded-xl bg-secondary-50 dark:bg-slate-800/60 border-2 border-slate-900 dark:border-[#FDF3D9]/40 p-3.5">
               <h3 className="text-xs font-bold uppercase tracking-wide text-secondary-600 dark:text-secondary-400 mb-1.5">Tips</h3>
