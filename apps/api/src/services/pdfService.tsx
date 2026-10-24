@@ -1756,6 +1756,15 @@ const UserGuideDocument = ({ entries }: { entries: DocRouteEntry[] }) => {
                 <Text key={i} style={userGuideStyles.bulletItem}>• {action}</Text>
               ))}
 
+              {entry.steps && entry.steps.length > 0 && (
+                <>
+                  <Text style={userGuideStyles.articleSubheading}>HOW TO DO IT</Text>
+                  {entry.steps.map((step, i) => (
+                    <Text key={i} style={userGuideStyles.bulletItem}>{i + 1}. {step}</Text>
+                  ))}
+                </>
+              )}
+
               {entry.tips && entry.tips.length > 0 && (
                 <>
                   <Text style={userGuideStyles.articleSubheading}>TIPS</Text>

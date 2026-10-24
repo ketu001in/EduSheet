@@ -5,6 +5,13 @@ import { Search, ChevronRight, Download, Loader2, HelpCircle } from 'lucide-reac
 import { HELP_REGISTRY, HELP_CATEGORIES } from '@edusheets/content';
 import { downloadUserGuidePdf } from '@/lib/help';
 
+const START_HERE = [
+  { id: 'start-student', label: "I'm a Student", description: 'Your first worksheet, your first lab experiment.' },
+  { id: 'start-teacher', label: "I'm a Teacher", description: 'Setting work, using Ask AI, and the admin tools you can reach.' },
+  { id: 'start-parent', label: "I'm a Parent", description: 'Helping at home, activity sheets, and study material.' },
+  { id: 'start-admin', label: "I'm an Admin", description: 'Curriculum, content, navigation, and site settings.' },
+];
+
 export default function HelpCenterPage() {
   const [query, setQuery] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -59,6 +66,24 @@ export default function HelpCenterPage() {
           {downloading ? 'Preparing PDF...' : 'Download full guide (PDF)'}
         </button>
       </div>
+
+      {!results && (
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">Start here</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            {START_HERE.map((s) => (
+              <Link
+                key={s.id}
+                href={`/help/${s.id}`}
+                className="glass-card rounded-2xl p-4 hover:border-primary-500/50 transition-all group"
+              >
+                <h3 className="font-bold text-sm group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{s.label}</h3>
+                <p className="text-xs text-slate-500 mt-1">{s.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {results ? (
         <div>
