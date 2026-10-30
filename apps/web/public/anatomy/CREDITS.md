@@ -21,6 +21,8 @@ credit line shown under each model in `AnatomyExplorer.tsx`.
 | `nose-smell-receptors.jpg` | [Olfactory_System_Large_Unlabeled.jpg](https://commons.wikimedia.org/wiki/File:Olfactory_System_Large_Unlabeled.jpg) (960px rendition) | Andrewmeyerson | CC BY-SA 3.0 |
 | `skeleton-front.svg` | [Human_skeleton_front_-_no_labels.svg](https://commons.wikimedia.org/wiki/File:Human_skeleton_front_-_no_labels.svg) | Mikael Häggström, based on a diagram by Mariana Ruiz Villarreal | Public Domain |
 | `skin.jpg` | [Anatomy_The_Skin_-_NCI_Visuals_Online.jpg](https://commons.wikimedia.org/wiki/File:Anatomy_The_Skin_-_NCI_Visuals_Online.jpg) | Don Bliss, National Cancer Institute (NCI Visuals Online) | Public Domain (US Gov work) |
+| `tooth-cross-section.jpg` | [Tooth_Section.svg](https://commons.wikimedia.org/wiki/File:Tooth_Section.svg) -- derivative: translatable text labels removed, cropped to content, rendered to JPEG | Sam Fentress; vectorised by Indolences | CC BY-SA 3.0 / GFDL |
+| `teeth-types.png` | [Teeth_types_colored.png](https://commons.wikimedia.org/wiki/File:Teeth_types_colored.png), based on [Human_dental_arches.svg](https://commons.wikimedia.org/wiki/File:Human_dental_arches.svg) | Strepulah, based on a diagram by Kaligula | CC BY-SA 4.0 |
 
 Hotspot positions and all explanatory text are original, hand-verified work
 for Bosket's EDStudio -- see `packages/content/src/anatomyModels.ts`.
