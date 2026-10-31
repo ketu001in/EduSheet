@@ -4,6 +4,7 @@ import { Dices } from 'lucide-react';
 import { MathSimType } from '@edusheets/content';
 import {
   euclideanSteps, lcmFromHcf, solveQuadratic, DICE_SUM_WAYS,
+  addWithCarries, subtractWithBorrows, multiplyPartialProducts, longDivisionSteps, gcd, pointOnCircle,
 } from '@/lib/mathEngine';
 
 // Renders whichever guided-experiment visual matches the current simType --
@@ -24,8 +25,19 @@ export default function MathStage({ simType, params, resetKey }: {
     case 'quadratic': return <QuadraticScene params={params} />;
     case 'probability': return <ProbabilityScene params={params} resetKey={resetKey} />;
     case 'graph': return <GraphScene params={params} />;
+    case 'addition': return <AdditionScene params={params} />;
+    case 'subtraction': return <SubtractionScene params={params} />;
+    case 'multiplication': return <MultiplicationScene params={params} />;
+    case 'division': return <DivisionScene params={params} />;
+    case 'decimals': return <DecimalsScene params={params} />;
+    case 'fractions': return <FractionsScene params={params} />;
     default: return null;
   }
+}
+
+const PLACE_LABELS = ['Ones', 'Tens', 'Hundreds', 'Thousands', 'Ten-Thousands'];
+function placeLabel(p: number): string {
+  return PLACE_LABELS[p] || `10^${p}`;
 }
 
 function StageCard({ children }: { children: React.ReactNode }) {
@@ -237,6 +249,317 @@ function GraphScene({ params }: { params: Record<string, number> }) {
       </svg>
       <p className="text-center font-display text-lg font-semibold">
         Slope = <span className="text-primary-600">{m}</span> &nbsp;|&nbsp; y-Intercept = <span className="text-accent-600">(0, {c})</span>
+      </p>
+    </StageCard>
+  );
+}
+
+// -- addition ----------------------------------------------------------------
+function AdditionScene({ params }: { params: Record<string, number> }) {
+  const a = Math.round(params.addendA ?? 27);
+  const b = Math.round(params.addendB ?? 15);
+  const { columns, sum } = useMemo(() => addWithCarries(a, b), [a, b]);
+
+  return (
+    <StageCard>
+      <p className="text-center text-sm text-slate-500">{a} + {b}</p>
+      <div className="flex flex-wrap justify-center gap-3">
+        {[...columns].reverse().map((col) => (
+          <div key={col.place} className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 p-3 space-y-1.5 text-center min-w-[84px]">
+            <p className="text-[10px] font-bold text-slate-400">{placeLabel(col.place)}</p>
+            <div className="flex flex-wrap justify-center gap-1 min-h-[1.25rem] max-w-[90px]">
+              {Array.from({ length: col.digitA }).map((_, i) => <span key={`a${i}`} className="w-3 h-3 rounded-sm bg-primary-600" />)}
+              {Array.from({ length: col.digitB }).map((_, i) => <span key={`b${i}`} className="w-3 h-3 rounded-sm bg-accent-600" />)}
+              {Array.from({ length: col.carryIn }).map((_, i) => <span key={`c${i}`} className="w-3 h-3 rounded-sm bg-amber-500" />)}
+            </div>
+            <p className="font-display text-lg font-bold">{col.digitOut}</p>
+            {col.carryOut > 0 && <p className="text-[9px] font-bold text-amber-600">regroups {col.carryOut} &rarr; next column</p>}
+          </div>
+        ))}
+      </div>
+      <p className="text-center font-display text-lg font-semibold">
+        {a} + {b} = <span className="text-primary-600">{sum}</span>
+      </p>
+    </StageCard>
+  );
+}
+
+// -- subtraction ---------------------------------------------------------------
+function SubtractionScene({ params }: { params: Record<string, number> }) {
+  const minuend = Math.round(params.minuend ?? 42);
+  const subtrahend = Math.round(params.subtrahend ?? 27);
+  const { columns, difference, swapped } = useMemo(() => subtractWithBorrows(minuend, subtrahend), [minuend, subtrahend]);
+  const top = swapped ? subtrahend : minuend;
+  const bottom = swapped ? minuend : subtrahend;
+
+  return (
+    <StageCard>
+      <p className="text-center text-sm text-slate-500">
+        {top} - {bottom}
+        {swapped && <span className="block text-amber-600 text-xs mt-1">(swapped so the larger number is on top)</span>}
+      </p>
+      <div className="flex flex-wrap justify-center gap-3">
+        {[...columns].reverse().map((col) => (
+          <div key={col.place} className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 p-3 space-y-1.5 text-center min-w-[84px]">
+            <p className="text-[10px] font-bold text-slate-400">{placeLabel(col.place)}</p>
+            {col.borrowed && <p className="text-[9px] font-bold text-amber-600">borrowed a ten &rarr; +10</p>}
+            <div className="flex flex-wrap justify-center gap-1 min-h-[1.25rem] max-w-[90px]">
+              {Array.from({ length: col.effectiveTop }).map((_, i) => (
+                <span key={i} className={`w-3 h-3 rounded-sm ${i < col.digitBottom ? 'bg-slate-300 dark:bg-slate-700' : 'bg-primary-600'}`} />
+              ))}
+            </div>
+            <p className="font-display text-lg font-bold">{col.digitOut}</p>
+          </div>
+        ))}
+      </div>
+      <p className="text-center font-display text-lg font-semibold">
+        {top} - {bottom} = <span className="text-primary-600">{difference}</span>
+      </p>
+    </StageCard>
+  );
+}
+
+// -- multiplication --------------------------------------------------------
+function MultiplicationScene({ params }: { params: Record<string, number> }) {
+  const a = Math.max(1, Math.round(params.factorA ?? 4));
+  const b = Math.max(1, Math.round(params.factorB ?? 6));
+  const product = a * b;
+  const { parts } = useMemo(() => multiplyPartialProducts(a, b), [a, b]);
+  const useArray = a <= 12 && b <= 12 && product <= 144;
+
+  return (
+    <StageCard>
+      {useArray ? (
+        <>
+          <p className="text-center text-sm text-slate-500">{a} rows &times; {b} columns</p>
+          <div className="flex flex-col items-center gap-1">
+            {Array.from({ length: a }).map((_, r) => (
+              <div key={r} className="flex gap-1">
+                {Array.from({ length: b }).map((_, c) => <span key={c} className="w-4 h-4 rounded-full bg-primary-600" />)}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-center text-sm text-slate-500">{a} &times; {b}, broken into tens and ones</p>
+          <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
+            {parts.map((p, i) => (
+              <div key={i} className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 p-3 text-center">
+                <p className="text-[10px] font-bold text-slate-400">{p.placeA} &times; {p.placeB}</p>
+                <p className="font-display text-lg font-bold text-primary-600">{p.value}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <p className="text-center font-display text-lg font-semibold">
+        {a} &times; {b} = <span className="text-primary-600">{product}</span>
+      </p>
+    </StageCard>
+  );
+}
+
+// -- division (long division) -----------------------------------------------
+function DivisionScene({ params }: { params: Record<string, number> }) {
+  const dividend = Math.max(1, Math.round(params.dividend ?? 936));
+  const divisor = Math.max(1, Math.round(params.divisor ?? 8));
+  const { steps, quotient, remainder } = useMemo(() => longDivisionSteps(dividend, divisor), [dividend, divisor]);
+
+  return (
+    <StageCard>
+      <p className="text-center text-sm text-slate-500">{dividend} &divide; {divisor}, one digit at a time</p>
+      <div className="space-y-2 max-w-sm mx-auto">
+        {steps.map((s, i) => (
+          <p key={i} className="font-mono text-sm bg-slate-900 text-slate-50 dark:bg-slate-950 rounded-xl px-3 py-2">
+            bring down {s.bringDown} &rarr; {s.workingValue} &divide; {divisor} = {s.digitQuotient} r {s.remainderAfter}
+          </p>
+        ))}
+      </div>
+      <p className="text-center font-display text-lg font-semibold">
+        {dividend} &divide; {divisor} = <span className="text-primary-600">{quotient}</span>
+        {remainder > 0 && <> remainder <span className="text-amber-600">{remainder}</span></>}
+      </p>
+    </StageCard>
+  );
+}
+
+// -- decimals ------------------------------------------------------------------
+function DecimalsScene({ params }: { params: Record<string, number> }) {
+  const dual = params.bWhole !== undefined;
+
+  if (!dual) {
+    const whole = Math.round(params.wholePart ?? 3);
+    const tenths = Math.round(params.tenths ?? 4);
+    const hundredths = Math.round(params.hundredths ?? 7);
+    const value = whole + tenths / 10 + hundredths / 100;
+    const max = Math.max(10, whole + 1);
+    return (
+      <StageCard>
+        <p className="text-center text-sm text-slate-500">Building {whole}.{tenths}{hundredths}</p>
+        <div className="flex justify-center items-center gap-3">
+          <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 p-3 text-center min-w-[70px]">
+            <p className="text-[10px] font-bold text-slate-400">Ones</p>
+            <p className="font-display text-xl font-bold text-primary-600">{whole}</p>
+          </div>
+          <p className="text-2xl font-bold">.</p>
+          <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 p-3 text-center min-w-[70px]">
+            <p className="text-[10px] font-bold text-slate-400">Tenths (1/10)</p>
+            <p className="font-display text-xl font-bold text-accent-600">{tenths}</p>
+          </div>
+          <div className="rounded-2xl border-2 border-slate-900 dark:border-slate-700 p-3 text-center min-w-[70px]">
+            <p className="text-[10px] font-bold text-slate-400">Hundredths (1/100)</p>
+            <p className="font-display text-xl font-bold text-amber-600">{hundredths}</p>
+          </div>
+        </div>
+        <svg viewBox="0 0 320 50" className="w-full max-w-sm mx-auto">
+          <line x1={10} y1={30} x2={310} y2={30} className="stroke-slate-300 dark:stroke-slate-700" strokeWidth={1.5} />
+          {Array.from({ length: max + 1 }).map((_, i) => (
+            <line key={i} x1={10 + (i / max) * 300} y1={25} x2={10 + (i / max) * 300} y2={35} className="stroke-slate-300 dark:stroke-slate-700" strokeWidth={1} />
+          ))}
+          <circle cx={10 + (value / max) * 300} cy={30} r={6} className="fill-primary-600 stroke-white dark:stroke-slate-900" strokeWidth={2} />
+        </svg>
+        <p className="text-center font-display text-lg font-semibold">{whole}.{tenths}{hundredths} = <span className="text-primary-600">{value}</span></p>
+      </StageCard>
+    );
+  }
+
+  const aWhole = Math.round(params.aWhole ?? 4);
+  const aTenths = Math.round(params.aTenths ?? 6);
+  const aHundredths = Math.round(params.aHundredths ?? 0);
+  const bWhole = Math.round(params.bWhole ?? 2);
+  const bTenths = Math.round(params.bTenths ?? 0);
+  const bHundredths = Math.round(params.bHundredths ?? 8);
+  const aValue = aWhole + aTenths / 10 + aHundredths / 100;
+  const bValue = bWhole + bTenths / 10 + bHundredths / 100;
+  const sum = Math.round((aValue + bValue) * 100) / 100;
+  const max = Math.max(10, Math.ceil(Math.max(aValue, bValue)) + 1);
+
+  return (
+    <StageCard>
+      <p className="text-center text-sm text-slate-500">Comparing {aWhole}.{aTenths}{aHundredths} and {bWhole}.{bTenths}{bHundredths}</p>
+      <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto text-center">
+        <div>
+          <p className="text-[10px] font-bold text-primary-600 uppercase">Number A</p>
+          <p className="font-display text-xl font-bold">{aWhole}.{aTenths}{aHundredths}</p>
+        </div>
+        <div>
+          <p className="text-[10px] font-bold text-accent-600 uppercase">Number B</p>
+          <p className="font-display text-xl font-bold">{bWhole}.{bTenths}{bHundredths}</p>
+        </div>
+      </div>
+      <svg viewBox="0 0 320 50" className="w-full max-w-sm mx-auto">
+        <line x1={10} y1={30} x2={310} y2={30} className="stroke-slate-300 dark:stroke-slate-700" strokeWidth={1.5} />
+        {Array.from({ length: max + 1 }).map((_, i) => (
+          <line key={i} x1={10 + (i / max) * 300} y1={25} x2={10 + (i / max) * 300} y2={35} className="stroke-slate-300 dark:stroke-slate-700" strokeWidth={1} />
+        ))}
+        <circle cx={10 + (aValue / max) * 300} cy={30} r={6} className="fill-primary-600 stroke-white dark:stroke-slate-900" strokeWidth={2} />
+        <circle cx={10 + (bValue / max) * 300} cy={30} r={6} className="fill-accent-600 stroke-white dark:stroke-slate-900" strokeWidth={2} />
+      </svg>
+      <p className="text-center font-display text-lg font-semibold">
+        {aValue} {aValue > bValue ? '>' : aValue < bValue ? '<' : '='} {bValue} &nbsp;|&nbsp; Sum = <span className="text-primary-600">{sum}</span>
+      </p>
+    </StageCard>
+  );
+}
+
+// -- fractions -----------------------------------------------------------------
+function FractionBar({ numerator, denominator, colorClass }: { numerator: number; denominator: number; colorClass: string }) {
+  return (
+    <div className="flex w-28 h-9 rounded-lg overflow-hidden border-2 border-slate-900 dark:border-slate-700">
+      {Array.from({ length: Math.max(1, denominator) }).map((_, i) => (
+        <div key={i} className={`flex-1 border-r border-slate-400/40 last:border-r-0 ${i < numerator ? colorClass : 'bg-slate-100 dark:bg-slate-800'}`} />
+      ))}
+    </div>
+  );
+}
+
+function FractionCircle({ numerator, denominator, colorClass }: { numerator: number; denominator: number; colorClass: string }) {
+  const center = { x: 50, y: 50 };
+  const r = 44;
+  const slices = Math.max(1, denominator);
+  return (
+    <svg viewBox="0 0 100 100" className="w-20 h-20">
+      {Array.from({ length: slices }).map((_, i) => {
+        const startAngle = -90 + (i * 360) / slices;
+        const endAngle = -90 + ((i + 1) * 360) / slices;
+        const p1 = pointOnCircle(center, r, startAngle);
+        const p2 = pointOnCircle(center, r, endAngle);
+        const largeArc = 360 / slices > 180 ? 1 : 0;
+        return (
+          <path
+            key={i}
+            d={`M ${center.x} ${center.y} L ${p1.x} ${p1.y} A ${r} ${r} 0 ${largeArc} 1 ${p2.x} ${p2.y} Z`}
+            className={`${i < numerator ? colorClass : 'fill-slate-100 dark:fill-slate-800'} stroke-slate-900 dark:stroke-slate-600`}
+            strokeWidth={1}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function FractionsScene({ params }: { params: Record<string, number> }) {
+  const dual = params.numeratorA !== undefined;
+
+  if (!dual) {
+    const numerator = Math.max(0, Math.round(params.numerator ?? 3));
+    const denominator = Math.max(1, Math.round(params.denominator ?? 4));
+    const wholes = Math.floor(numerator / denominator);
+    const remainder = numerator % denominator;
+    const unitsToShow = Math.max(1, wholes + (remainder > 0 ? 1 : 0));
+
+    return (
+      <StageCard>
+        <p className="text-center text-sm text-slate-500">
+          {numerator}/{denominator}
+          {numerator > denominator && ' -- an improper fraction, more than one whole'}
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {Array.from({ length: unitsToShow }).map((_, i) => (
+            <FractionBar key={i} numerator={i < wholes ? denominator : remainder} denominator={denominator} colorClass="bg-primary-600" />
+          ))}
+        </div>
+        <div className="flex flex-wrap justify-center gap-2">
+          {Array.from({ length: unitsToShow }).map((_, i) => (
+            <FractionCircle key={i} numerator={i < wholes ? denominator : remainder} denominator={denominator} colorClass="fill-accent-600" />
+          ))}
+        </div>
+        <p className="text-center font-display text-lg font-semibold">
+          {numerator}/{denominator} = <span className="text-primary-600">{(numerator / denominator).toFixed(2)}</span>
+        </p>
+      </StageCard>
+    );
+  }
+
+  const numeratorA = Math.max(0, Math.round(params.numeratorA ?? 1));
+  const denominatorA = Math.max(1, Math.round(params.denominatorA ?? 3));
+  const numeratorB = Math.max(0, Math.round(params.numeratorB ?? 1));
+  const denominatorB = Math.max(1, Math.round(params.denominatorB ?? 4));
+  const g = gcd(denominatorA, denominatorB);
+  const commonDen = (denominatorA * denominatorB) / g;
+  const scaledA = numeratorA * (commonDen / denominatorA);
+  const scaledB = numeratorB * (commonDen / denominatorB);
+  const sumNumerator = scaledA + scaledB;
+  const sumGcd = gcd(sumNumerator || 1, commonDen);
+  const simplified = sumGcd > 1 ? `${sumNumerator / sumGcd}/${commonDen / sumGcd}` : null;
+
+  return (
+    <StageCard>
+      <p className="text-center text-sm text-slate-500">{numeratorA}/{denominatorA} + {numeratorB}/{denominatorB}</p>
+      <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto text-center">
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold text-primary-600 uppercase">{numeratorA}/{denominatorA} = {scaledA}/{commonDen}</p>
+          <FractionBar numerator={scaledA} denominator={commonDen} colorClass="bg-primary-600" />
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold text-accent-600 uppercase">{numeratorB}/{denominatorB} = {scaledB}/{commonDen}</p>
+          <FractionBar numerator={scaledB} denominator={commonDen} colorClass="bg-accent-600" />
+        </div>
+      </div>
+      <p className="text-center font-display text-lg font-semibold">
+        {numeratorA}/{denominatorA} + {numeratorB}/{denominatorB} = <span className="text-primary-600">{sumNumerator}/{commonDen}</span>
+        {simplified && <span className="text-sm text-slate-400 font-normal block mt-1">simplifies to {simplified}</span>}
       </p>
     </StageCard>
   );

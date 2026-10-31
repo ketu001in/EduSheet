@@ -8,6 +8,7 @@ import { playSelectChime } from '@/lib/uiSoundEngine';
 import { useDeepDives } from '@/lib/useDeepDives';
 import DeepDiveTrigger from '@/components/labshared/DeepDiveTrigger';
 import TheoremVisualProof from './TheoremVisualProof';
+import GenerateWorksheetLink from './GenerateWorksheetLink';
 
 const BRANCH_LABEL: Partial<Record<MathBranch, string>> = {
   'number-systems': 'Number Systems',
@@ -134,6 +135,8 @@ export default function TheoremCorner({ theorems }: { theorems: MathTheorem[] })
           </div>
 
           {hasDeepDive && <DeepDiveTrigger id={deepDiveId} label="Explore This Theorem Further" />}
+
+          <GenerateWorksheetLink chapterTags={active.chapterTags} gradeBand={active.gradeBand} board={active.board} />
 
           <details className="group" open>
             <summary className="cursor-pointer text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 list-none">

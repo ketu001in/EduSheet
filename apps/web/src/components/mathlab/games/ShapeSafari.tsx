@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useState } from 'react';
 import { GameHeader, OptionGrid } from './GameHeader';
+import GenerateWorksheetLink from '../GenerateWorksheetLink';
 import { useGameScore } from '@/lib/useGameScore';
 import { generateShapeQuestion, ShapeName } from '@/lib/mathGamesEngine';
 
@@ -51,6 +52,7 @@ export default function ShapeSafari() {
           disabled={selectedIndex !== null}
           onSelect={select}
         />
+        <GenerateWorksheetLink chapterTags={['Shapes and Space', 'Shapes Around Us']} gradeBand="early" board="both" className="flex justify-center" />
       </div>
     </div>
   );

@@ -160,6 +160,154 @@ export function primeFactorize(n: number): number[] {
   return factors;
 }
 
+// -- Helpers for Math Lab's new arithmetic experiments (addition/
+// subtraction/multiplication/division/decimals/fractions simTypes) -- same
+// "pure function drives both the visual and the live readout" philosophy,
+// and the same reason euclideanSteps/solveQuadratic exist as functions
+// rather than inline scene math: the regrouping logic is worth getting
+// right once and testing independently of any rendering.
+
+export interface PlaceColumn {
+  // 0 = ones, 1 = tens, 2 = hundreds, ... -- matches how digits are
+  // naturally produced working from the least significant end.
+  place: number;
+  digitA: number;
+  digitB: number;
+  carryIn: number;
+  total: number;
+  digitOut: number;
+  carryOut: number;
+}
+
+// Column addition with real regrouping, ones-first -- the same process a
+// student performs by hand, just computed so a scene can show each
+// column's carry explicitly. `a`/`b` must be non-negative integers.
+export function addWithCarries(a: number, b: number): { columns: PlaceColumn[]; sum: number } {
+  const x = Math.max(0, Math.round(a));
+  const y = Math.max(0, Math.round(b));
+  const columns: PlaceColumn[] = [];
+  let carry = 0;
+  let place = 0;
+  let remA = x;
+  let remB = y;
+  while (remA > 0 || remB > 0 || carry > 0 || place === 0) {
+    const digitA = remA % 10;
+    const digitB = remB % 10;
+    const total = digitA + digitB + carry;
+    const digitOut = total % 10;
+    const carryOut = Math.floor(total / 10);
+    columns.push({ place, digitA, digitB, carryIn: carry, total, digitOut, carryOut });
+    carry = carryOut;
+    remA = Math.floor(remA / 10);
+    remB = Math.floor(remB / 10);
+    place++;
+    if (place > 8) break; // guard against runaway loops
+  }
+  return { columns, sum: x + y };
+}
+
+export interface BorrowColumn {
+  place: number;
+  digitTop: number;
+  digitBottom: number;
+  borrowed: boolean;
+  effectiveTop: number;
+  digitOut: number;
+}
+
+// Column subtraction with real borrowing, ones-first. Swaps so the larger
+// number is always on top -- this app's subtraction experiments are about
+// borrowing mechanics, not negative numbers, which have their own chapter.
+export function subtractWithBorrows(minuend: number, subtrahend: number): { columns: BorrowColumn[]; difference: number; swapped: boolean } {
+  let top = Math.max(0, Math.round(minuend));
+  let bottom = Math.max(0, Math.round(subtrahend));
+  const swapped = bottom > top;
+  if (swapped) [top, bottom] = [bottom, top];
+
+  const topDigits: number[] = [];
+  let t = top;
+  do { topDigits.push(t % 10); t = Math.floor(t / 10); } while (t > 0);
+
+  const columns: BorrowColumn[] = [];
+  let borrow = 0;
+  for (let place = 0; place < topDigits.length; place++) {
+    const digitBottom = Math.floor(bottom / 10 ** place) % 10;
+    let digitTop = topDigits[place] - borrow;
+    let borrowed = false;
+    if (digitTop < digitBottom) {
+      digitTop += 10;
+      borrowed = true;
+    }
+    columns.push({ place, digitTop: topDigits[place], digitBottom, borrowed, effectiveTop: digitTop, digitOut: digitTop - digitBottom });
+    borrow = borrowed ? 1 : 0;
+  }
+  return { columns, difference: top - bottom, swapped };
+}
+
+export interface PartialProduct {
+  placeA: number; // 1 or 10 (ones or tens component of factor A)
+  placeB: number;
+  value: number; // placeA * placeB
+}
+
+// The area-model breakdown of a x b into up to four partial products by
+// splitting each factor into tens + ones (e.g. 13 x 24 = (10+3)(20+4)).
+// Works for single-digit factors too (the tens component is just 0).
+export function multiplyPartialProducts(a: number, b: number): { parts: PartialProduct[]; product: number } {
+  const x = Math.max(0, Math.round(a));
+  const y = Math.max(0, Math.round(b));
+  const aTens = Math.floor(x / 10) * 10;
+  const aOnes = x % 10;
+  const bTens = Math.floor(y / 10) * 10;
+  const bOnes = y % 10;
+  const parts: PartialProduct[] = [
+    { placeA: aTens, placeB: bTens, value: aTens * bTens },
+    { placeA: aTens, placeB: bOnes, value: aTens * bOnes },
+    { placeA: aOnes, placeB: bTens, value: aOnes * bTens },
+    { placeA: aOnes, placeB: bOnes, value: aOnes * bOnes },
+  ].filter((p) => p.placeA !== 0 || p.placeB !== 0 || (aTens === 0 && bTens === 0));
+  return { parts, product: x * y };
+}
+
+export interface LongDivisionStep {
+  bringDown: number; // the digit brought down this step
+  workingValue: number; // what's being divided this step
+  digitQuotient: number;
+  product: number; // digitQuotient * divisor
+  remainderAfter: number;
+}
+
+// The real long-division algorithm (divide, multiply, subtract, bring
+// down), one place-value column of the dividend at a time, left to right.
+export function longDivisionSteps(dividend: number, divisor: number): { steps: LongDivisionStep[]; quotient: number; remainder: number } {
+  const d = Math.max(1, Math.round(divisor));
+  const dividendStr = String(Math.max(0, Math.round(dividend)));
+  const steps: LongDivisionStep[] = [];
+  let working = 0;
+  let quotientStr = '';
+  for (const ch of dividendStr) {
+    const digit = Number(ch);
+    working = working * 10 + digit;
+    const digitQuotient = Math.floor(working / d);
+    const product = digitQuotient * d;
+    const remainderAfter = working - product;
+    steps.push({ bringDown: digit, workingValue: working, digitQuotient, product, remainderAfter });
+    quotientStr += String(digitQuotient);
+    working = remainderAfter;
+  }
+  // Strip leading zeros the same way the standard algorithm's written
+  // quotient does (e.g. 048 -> 48), but keep a single 0 if everything was 0.
+  const quotient = Number(quotientStr) || 0;
+  return { steps, quotient, remainder: working };
+}
+
+export function gcd(a: number, b: number): number {
+  let x = Math.abs(Math.round(a));
+  let y = Math.abs(Math.round(b));
+  while (y !== 0) [x, y] = [y, x % y];
+  return x || 1;
+}
+
 export function keepAngleOutsideRange(angleDeg: number, start: number, end: number, buffer = 4): number {
   // Strict < / > (not <=/>=) so landing EXACTLY on `start` or `end` still
   // counts as forbidden and gets pushed out too -- otherwise a point could

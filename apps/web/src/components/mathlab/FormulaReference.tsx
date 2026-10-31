@@ -4,6 +4,7 @@ import { MathFormula, MathBranch } from '@edusheets/content';
 import SpeakButton from '@/components/labshared/SpeakButton';
 import { useDeepDives } from '@/lib/useDeepDives';
 import DeepDiveTrigger from '@/components/labshared/DeepDiveTrigger';
+import GenerateWorksheetLink from './GenerateWorksheetLink';
 
 const BRANCH_LABEL: Partial<Record<MathBranch, string>> = {
   'number-systems': 'Number Systems',
@@ -69,6 +70,7 @@ export default function FormulaReference({ formulas }: { formulas: MathFormula[]
             {deepDives.some((d) => d.id === `math-formula-${f.id}`) && (
               <DeepDiveTrigger id={`math-formula-${f.id}`} label="Explore Further" />
             )}
+            <GenerateWorksheetLink chapterTags={f.chapterTags} gradeBand={f.gradeBand} board={f.board} />
           </div>
         ))}
       </div>

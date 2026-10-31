@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { MATH_EXPERIMENTS } from '@edusheets/content';
 import MathStage from './MathStage';
+import GenerateWorksheetLink from './GenerateWorksheetLink';
 import SpeakButton from '@/components/labshared/SpeakButton';
 
 // Free-play version of the Guided Experiments -- every curated experiment's
@@ -47,6 +48,8 @@ export default function ExperimentPlayground() {
           <SpeakButton text={experiment.keyIdea} />
         </div>
       </div>
+
+      <GenerateWorksheetLink chapterTags={experiment.chapterTags} gradeBand={experiment.gradeBand} board={experiment.board} />
 
       {experiment.paramConfig.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

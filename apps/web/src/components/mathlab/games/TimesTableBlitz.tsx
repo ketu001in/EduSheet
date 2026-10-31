@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Timer } from 'lucide-react';
 import { GameHeader, OptionGrid } from './GameHeader';
+import GenerateWorksheetLink from '../GenerateWorksheetLink';
 import { useGameScore } from '@/lib/useGameScore';
 import { generateMultiplicationQuestion } from '@/lib/mathGamesEngine';
 
@@ -56,6 +57,7 @@ export default function TimesTableBlitz() {
           onSelect={select}
         />
         {selectedIndex === -1 && <p className="text-sm font-bold text-red-500">Time's up! The answer was {q.product}.</p>}
+        <GenerateWorksheetLink chapterTags={['Multiplication', 'Playing with Numbers']} gradeBand="junior" board="both" className="flex justify-center" />
       </div>
     </div>
   );

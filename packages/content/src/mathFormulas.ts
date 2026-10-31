@@ -10,6 +10,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'HCF x LCM Relation',
     branch: 'number-systems',
     gradeBand: 'junior',
+    board: 'both',
+    chapterTags: ['Prime Time', 'HCF and LCM'],
     formula: 'HCF(a, b) x LCM(a, b) = a x b',
     variables: [
       { symbol: 'HCF(a, b)', meaning: 'Highest Common Factor of a and b' },
@@ -23,6 +25,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Quadratic Formula',
     branch: 'algebra',
     gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Quadratic Equations'],
     formula: 'x = (-b +/- sqrt(b^2 - 4ac)) / 2a',
     variables: [
       { symbol: 'a, b, c', meaning: 'coefficients of the quadratic equation ax^2 + bx + c = 0 (a != 0)' },
@@ -36,6 +40,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Standard Algebraic Identities',
     branch: 'algebra',
     gradeBand: 'middle',
+    board: 'both',
+    chapterTags: ['Algebraic Expressions and Identities'],
     formula: '(a+b)^2 = a^2 + 2ab + b^2   |   (a-b)^2 = a^2 - 2ab + b^2   |   a^2 - b^2 = (a+b)(a-b)',
     variables: [
       { symbol: 'a, b', meaning: 'any two numbers or algebraic terms' },
@@ -48,6 +54,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Area of a Triangle',
     branch: 'mensuration',
     gradeBand: 'junior',
+    board: 'both',
+    chapterTags: ['Mensuration', 'Perimeter and Area'],
     formula: 'Area = 1/2 x base x height',
     variables: [
       { symbol: 'base', meaning: 'length of the triangle\'s base' },
@@ -61,6 +69,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Area and Circumference of a Circle',
     branch: 'mensuration',
     gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Areas Related to Circles', 'Mensuration'],
     formula: 'Area = pi x r^2      Circumference = 2 x pi x r',
     variables: [
       { symbol: 'r', meaning: 'radius of the circle' },
@@ -74,6 +84,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Surface Area and Volume of a Cylinder',
     branch: 'mensuration',
     gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Surface Areas and Volumes'],
     formula: 'Curved Surface Area = 2 x pi x r x h      Volume = pi x r^2 x h',
     variables: [
       { symbol: 'r', meaning: 'radius of the circular base' },
@@ -87,6 +99,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Volume of a Sphere',
     branch: 'mensuration',
     gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Surface Areas and Volumes'],
     formula: 'Volume = 4/3 x pi x r^3',
     variables: [
       { symbol: 'r', meaning: 'radius of the sphere' },
@@ -99,6 +113,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Distance Formula',
     branch: 'geometry',
     gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Coordinate Geometry'],
     formula: 'd = sqrt((x2-x1)^2 + (y2-y1)^2)',
     variables: [
       { symbol: '(x1, y1)', meaning: 'coordinates of the first point' },
@@ -112,6 +128,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Basic Trigonometric Ratios',
     branch: 'trigonometry',
     gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Introduction to Trigonometry'],
     formula: 'sin(theta) = opposite/hypotenuse    cos(theta) = adjacent/hypotenuse    tan(theta) = opposite/adjacent',
     variables: [
       { symbol: 'theta', meaning: 'one of the acute angles in a right triangle' },
@@ -125,6 +143,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Pythagorean Trigonometric Identity',
     branch: 'trigonometry',
     gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Introduction to Trigonometry', 'Trigonometric Identities'],
     formula: 'sin^2(theta) + cos^2(theta) = 1',
     variables: [
       { symbol: 'theta', meaning: 'any angle' },
@@ -137,6 +157,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Mean (Average)',
     branch: 'statistics-probability',
     gradeBand: 'middle',
+    board: 'both',
+    chapterTags: ['Data Handling', 'Statistics'],
     formula: 'Mean = (sum of all values) / (number of values)',
     variables: [
       { symbol: 'n', meaning: 'how many values are in the data set' },
@@ -149,6 +171,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Probability of an Event',
     branch: 'statistics-probability',
     gradeBand: 'senior',
+    board: 'both',
+    chapterTags: ['Probability', 'Statistics'],
     formula: 'P(event) = (favourable outcomes) / (total possible outcomes)',
     variables: [
       { symbol: 'P(event)', meaning: 'probability of the event happening, always between 0 and 1' },
@@ -161,6 +185,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Derivative Power Rule',
     branch: 'calculus',
     gradeBand: 'plusTwo',
+    board: 'both',
+    chapterTags: ['Limits and Derivatives', 'Application of Derivatives'],
     formula: 'd/dx (x^n) = n . x^(n-1)',
     variables: [
       { symbol: 'n', meaning: 'any real-number exponent' },
@@ -173,6 +199,8 @@ export const MATH_FORMULAS: MathFormula[] = [
     name: 'Integral Power Rule',
     branch: 'calculus',
     gradeBand: 'plusTwo',
+    board: 'both',
+    chapterTags: ['Integrals'],
     formula: 'Integral of x^n dx = x^(n+1) / (n+1) + C',
     variables: [
       { symbol: 'n', meaning: 'any real-number exponent, n != -1' },

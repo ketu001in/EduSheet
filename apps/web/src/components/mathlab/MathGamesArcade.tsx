@@ -5,6 +5,10 @@ import ShapeSafari from './games/ShapeSafari';
 import TimesTableBlitz from './games/TimesTableBlitz';
 import FractionFill from './games/FractionFill';
 import PatternDetective from './games/PatternDetective';
+import AdditionDash from './games/AdditionDash';
+import SubtractionDash from './games/SubtractionDash';
+import DivisionDerby from './games/DivisionDerby';
+import DecimalDuel from './games/DecimalDuel';
 
 // A small arcade of quick drill games for the early/junior grade bands
 // (Classes 1-6) -- pure fun-and-practice, distinct from the guided
@@ -15,7 +19,11 @@ import PatternDetective from './games/PatternDetective';
 const GAMES = [
   { id: 'count', label: 'Count & Match', gradeHint: 'Class 1-2', render: () => <CountAndMatch /> },
   { id: 'shapes', label: 'Shape Safari', gradeHint: 'Class 1-2', render: () => <ShapeSafari /> },
+  { id: 'addition', label: 'Addition Dash', gradeHint: 'Class 1-3', render: () => <AdditionDash /> },
+  { id: 'subtraction', label: 'Subtraction Dash', gradeHint: 'Class 1-3', render: () => <SubtractionDash /> },
   { id: 'times-table', label: 'Times Table Blitz', gradeHint: 'Class 3-4', render: () => <TimesTableBlitz /> },
+  { id: 'division', label: 'Division Derby', gradeHint: 'Class 4-6', render: () => <DivisionDerby /> },
+  { id: 'decimals', label: 'Decimal Duel', gradeHint: 'Class 4-6', render: () => <DecimalDuel /> },
   { id: 'fractions', label: 'Fraction Fill', gradeHint: 'Class 4-5', render: () => <FractionFill /> },
   { id: 'patterns', label: 'Pattern Detective', gradeHint: 'Class 3-4', render: () => <PatternDetective /> },
 ] as const;

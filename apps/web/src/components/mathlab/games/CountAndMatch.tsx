@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useState } from 'react';
 import { GameHeader, OptionGrid } from './GameHeader';
+import GenerateWorksheetLink from '../GenerateWorksheetLink';
 import { useGameScore } from '@/lib/useGameScore';
 import { generateCountingQuestion } from '@/lib/mathGamesEngine';
 
@@ -44,6 +45,7 @@ export default function CountAndMatch() {
           disabled={selectedIndex !== null}
           onSelect={select}
         />
+        <GenerateWorksheetLink chapterTags={['Numbers', 'Counting']} gradeBand="early" board="both" className="flex justify-center" />
       </div>
     </div>
   );
