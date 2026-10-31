@@ -10,6 +10,8 @@ import {
   Point, triangleAngles, angleOf, pointOnCircle, angleAtVertex, keepAngleOutsideRange,
   distance, midpoint, sectionPoint, projectOntoSegment,
 } from '@/lib/mathEngine';
+import { MATH_GRADE_BANDS } from '@edusheets/content';
+import GenerateWorksheetLink from './GenerateWorksheetLink';
 import { SolidType, cubeMensuration, cuboidMensuration, cylinderMensuration, coneMensuration, sphereMensuration } from '@/lib/mensurationEngine';
 
 const Solid3DScene = dynamic(() => import('./Solid3DScene'), {
@@ -527,62 +529,363 @@ function MensurationSolids() {
   );
 }
 
-// -- Category / construction picker -----------------------------------------
-type ConstructionId = 'triangle-angle-sum' | 'bpt' | 'circle-theorem' | 'parallelogram' | 'coordinate-geometry' | 'mensuration-solids';
+// -- NEW: Early level -- Shapes & Sides --------------------------------------
+// A shape is identified by HOW MANY straight sides/corners it has (0 for a
+// circle, which has neither) -- dragging a corner anywhere never changes
+// that count, which IS the point being taught, the same "invariant survives
+// dragging" idea as every construction above, just applied to the most
+// basic geometric fact there is.
+const SHAPE_SIDES: { id: string; label: string; n: number }[] = [
+  { id: 'circle', label: 'Circle', n: 0 },
+  { id: 'triangle', label: 'Triangle', n: 3 },
+  { id: 'square', label: 'Square / Rectangle', n: 4 },
+  { id: 'pentagon', label: 'Pentagon', n: 5 },
+  { id: 'hexagon', label: 'Hexagon', n: 6 },
+];
+const SHAPE_CENTER: Point = { x: 200, y: 200 };
+
+function regularPolygonPoints(n: number, center: Point, radius: number): Point[] {
+  return Array.from({ length: n }, (_, i) => pointOnCircle(center, radius, -90 + (i * 360) / n));
+}
+
+function ShapeSidesExplorer() {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [shapeId, setShapeId] = useState('triangle');
+  const shape = SHAPE_SIDES.find((s) => s.id === shapeId) || SHAPE_SIDES[1];
+  const [points, setPoints] = useState<Point[]>(() => regularPolygonPoints(3, SHAPE_CENTER, 130));
+  const [circleRadius, setCircleRadius] = useState(120);
+  const draggingRef = useRef<number | null>(null);
+
+  const switchShape = (id: string) => {
+    const s = SHAPE_SIDES.find((x) => x.id === id);
+    if (!s) return;
+    setShapeId(id);
+    if (s.n > 0) setPoints(regularPolygonPoints(s.n, SHAPE_CENTER, 130));
+    playSelectChime();
+  };
+
+  const startDrag = (i: number) => (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture(e.pointerId);
+    draggingRef.current = i;
+  };
+  const onMove = (e: React.PointerEvent) => {
+    const svg = svgRef.current;
+    if (!svg || draggingRef.current === null) return;
+    const p = toSvgPoint(svg, e.clientX, e.clientY);
+    if (shape.n === 0) {
+      setCircleRadius(clamp(distance(p, SHAPE_CENTER), 30, 170));
+      return;
+    }
+    const i = draggingRef.current;
+    setPoints((prev) => prev.map((pt, idx) => (idx === i ? { x: clamp(p.x, 10, VIEW - 10), y: clamp(p.y, 10, VIEW - 10) } : pt)));
+  };
+  const endDrag = () => { draggingRef.current = null; };
+  const reset = () => {
+    if (shape.n > 0) setPoints(regularPolygonPoints(shape.n, SHAPE_CENTER, 130));
+    else setCircleRadius(120);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <p className="text-sm text-slate-500">Pick a shape, then drag its corners (or its edge, for a circle). Count how many straight sides and corners it has.</p>
+        <div className="flex items-center gap-2 shrink-0">
+          <SpeakButton text={`This is a ${shape.label}. ${shape.n === 0 ? 'A circle has no straight sides and no corners at all -- it is one continuous curve.' : `Drag any corner -- however you reshape it, it always has exactly ${shape.n} straight sides and ${shape.n} corners.`}`} />
+          <button onClick={reset} className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700">
+            <RotateCcw className="w-3.5 h-3.5" /> Reset
+          </button>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {SHAPE_SIDES.map((s) => (
+          <Tilt3DCard key={s.id} active={shapeId === s.id} onClick={() => switchShape(s.id)} className={`px-3.5 py-2 rounded-xl text-sm font-bold ${shapeId === s.id ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}>
+            {s.label}
+          </Tilt3DCard>
+        ))}
+      </div>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${VIEW} ${VIEW}`}
+        className="w-full max-w-md mx-auto touch-none select-none rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-slate-200 dark:border-slate-800"
+        onPointerMove={onMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        {shape.n === 0 ? (
+          <>
+            <circle cx={SHAPE_CENTER.x} cy={SHAPE_CENTER.y} r={circleRadius} className="fill-primary-500/10 stroke-primary-600" strokeWidth={2.5} />
+            <circle cx={SHAPE_CENTER.x + circleRadius} cy={SHAPE_CENTER.y} r={11} className="fill-primary-600 stroke-white dark:stroke-slate-900 cursor-grab active:cursor-grabbing" strokeWidth={3} onPointerDown={startDrag(0)} />
+          </>
+        ) : (
+          <>
+            <polygon points={points.map((p) => `${p.x},${p.y}`).join(' ')} className="fill-primary-500/10 stroke-primary-600" strokeWidth={2.5} />
+            {points.map((p, i) => (
+              <circle key={i} cx={p.x} cy={p.y} r={11} className="fill-primary-600 stroke-white dark:stroke-slate-900 cursor-grab active:cursor-grabbing" strokeWidth={3} onPointerDown={startDrag(i)} />
+            ))}
+          </>
+        )}
+      </svg>
+      <p className="text-center font-display text-lg font-semibold">
+        {shape.label}: <span className="text-primary-600">{shape.n}</span> straight sides, <span className="text-accent-600">{shape.n}</span> corners
+        {shape.n === 0 && <span className="text-slate-500 font-normal text-sm block mt-1">A circle is one continuous curve -- no straight sides, no corners.</span>}
+      </p>
+    </div>
+  );
+}
+
+// -- NEW: Junior level -- Perimeter & Area of a Rectangle --------------------
+const RECT_UNIT = 28;
+const RECT_ORIGIN: Point = { x: 40, y: 40 };
+
+function RectanglePerimeterArea() {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [cols, setCols] = useState(5);
+  const [rows, setRows] = useState(3);
+  const draggingRef = useRef(false);
+
+  const corner: Point = { x: RECT_ORIGIN.x + cols * RECT_UNIT, y: RECT_ORIGIN.y + rows * RECT_UNIT };
+  const perimeter = 2 * (cols + rows);
+  const area = cols * rows;
+
+  const startDrag = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture(e.pointerId);
+    draggingRef.current = true;
+  };
+  const onMove = (e: React.PointerEvent) => {
+    const svg = svgRef.current;
+    if (!draggingRef.current || !svg) return;
+    const p = toSvgPoint(svg, e.clientX, e.clientY);
+    setCols(clamp(Math.round((p.x - RECT_ORIGIN.x) / RECT_UNIT), 1, 11));
+    setRows(clamp(Math.round((p.y - RECT_ORIGIN.y) / RECT_UNIT), 1, 11));
+  };
+  const endDrag = () => { draggingRef.current = false; };
+  const reset = () => { setCols(5); setRows(3); };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <p className="text-sm text-slate-500">Drag the corner to resize the rectangle. Count the unit squares inside for area, and the squares along the edge for perimeter.</p>
+        <div className="flex items-center gap-2 shrink-0">
+          <SpeakButton text={`This rectangle is ${cols} units wide and ${rows} units tall. Its area is ${area} square units -- every unit square counted inside. Its perimeter is ${perimeter} units -- the total distance all the way around the edge.`} />
+          <button onClick={reset} className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700">
+            <RotateCcw className="w-3.5 h-3.5" /> Reset
+          </button>
+        </div>
+      </div>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${VIEW} ${VIEW}`}
+        className="w-full max-w-md mx-auto touch-none select-none rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-slate-200 dark:border-slate-800"
+        onPointerMove={onMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        {Array.from({ length: cols }).map((_, c) =>
+          Array.from({ length: rows }).map((_, r) => (
+            <rect key={`${c}-${r}`} x={RECT_ORIGIN.x + c * RECT_UNIT} y={RECT_ORIGIN.y + r * RECT_UNIT} width={RECT_UNIT} height={RECT_UNIT} className="fill-primary-500/10 stroke-primary-300 dark:stroke-primary-800" strokeWidth={1} />
+          )),
+        )}
+        <rect x={RECT_ORIGIN.x} y={RECT_ORIGIN.y} width={cols * RECT_UNIT} height={rows * RECT_UNIT} className="fill-none stroke-primary-600" strokeWidth={2.5} />
+        <circle cx={corner.x} cy={corner.y} r={11} className="fill-primary-600 stroke-white dark:stroke-slate-900 cursor-grab active:cursor-grabbing" strokeWidth={3} onPointerDown={startDrag} />
+      </svg>
+      <p className="text-center font-display text-lg font-semibold">
+        Area = <span className="text-primary-600">{area}</span> sq units &nbsp;|&nbsp; Perimeter = <span className="text-accent-600">{perimeter}</span> units
+      </p>
+    </div>
+  );
+}
+
+// -- NEW: Middle level -- Types of Angles ------------------------------------
+const ANGLE_VERTEX: Point = { x: 80, y: 320 };
+const ANGLE_BASE_POINT: Point = { x: 340, y: 320 };
+const ANGLE_DEFAULT_RAY: Point = { x: 220, y: 150 };
+
+function classifyAngle(deg: number): string {
+  if (deg < 89.5) return 'Acute';
+  if (deg < 90.5) return 'Right';
+  if (deg < 179.5) return 'Obtuse';
+  return 'Straight';
+}
+
+function AngleTypeExplorer() {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [rayPoint, setRayPoint] = useState<Point>(ANGLE_DEFAULT_RAY);
+  const draggingRef = useRef(false);
+
+  const angle = angleAtVertex(ANGLE_BASE_POINT, ANGLE_VERTEX, rayPoint);
+  const label = classifyAngle(angle);
+  const rayDir = { x: rayPoint.x - ANGLE_VERTEX.x, y: rayPoint.y - ANGLE_VERTEX.y };
+  const rayLen = Math.hypot(rayDir.x, rayDir.y) || 1;
+  const rayEnd = { x: ANGLE_VERTEX.x + (rayDir.x / rayLen) * 260, y: ANGLE_VERTEX.y + (rayDir.y / rayLen) * 260 };
+
+  const startDrag = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture(e.pointerId);
+    draggingRef.current = true;
+  };
+  const onMove = (e: React.PointerEvent) => {
+    const svg = svgRef.current;
+    if (!draggingRef.current || !svg) return;
+    const p = toSvgPoint(svg, e.clientX, e.clientY);
+    // Keep the free ray at or above the base line, so the angle always
+    // reads as 0-180 degrees rather than wrapping into reflex territory --
+    // reflex angles are a separate, later idea.
+    setRayPoint({ x: clamp(p.x, 10, VIEW - 10), y: Math.min(p.y, ANGLE_VERTEX.y - 5) });
+  };
+  const endDrag = () => { draggingRef.current = false; };
+  const reset = () => setRayPoint(ANGLE_DEFAULT_RAY);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <p className="text-sm text-slate-500">Drag the free ray. Watch the angle update live, and see it classified as acute, right, obtuse, or straight.</p>
+        <div className="flex items-center gap-2 shrink-0">
+          <SpeakButton text={`This angle currently measures ${angle.toFixed(0)} degrees, which makes it ${label.toLowerCase()}. Angles under 90 degrees are acute, exactly 90 is right, between 90 and 180 is obtuse, and exactly 180 is straight.`} />
+          <button onClick={reset} className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700">
+            <RotateCcw className="w-3.5 h-3.5" /> Reset
+          </button>
+        </div>
+      </div>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${VIEW} ${VIEW}`}
+        className="w-full max-w-md mx-auto touch-none select-none rounded-2xl bg-slate-50 dark:bg-slate-900/40 border-2 border-slate-200 dark:border-slate-800"
+        onPointerMove={onMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        <line x1={ANGLE_VERTEX.x} y1={ANGLE_VERTEX.y} x2={ANGLE_BASE_POINT.x} y2={ANGLE_BASE_POINT.y} className="stroke-slate-500 dark:stroke-slate-400" strokeWidth={2.5} />
+        <line x1={ANGLE_VERTEX.x} y1={ANGLE_VERTEX.y} x2={rayEnd.x} y2={rayEnd.y} className="stroke-accent-600" strokeWidth={2.5} />
+        <circle cx={ANGLE_VERTEX.x} cy={ANGLE_VERTEX.y} r={5} className="fill-slate-700 dark:fill-slate-200" />
+        <circle cx={rayEnd.x} cy={rayEnd.y} r={11} className="fill-accent-600 stroke-white dark:stroke-slate-900 cursor-grab active:cursor-grabbing" strokeWidth={3} onPointerDown={startDrag} />
+      </svg>
+      <p className="text-center font-display text-lg font-semibold">
+        {angle.toFixed(0)}&deg; &nbsp;|&nbsp; <span className="text-primary-600">{label}</span> angle
+      </p>
+    </div>
+  );
+}
+
+// -- Level / Category / construction picker -----------------------------------
+type ConstructionId =
+  | 'triangle-angle-sum' | 'bpt' | 'circle-theorem' | 'parallelogram' | 'coordinate-geometry' | 'mensuration-solids'
+  | 'shape-sides' | 'rectangle-perimeter-area' | 'angle-types';
 
 interface Category {
   id: string;
   label: string;
-  constructions: { id: ConstructionId; label: string; render: () => React.ReactNode }[];
+  // Real chapter names each construction maps to -- same discipline as
+  // MathExperiment/MathTheorem/MathFormula's chapterTags, powering this
+  // construction's own "Generate a worksheet on this" link.
+  constructions: { id: ConstructionId; label: string; chapterTags: string[]; render: () => React.ReactNode }[];
 }
 
-const CATEGORIES: Category[] = [
+type GeometryLevelId = 'early' | 'junior' | 'middle' | 'senior';
+
+interface GeometryLevel {
+  id: GeometryLevelId;
+  label: string;
+  gradeLabel: string;
+  categories: Category[];
+}
+
+// Today's five original categories, unchanged, become the Senior level --
+// Class 9-10 theorem-grade constructions (Thales, circle theorems,
+// coordinate geometry, 3D mensuration). Early/Junior/Middle are new, built
+// in the exact same drag-and-recompute style so the whole lab reads as one
+// real progression instead of a single flat list aimed at the oldest
+// students only.
+const GEOMETRY_LEVELS: GeometryLevel[] = [
   {
-    id: 'triangles',
-    label: 'Triangles',
-    constructions: [
-      { id: 'triangle-angle-sum', label: 'Angle Sum Property', render: () => <TriangleAngleSum /> },
-      { id: 'bpt', label: 'Basic Proportionality (Thales)', render: () => <BasicProportionalityTheorem /> },
+    id: 'early',
+    label: 'Early',
+    gradeLabel: MATH_GRADE_BANDS.find((b) => b.id === 'early')?.label || 'Class 1-3',
+    categories: [
+      {
+        id: 'shapes',
+        label: 'Shapes',
+        constructions: [{ id: 'shape-sides', label: 'Shapes & Sides', chapterTags: ['Shapes and Space', 'Shapes Around Us'], render: () => <ShapeSidesExplorer /> }],
+      },
     ],
   },
   {
-    id: 'circles',
-    label: 'Circles',
-    constructions: [
-      { id: 'circle-theorem', label: 'Angle at the Centre', render: () => <CircleTheorem /> },
+    id: 'junior',
+    label: 'Junior',
+    gradeLabel: MATH_GRADE_BANDS.find((b) => b.id === 'junior')?.label || 'Class 4-6',
+    categories: [
+      {
+        id: 'mensuration-basics',
+        label: 'Perimeter & Area',
+        constructions: [{ id: 'rectangle-perimeter-area', label: 'Rectangle Perimeter & Area', chapterTags: ['Perimeter and Area', 'Mensuration'], render: () => <RectanglePerimeterArea /> }],
+      },
     ],
   },
   {
-    id: 'quadrilaterals',
-    label: 'Quadrilaterals',
-    constructions: [
-      { id: 'parallelogram', label: 'Parallelogram Diagonals', render: () => <ParallelogramDiagonals /> },
+    id: 'middle',
+    label: 'Middle',
+    gradeLabel: MATH_GRADE_BANDS.find((b) => b.id === 'middle')?.label || 'Class 7-8',
+    categories: [
+      {
+        id: 'angles',
+        label: 'Angles',
+        constructions: [{ id: 'angle-types', label: 'Types of Angles', chapterTags: ['Lines and Angles'], render: () => <AngleTypeExplorer /> }],
+      },
     ],
   },
   {
-    id: 'coordinate',
-    label: 'Coordinate Geometry',
-    constructions: [
-      { id: 'coordinate-geometry', label: 'Distance & Section Formula', render: () => <CoordinateGeometryConstruction /> },
-    ],
-  },
-  {
-    id: 'mensuration',
-    label: 'Mensuration (3D Solids)',
-    constructions: [
-      { id: 'mensuration-solids', label: '3D Solid Explorer', render: () => <MensurationSolids /> },
+    id: 'senior',
+    label: 'Senior',
+    gradeLabel: MATH_GRADE_BANDS.find((b) => b.id === 'senior')?.label || 'Class 9-10',
+    categories: [
+      {
+        id: 'triangles',
+        label: 'Triangles',
+        constructions: [
+          { id: 'triangle-angle-sum', label: 'Angle Sum Property', chapterTags: ['Triangles', 'Lines and Angles'], render: () => <TriangleAngleSum /> },
+          { id: 'bpt', label: 'Basic Proportionality (Thales)', chapterTags: ['Triangles', 'Similarity'], render: () => <BasicProportionalityTheorem /> },
+        ],
+      },
+      {
+        id: 'circles',
+        label: 'Circles',
+        constructions: [{ id: 'circle-theorem', label: 'Angle at the Centre', chapterTags: ['Circles'], render: () => <CircleTheorem /> }],
+      },
+      {
+        id: 'quadrilaterals',
+        label: 'Quadrilaterals',
+        constructions: [{ id: 'parallelogram', label: 'Parallelogram Diagonals', chapterTags: ['Quadrilaterals', 'Understanding Quadrilaterals'], render: () => <ParallelogramDiagonals /> }],
+      },
+      {
+        id: 'coordinate',
+        label: 'Coordinate Geometry',
+        constructions: [{ id: 'coordinate-geometry', label: 'Distance & Section Formula', chapterTags: ['Coordinate Geometry'], render: () => <CoordinateGeometryConstruction /> }],
+      },
+      {
+        id: 'mensuration',
+        label: 'Mensuration (3D Solids)',
+        constructions: [{ id: 'mensuration-solids', label: '3D Solid Explorer', chapterTags: ['Surface Areas and Volumes', 'Mensuration'], render: () => <MensurationSolids /> }],
+      },
     ],
   },
 ];
 
 export default function GeometryExplorer() {
-  const [categoryId, setCategoryId] = useState(CATEGORIES[0].id);
-  const category = CATEGORIES.find((c) => c.id === categoryId) || CATEGORIES[0];
+  const [levelId, setLevelId] = useState<GeometryLevelId>('early');
+  const level = GEOMETRY_LEVELS.find((l) => l.id === levelId) || GEOMETRY_LEVELS[0];
+  const [categoryId, setCategoryId] = useState(level.categories[0].id);
+  const category = level.categories.find((c) => c.id === categoryId) || level.categories[0];
   const [activeId, setActiveId] = useState<ConstructionId>(category.constructions[0].id);
   const active = category.constructions.find((c) => c.id === activeId) || category.constructions[0];
 
+  const switchLevel = (id: GeometryLevelId) => {
+    const next = GEOMETRY_LEVELS.find((l) => l.id === id);
+    if (!next) return;
+    setLevelId(id);
+    setCategoryId(next.categories[0].id);
+    setActiveId(next.categories[0].constructions[0].id);
+    playSelectChime();
+  };
   const switchCategory = (id: string) => {
-    const next = CATEGORIES.find((c) => c.id === id);
+    const next = level.categories.find((c) => c.id === id);
     if (!next) return;
     setCategoryId(id);
     setActiveId(next.constructions[0].id);
@@ -595,17 +898,36 @@ export default function GeometryExplorer() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-2.5">
-        {CATEGORIES.map((c) => (
-          <Tilt3DCard
-            key={c.id}
-            active={categoryId === c.id}
-            onClick={() => switchCategory(c.id)}
-            className={`px-4 py-2.5 rounded-xl text-sm font-bold ${categoryId === c.id ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}
-          >
-            {c.label}
-          </Tilt3DCard>
-        ))}
+      <div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Level</p>
+        <div className="flex flex-wrap gap-2">
+          {GEOMETRY_LEVELS.map((l) => (
+            <Tilt3DCard
+              key={l.id}
+              active={levelId === l.id}
+              onClick={() => switchLevel(l.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold ${levelId === l.id ? 'bg-accent-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}
+            >
+              {l.label} <span className="font-normal opacity-75">({l.gradeLabel})</span>
+            </Tilt3DCard>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Category</p>
+        <div className="flex flex-wrap gap-2.5">
+          {level.categories.map((c) => (
+            <Tilt3DCard
+              key={c.id}
+              active={categoryId === c.id}
+              onClick={() => switchCategory(c.id)}
+              className={`px-4 py-2.5 rounded-xl text-sm font-bold ${categoryId === c.id ? 'bg-primary-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'}`}
+            >
+              {c.label}
+            </Tilt3DCard>
+          ))}
+        </div>
       </div>
 
       {category.constructions.length > 1 && (
@@ -622,8 +944,9 @@ export default function GeometryExplorer() {
         </div>
       )}
 
-      <div className="glass-card rounded-3xl p-4 md:p-6">
+      <div className="glass-card rounded-3xl p-4 md:p-6 space-y-4">
         {active.render()}
+        <GenerateWorksheetLink chapterTags={active.chapterTags} gradeBand={level.id} board="both" />
       </div>
     </div>
   );

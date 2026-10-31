@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, X, Mic, MicOff, Send, Volume2, VolumeX, Loader2, Trash2, Square, ArrowRight } from 'lucide-react';
+import { Sparkles, X, Mic, MicOff, Send, Volume2, VolumeX, Loader2, Trash2, Square, ArrowRight, HelpCircle } from 'lucide-react';
 import { getHelpEntryForPath } from '@edusheets/content';
 import { useWorksheetStore } from '@/store/useWorksheetStore';
 import { useWizardStore } from '@/store/useWizardStore';
@@ -208,6 +208,9 @@ export default function AskPanel() {
           <p className="font-bold text-sm leading-tight">Ask AI</p>
           <p className="text-[11px] text-slate-500 truncate">About: {help.title}</p>
         </div>
+        <Link href="/help/ask-ai" title="How Ask AI works" className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 shrink-0">
+          <HelpCircle className="w-4 h-4" />
+        </Link>
         {isSpeechSupported() && (
           <button onClick={toggleReadAloud} title={readAloud ? 'Read answers aloud: on' : 'Read answers aloud: off'} aria-pressed={readAloud} className={`p-1.5 rounded-lg ${readAloud ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-400 hover:text-slate-600'}`}>
             {readAloud ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}

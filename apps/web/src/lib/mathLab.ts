@@ -55,3 +55,20 @@ export async function downloadMathAttemptPdf(id: string) {
 
 export const regenerateMathAttemptPdf = (id: string) =>
   api.post<{ success: boolean; data: { pdfStoragePath: string } }>(`/api/math-lab/attempts/${id}/regenerate-pdf`);
+
+export interface ResolvedTopicSelection {
+  boardId: string;
+  board: string;
+  classId: string;
+  className: string;
+  subjectId: string;
+  subjectName: string;
+  chapterId?: string;
+  chapterName?: string;
+}
+
+// Powers every "Generate a worksheet on this" link across Math Lab -- see
+// apps/api/src/routes/mathLabRoutes.ts's `/resolve-topic` for how the match
+// actually happens (same resolver Ask AI's generate_worksheet tool uses).
+export const resolveMathTopic = (input: { chapterTags: string[]; gradeBand: string; board: 'CBSE' | 'ICSE' | 'both' }) =>
+  api.post<{ success: boolean; selection: ResolvedTopicSelection }>('/api/math-lab/resolve-topic', input);

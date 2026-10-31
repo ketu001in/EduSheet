@@ -41,6 +41,20 @@ export default function HelpArticlePage({ params }: { params: Promise<{ slug: st
         </ul>
       </div>
 
+      {entry.steps && entry.steps.length > 0 && (
+        <div className="glass-card rounded-2xl p-6">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">How to do it</h2>
+          <ol className="space-y-3">
+            {entry.steps.map((step, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300">
+                <span className="mt-0.5 w-6 h-6 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                <span className="pt-0.5">{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
       {entry.tips && entry.tips.length > 0 && (
         <div className="rounded-2xl bg-secondary-50 dark:bg-slate-800/60 border-2 border-slate-900 dark:border-[#FDF3D9]/40 p-6">
           <h2 className="text-xs font-bold uppercase tracking-wide text-secondary-600 dark:text-secondary-400 mb-3">Tips</h2>

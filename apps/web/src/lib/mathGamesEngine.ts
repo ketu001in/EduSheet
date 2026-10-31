@@ -110,6 +110,98 @@ export function generateFractionQuestion(): { total: number; shaded: number; opt
   return { total, shaded, options, correctIndex };
 }
 
+// Same-denominator fraction addition -- a deliberate second mode for
+// Fraction Fill (which otherwise only tests recognition, not arithmetic).
+// Multiplying the two numerators together is included as a distractor
+// because it's a genuine, common misconception (treating + like x).
+export function generateFractionArithmeticQuestion(): { total: number; a: number; b: number; sum: number; options: string[]; correctIndex: number } {
+  const total = randInt(4, 10);
+  const a = randInt(1, total - 2);
+  const b = randInt(1, total - a - 1);
+  const sum = a + b;
+  const correct = `${sum}/${total}`;
+
+  const candidateSet = new Set<string>();
+  const tryAdd = (num: number, den: number) => {
+    if (num <= 0 || den <= 0) return;
+    const s = `${num}/${den}`;
+    if (s !== correct) candidateSet.add(s);
+  };
+  tryAdd(sum, total + 1);
+  tryAdd(sum + 1, total);
+  tryAdd(Math.max(1, sum - 1), total);
+  tryAdd(a * b, total);
+  let guard = 0;
+  while (candidateSet.size < 3 && guard < 100) { guard++; tryAdd(randInt(1, total + 2), total); }
+
+  const wrongs = Array.from(candidateSet).slice(0, 3);
+  const { options, correctIndex } = shuffleWithIndex([correct, ...wrongs], correct);
+  return { total, a, b, sum, options, correctIndex };
+}
+
+export function generateAdditionQuestion(max = 50): { a: number; b: number; sum: number; options: number[]; correctIndex: number } {
+  const a = randInt(1, max);
+  const b = randInt(1, max);
+  const sum = a + b;
+  const distractors = numericDistractors(sum, 3, Math.max(5, Math.floor(sum * 0.2)), 0);
+  const { options, correctIndex } = shuffleWithIndex([sum, ...distractors], sum);
+  return { a, b, sum, options, correctIndex };
+}
+
+export function generateSubtractionQuestion(max = 50): { a: number; b: number; difference: number; options: number[]; correctIndex: number } {
+  const x = randInt(1, max);
+  const y = randInt(1, max);
+  const a = Math.max(x, y);
+  const b = Math.min(x, y);
+  const difference = a - b;
+  const distractors = numericDistractors(difference, 3, Math.max(5, Math.floor(a * 0.2)), 0);
+  const { options, correctIndex } = shuffleWithIndex([difference, ...distractors], difference);
+  return { a, b, difference, options, correctIndex };
+}
+
+// Division with a realistic chance of a remainder -- the dividend is built
+// FROM the quotient/remainder (never the other way round) so the correct
+// answer is always exactly reproducible, never approximated.
+export function generateDivisionQuestion(maxDivisor = 10, maxQuotient = 10): { dividend: number; divisor: number; quotient: number; remainder: number; options: string[]; correctIndex: number } {
+  const divisor = randInt(2, maxDivisor);
+  const quotient = randInt(2, maxQuotient);
+  const remainder = randInt(0, divisor - 1);
+  const dividend = divisor * quotient + remainder;
+  const correct = remainder === 0 ? `${quotient}` : `${quotient} r ${remainder}`;
+
+  const candidateSet = new Set<string>();
+  const tryAdd = (q: number, r: number) => {
+    if (q < 0 || r < 0 || r >= divisor) return;
+    const s = r === 0 ? `${q}` : `${q} r ${r}`;
+    if (s !== correct) candidateSet.add(s);
+  };
+  tryAdd(quotient + 1, remainder);
+  tryAdd(Math.max(0, quotient - 1), remainder);
+  tryAdd(quotient, Math.max(0, remainder - 1));
+  tryAdd(quotient, (remainder + 1) % divisor);
+  let guard = 0;
+  while (candidateSet.size < 3 && guard < 100) { guard++; tryAdd(randInt(0, maxQuotient + 1), randInt(0, divisor - 1)); }
+
+  const wrongs = Array.from(candidateSet).slice(0, 3);
+  const { options, correctIndex } = shuffleWithIndex([correct, ...wrongs], correct);
+  return { dividend, divisor, quotient, remainder, options, correctIndex };
+}
+
+// A genuinely binary question (which of these two decimals is bigger) --
+// deliberately a 2-option round rather than forcing a 4-option MCQ shape
+// onto a task that's naturally a pairwise comparison.
+export function generateDecimalCompareQuestion(): { a: number; b: number; options: string[]; correctIndex: number } {
+  const randDecimal = () => randInt(1, 95) / 10; // one decimal place, 0.1-9.5
+  const a = randDecimal();
+  let b = randDecimal();
+  let guard = 0;
+  while (b === a && guard < 20) { b = randDecimal(); guard++; }
+  const correct = a > b ? a.toFixed(1) : b.toFixed(1);
+  const other = a > b ? b.toFixed(1) : a.toFixed(1);
+  const { options, correctIndex } = shuffleWithIndex([correct, other], correct);
+  return { a, b, options, correctIndex };
+}
+
 export type PatternRule = { label: string; next: (prev: number) => number };
 export const PATTERN_RULES: PatternRule[] = [
   { label: '+2', next: (n) => n + 2 },

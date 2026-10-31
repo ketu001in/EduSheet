@@ -4,6 +4,8 @@ import { submitMathAttempt, regenerateMathAttemptPdf } from '../services/mathLab
 import { getSignedURL } from '../services/storageService';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
+import { MATH_GRADE_BANDS } from '@edusheets/content';
+import { resolveCurriculumSelection } from '../lib/curriculumResolve';
 
 const router: Router = Router();
 
@@ -94,6 +96,56 @@ router.get('/attempts/:id/pdf', async (req: AuthenticatedRequest, res, next) => 
     const path = `math-lab-reports/${req.user!.id}/${req.params.id}.pdf`;
     const url = await getSignedURL(path);
     res.json({ success: true, url });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Powers Math Lab's "Generate a worksheet on this" links -- the same
+// board/class/subject/chapter resolution Ask AI's generate_worksheet tool
+// uses (resolveCurriculumSelection), just reached directly with a Math Lab
+// content entry's own chapterTags/gradeBand/board instead of an LLM's
+// free-text guess. Subject is always "Mathematics" here, never guessed.
+// Tries each chapterTag in turn (a chapter match is optional on the
+// resolver, so this just gives several real-chapter-name shots at finding
+// one before falling through to a board/class/subject-only selection).
+const resolveTopicSchema = z.object({
+  chapterTags: z.array(z.string()).default([]),
+  gradeBand: z.enum(['early', 'junior', 'middle', 'senior', 'plusTwo']),
+  board: z.enum(['CBSE', 'ICSE', 'both']),
+});
+
+router.post('/resolve-topic', validate(resolveTopicSchema), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { chapterTags, gradeBand, board } = req.body as z.infer<typeof resolveTopicSchema>;
+    const band = MATH_GRADE_BANDS.find((b) => b.id === gradeBand);
+    const classNumber = band?.classNumbers[0] ?? 6;
+    const boardCode = board === 'both' ? 'CBSE' : board;
+
+    let result = await resolveCurriculumSelection(req.supabase, {
+      boardCode,
+      className: `Class ${classNumber}`,
+      subjectName: 'Mathematics',
+    });
+    if ('error' in result) {
+      res.status(404).json({ success: false, error: result.error });
+      return;
+    }
+
+    for (const tag of chapterTags) {
+      const withChapter = await resolveCurriculumSelection(req.supabase, {
+        boardCode,
+        className: `Class ${classNumber}`,
+        subjectName: 'Mathematics',
+        chapterName: tag,
+      });
+      if (!('error' in withChapter) && withChapter.chapterId) {
+        result = withChapter;
+        break;
+      }
+    }
+
+    res.json({ success: true, selection: result });
   } catch (error) {
     next(error);
   }

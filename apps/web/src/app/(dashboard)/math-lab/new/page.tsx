@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { MATH_EXPERIMENTS, MathExperiment, MathBranch, mathGradeBandForClass } from '@edusheets/content';
 import MathStage from '@/components/mathlab/MathStage';
+import GenerateWorksheetLink from '@/components/mathlab/GenerateWorksheetLink';
 import SpeakButton from '@/components/labshared/SpeakButton';
 import { submitMathAttempt, downloadMathAttemptPdf } from '@/lib/mathLab';
 import { fetchBoards, fetchClasses, Board, ClassLevel } from '@/lib/curriculum';
@@ -418,6 +419,7 @@ export default function NewMathExperimentPage() {
               {experiment.extensions.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           </div>
+          <GenerateWorksheetLink chapterTags={experiment.chapterTags} gradeBand={experiment.gradeBand} board={experiment.board} className="text-center" />
           {submitError && <p className="text-xs text-red-600 font-medium">{submitError}</p>}
           <button
             onClick={handleSubmit}

@@ -10,6 +10,7 @@ import {
   antyayordashake, yavadunamSquare, ekanyunenaMultiply,
 } from '@/lib/vedicMathEngine';
 import { useContent } from '@/lib/useContent';
+import GenerateWorksheetLink from './GenerateWorksheetLink';
 
 function SutraHeader({ sutra }: { sutra: VedicSutra }) {
   return (
@@ -275,6 +276,10 @@ export default function VedicMathLab() {
           <SutraHeader sutra={active} />
           <p className="text-xs text-slate-400">This sutra doesn&apos;t have an interactive calculator built yet -- only the six above do, each hand-verified against hundreds to thousands of test cases (see the code comments in lib/vedicMathEngine.ts).</p>
         </div>
+      )}
+
+      {active.chapterTags && active.board && (
+        <GenerateWorksheetLink chapterTags={active.chapterTags} gradeBand={active.gradeBand} board={active.board} />
       )}
     </div>
   );

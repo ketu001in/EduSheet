@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useState } from 'react';
 import { GameHeader, OptionGrid } from './GameHeader';
+import GenerateWorksheetLink from '../GenerateWorksheetLink';
 import { useGameScore } from '@/lib/useGameScore';
 import { generatePatternQuestion } from '@/lib/mathGamesEngine';
 
@@ -39,6 +40,7 @@ export default function PatternDetective() {
           disabled={selectedIndex !== null}
           onSelect={select}
         />
+        <GenerateWorksheetLink chapterTags={['Patterns', 'Playing with Numbers']} gradeBand="junior" board="both" className="flex justify-center" />
       </div>
     </div>
   );

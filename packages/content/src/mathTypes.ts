@@ -70,7 +70,19 @@ export interface MathEquipment {
 //    live, re-computed geometry as Geometry Explorer)
 //  - explorer: a labeled diagram/gallery where every part is clickable for
 //    real facts, same pattern as Biology's 'explorer'
-export type MathSimType = 'divide' | 'euclidean' | 'progression' | 'quadratic' | 'probability' | 'graph' | 'construct' | 'explorer';
+//  - addition / subtraction: a number line plus base-10 block grouping
+//    (ones/tens), showing regrouping ("carrying"/"borrowing") happen live
+//  - multiplication: an equal-groups array (rows x columns of counters)
+//    that rebuilds live as the two factors change
+//  - division: equal-groups sharing extended with a remainder and, at the
+//    harder level, the standard long-division steps shown one at a time
+//  - decimals: a place-value grid (ones/tenths/hundredths) with a slider
+//    per column, compared on a shared number line
+//  - fractions: a fraction bar and circle shown together for the same
+//    fraction, with numerator/denominator sliders
+export type MathSimType =
+  | 'divide' | 'euclidean' | 'progression' | 'quadratic' | 'probability' | 'graph' | 'construct' | 'explorer'
+  | 'addition' | 'subtraction' | 'multiplication' | 'division' | 'decimals' | 'fractions';
 
 export interface MathParamConfig {
   key: string;
@@ -156,6 +168,10 @@ export interface MathFormula {
   name: string;
   branch: MathBranch;
   gradeBand: MathGradeBandId;
+  board: 'CBSE' | 'ICSE' | 'both';
+  // Same "real chapter name" discipline as MathExperiment/MathTheorem's
+  // chapterTags -- powers the "Generate a worksheet on this" link.
+  chapterTags: string[];
   formula: string; // e.g. "Area = 1/2 x base x height"
   variables: { symbol: string; meaning: string }[];
   // A single real worked example with plugged-in numbers, shown as a live
